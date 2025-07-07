@@ -32,7 +32,7 @@ export default function Card({ title, price, description, image, onEdit, onDelet
       )}
 
       <div className="w-40 h-40 relative mb-4">
-        <Image src={image || "/images/logo_hooligans.png"} alt={title} fill style={{ objectFit: "cover" }} className={`rounded-lg ${!image ? "bg-[var(--background)]" : ""}`} priority sizes="160px" />
+        <Image src={image || "/images/logo.png"} alt={title} fill style={{ objectFit: "cover" }} className={`rounded-lg ${!image ? "bg-[var(--background)]" : ""}`} priority sizes="160px" />
       </div>
 
       <h3 className="heading-black mb-1 font-bold">{title}</h3>

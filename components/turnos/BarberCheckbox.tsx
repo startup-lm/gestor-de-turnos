@@ -18,7 +18,7 @@ export default function BarberCheckbox({barbers,selectedBarberId,onChange,}: Rea
         return (
           <button key={b.id} type="button" onClick={() => onChange(b.id!)} 
             className={`w-36 h-30 justify-items-center barber-checkbox ${isSelected ? "selected" : ""} `} >
-            <Image src={b.image || "/images/logo_hooligans.png"} alt={b.name} width={64} height={64} className="w-18 h-18 rounded-full object-cover mb-2 bg-[var(--background)]" />
+            <Image src={b.image || "/images/logo.png"} alt={b.name} width={64} height={64} className="w-18 h-18 rounded-full object-cover mb-2 bg-[var(--background)]" />
             <span className="text-sm font-medium">{b.name}</span>
           </button>
         );

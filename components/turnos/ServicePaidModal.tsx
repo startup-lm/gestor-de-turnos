@@ -8,14 +8,11 @@ import { Service } from "@/lib/types/Services";
 import Modal from "@/components/ui/Modal";
 import PopupModal from "@/components/ui/PopupModal";
 import { usePopup } from "@/lib/hooks/usePopup";
-import { useAuth } from "@/lib/auth/AuthContext";
 import PayButton from "../buttons/PayButton";
 
 export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: Readonly<{ appointment: { id: number }; onClose: () => void; setIsPaid: (paid: boolean) => void; }>) {
-  const { role } = useAuth();
   const { data } = useFetchOnce<Service[]>(getServices);
   const services: Service[] = data ?? [];
-  const filtered = role === "admin" ? services : services.filter(s => s.id !== 5);
   const [selectedServiceId, setSelectedServiceId] = useState(-1);
   const isDisabled = selectedServiceId < 0;
   const [loading, setLoading] = useState(false);
@@ -26,10 +23,10 @@ export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: R
     if (selectedServiceId === -1) {
       setPrice(0);
     } else {
-      const svc = filtered.find(s => s.id === selectedServiceId);
+      const svc = services.find(s => s.id === selectedServiceId);
       setPrice(svc?.price ?? 0);
     }
-  }, [selectedServiceId, filtered]);
+  }, [selectedServiceId, services]);
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +50,7 @@ export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: R
               <option value={-1} disabled style={{ color: "grey" }}>
                 Selecciona un servicio
               </option>
-              {filtered.map(s => (
+              {services.map(s => (
                 <option key={s.id} value={s.id} style={{ color: "black" }}>
                   {s.name}
                 </option>

@@ -9,7 +9,6 @@ import PopupModal from "@/components/ui/PopupModal";
 import { usePopup } from "@/lib/hooks/usePopup";
 import { sendConfirmAppointment } from "../../utils/whatsapp";
 import ReserveButton from "../buttons/ReserveButton";
-import { useAuth } from "@/lib/auth/AuthContext";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import { Service } from "@/lib/types/Services";
 import { getServices } from "@/lib/repository/services";
@@ -18,10 +17,8 @@ import { CalendarEvent } from "@/lib/types/CalendarEvent";
 export default function ReservarModal({ onClose, selectedDate, selectedBarber, selectedBarberId, events, }:
   Readonly<{ onClose: () => void; selectedDate: Date; selectedBarber: string; selectedBarberId: number; events: CalendarEvent[]; }>) {
 
-  const { role } = useAuth();
   const { data } = useFetchOnce<Service[]>(getServices);
   const services: Service[] = data ?? [];
-  const filtered = role === "admin" ? services : services.filter(s => s.id !== 5);
   const [selectedServiceId, setSelectedServiceId] = useState(-1);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -108,7 +105,7 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
               <option value={-1} disabled style={{ color: "grey" }}>
                 Selecciona un servicio
               </option>
-              {filtered.map(s => (
+              {services.map(s => (
                 <option key={s.id} value={s.id} style={{ color: "black" }}>
                   {s.name} ({s.duration} min)
                 </option>
