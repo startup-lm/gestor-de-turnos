@@ -3,8 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   images: {
     domains: [
-      "efhmsbsxdsyiydcxbuid.supabase.co",
-      "ptiogpplnhwootvybfsi.supabase.co",
+      "ynhhatrcwylpkdssbhsv.supabase.co",
     ],
   },
   eslint: {

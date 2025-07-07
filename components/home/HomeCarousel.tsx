@@ -50,7 +50,7 @@ export default function HomeCarousel({ type, items }: Readonly<{ type: CarouselT
                   <Image src={item.image} alt={item.name} width={128} height={128} className="w-full h-full object-contain" />
                 ) : (
                   <div className="relative w-full h-full">
-                    <Image src={item.image ?? "/images/logo_hooligans.png"} alt={item.name} fill className={`object-cover rounded-lg brightness-50 ${!item.image ? "bg-[var(--background)]" : ""}`} sizes="(max-width: 768px) 100vw, 33vw" priority
+                    <Image src={item.image ?? "/images/logo.png"} alt={item.name} fill className={`object-cover rounded-lg brightness-50 ${!item.image ? "bg-[var(--background)]" : ""}`} sizes="(max-width: 768px) 100vw, 33vw" priority
                     />
                     <div className="absolute inset-0 flex items-center justify-center text-white font-semibold text-center px-2 text-sm sm:text-base md:text-md">
                       <span className="text-[var(--foreground)] font-semibold text-center">{item.name}</span>

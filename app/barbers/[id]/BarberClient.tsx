@@ -77,7 +77,7 @@ export default function BarberClient({ barber }: { barber: Barber }) {
                     <div className="text-left rounded-2lg mt-5 shadow-lg">
                         <div className="flex flex-col items-center justify-center mb-4">
                             <label className="cursor-pointer">
-                                <Image src={barber.image || "/images/logo_hooligans.png"} alt={barber.name} width={128} height={128} className="w-32 h-32 rounded-full object-cover bg-[var(--background)]" />
+                                <Image src={barber.image || "/images/logo.png"} alt={barber.name} width={128} height={128} className="w-32 h-32 rounded-full object-cover bg-[var(--background)]" />
                                 <input type="file" accept="image/*" onChange={(e) => e.target.files && setImageFile(e.target.files[0])} className="hidden" />
                             </label>
                         </div>

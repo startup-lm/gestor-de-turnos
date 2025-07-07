@@ -39,7 +39,7 @@ export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void;
   return (
     <>
       <Modal onClose={onClose}>
-        <Image src="/images/logo_hooligans.png" alt="Login Icon" width={120} height={120} className="rounded-full mx-auto mb-4" />
+        <Image src="/images/logo.png" alt="Login Icon" width={120} height={120} className="rounded-full mx-auto mb-4" />
         <h2 className="text-2xl font-bold mb-6 text-center text-[var(--primary)]">
           Iniciar Sesión
         </h2>

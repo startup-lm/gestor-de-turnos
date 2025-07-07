@@ -1,25 +1,25 @@
 :root {
   --background: #1A1A1A;
-  --foreground: #FFFFFF;
+  --foreground: #F4F4F4;
 
-  --primary: #5B3A29;
-  --secondary: #EDE0C8;
-  --accent: #D2B48C;
+  --primary: #1F3B4D;
+  --secondary: #C0392B;
+  --accent: #F4F4F4;
   --accent-red: #C1272D;
   --accent-blue: #1E90FF;
 
-  --heading-color: var(--secondary);
+  --heading-color: var(--foreground);
 
   --button-bg: var(--secondary);
   --button-text: var(--primary);
-  --button-hover: #C0A070;
+  --button-hover: var(--primary);
 
   --button-home-primary-bg: var(--primary) ;
   --button-home-primary-text: #FFFFFF;
   --button-home-primary-hover: var(--secondary);
 
   --button-home-secondary-bg: var(--secondary);
-  --button-home-secondary-text: var(--primary) ;
+  --button-home-secondary-text: var(--foreground) ;
   --button-home-secondary-hover: var(--primary) ;
 
   --bg-carousel: #2A2A2A;
