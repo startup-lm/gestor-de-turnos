@@ -1,0 +1,188 @@
+button {
+  background: var(--button-bg);
+  color: var(--button-text);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  transition: background 0.3s ease-in-out, transform 0.2s ease;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--button-hover);
+  transform: scale(1.03);
+}
+
+button:active {
+  transform: scale(0.97);
+  cursor: pointer;
+}
+
+button:disabled {
+  background: var(--button-home-disabled);
+  color: var(--button-home-disabled-text);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.btn-appointment {
+  background-color: var(--foreground);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  font-weight: bold;
+  padding: 10px 16px;
+  text-align: center;
+  transition: background 0.3s ease-in-out, transform 0.2s ease;
+}
+.btn-appointment:hover {
+  background-color: var(--primary);
+  color: var(--button-home-primary-text);
+  transform: scale(1.02);
+}
+
+.btn-appointment.reserved {
+  background-color: var(--button-home-disabled);
+  color: var(--button-home-disabled-text);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-delete {
+  background-color: var(--accent-red);
+  color: var(--button-home-primary-text);
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  padding: 10px 16px;
+  text-align: center;
+  transition: background 0.3s ease-in-out, transform 0.2s ease;
+}
+
+.btn-delete:hover {
+  background-color: var(--accent-red);
+  transform: scale(1.02);
+}
+
+.btn-delete:disabled {
+  background: var(--button-home-disabled);
+  color: var(--button-home-disabled-text);
+  cursor: not-allowed;
+}
+
+.icon-whatsapp {
+  background: var(--button-whatsapp);
+  color: var(--button-home-primary-text);
+  padding: 12px;
+  border-radius: 50%;
+  font-weight: bold;
+  transition: background 0.3s ease-in-out, transform 0.2s ease;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 20;
+}
+
+.icon-whatsapp:hover {
+  background: var(--button-whatsapp-hover);
+  transform: scale(1.1);
+}
+
+.btn-auth-mobile {
+  background: var(--bg-navbar);
+  color: var(--secondary);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: normal;
+}
+button.btn-auth-mobile:hover {
+  background: none;
+  transform: scale(1.02);
+}
+
+.btn-paid {
+  padding: 8px 16px;
+  border-radius: 6px;
+  color: var(--button-home-primary-text);
+  font-weight: 500;
+  border: none;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-paid-enabled {
+  background-color: var(--button-green);
+  cursor: pointer;
+}
+.btn-paid-enabled:hover {
+  background-color: var(--button-green-hover);
+  transform: scale(1.02);
+}
+
+.btn-paid-disabled {
+  background-color: var(--button-home-disabled);
+  cursor: not-allowed;
+}
+
+button.btn-home-primary {
+  background: var(--button-home-primary-bg);
+  color: var(--button-home-primary-text);
+}
+
+button.btn-home-secondary {
+  background: var(--button-home-secondary-bg);
+  color: var(--button-home-secondary-text);
+}
+
+button.btn-home-primary:disabled,
+button.btn-home-secondary:disabled {
+  background: var(--button-home-disabled);
+  color: var(--button-home-disabled-text);
+  cursor: not-allowed;
+}
+
+button.btn-home-small {
+  background: var(--button-home-secondary-bg);
+  color: var(--button-home-secondary-text);
+  padding: 8px 8px;
+  font-size: 0.75rem;
+  flex: 1;
+  max-width: 100px;
+}
+
+.forgot-password-button {
+  display: inline-block;
+  font-size: 0.75rem; 
+  color: var(--accent-blue);
+  cursor: pointer;
+  background: transparent; 
+  border: none; 
+  padding: 0;
+  text-decoration: none;
+  text-align: right;
+  transition: color 0.2s ease;
+}
+
+.forgot-password-button:hover,
+.forgot-password-button:focus {
+  text-decoration: underline;
+  color: var(--accent-blue); 
+  outline: none;
+  background: transparent; 
+}
+
+.btn-close {
+  background: transparent !important; 
+  cursor: pointer;
+  color: var(--foreground); 
+}
+
+.btn-whatsapp {
+  background: var(--button-whatsapp);
+  color: var(--button-home-primary-text);
+}
+
+.btn-whatsapp:hover {
+  background: var(--button-whatsapp-hover);
+  transform: scale(1.03);
+}

@@ -1,0 +1,28 @@
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: var(--background);
+  color: var(--button-text);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+              0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 20;
+  border: 2px solid var(--accent); 
+}
+
+.div-modal{
+  background: var(--background);
+}
+
+.grey-container {
+  background-color: var(--bg-carousel);
+  border-radius: 0.5rem;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}

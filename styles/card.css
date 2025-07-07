@@ -1,0 +1,27 @@
+.barber-instagram {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    text-decoration: none;
+  }
+  
+  .barber-instagram .icon {
+    color: #C13584;  
+    flex-shrink: 0;
+  }
+  
+  .barber-instagram .handle {
+    background: linear-gradient(90deg, #f58529, #dd2a7b, #515bd4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 500;
+  }
+  
+  .barber-instagram:hover .icon {
+    opacity: 0.8;
+  }
+  
+  .barber-instagram:hover .handle {
+    opacity: 0.8;
+  }
+  
