@@ -140,7 +140,7 @@ export default function AppointmentDetailsModal({ onClose, appointment, barbers 
                     <DatePickerField date={date} onChange={setDate} />
                   </div>
                   <div className="w-[30%]">
-                    <TimeSelect label="" value={startTime} options={allAppointments} onChange={setStartTime} />
+                    <TimeSelect label="" value={startTime} options={allAppointments} onChange={setStartTime} selectClassName="h-full"/>
                   </div>
                 </div>
 
