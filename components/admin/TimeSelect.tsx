@@ -17,7 +17,7 @@ export default function TimeSelect({ label, value, options, onChange, className 
         </label>
       )}
       <select
-        className="w-full border rounded px-3 py-2 text-sm"
+        className="w-full border rounded px-3 py-2 text-sm h-full"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required
