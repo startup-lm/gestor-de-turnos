@@ -81,6 +81,7 @@ export default function EditBarberModal({ onClose }: Readonly<{ onClose: () => v
                 barbers={barbers ?? []}
                 selectedBarberId={selectedBarberId}
                 onChange={handleBarberChange}
+                className="w-full"
               />
             </div>
 
