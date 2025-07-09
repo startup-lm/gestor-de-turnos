@@ -25,12 +25,13 @@ export default function DatePickerField({date,onChange,displayButton = false,}: 
       selected={date}
       onChange={onChange}
       locale="es"
-      dateFormat="dd/MM/yyyy"
+      dateFormat="EEEE dd 'de' MMMM"
       placeholderText="Seleccionar fecha"
       className="w-full border rounded px-3 py-2 text-sm"
       calendarClassName="rounded-md shadow-sm"
       popperPlacement="bottom-start"
       customInput={displayButton ? <ButtonInput /> : undefined}
+      wrapperClassName="w-full"
       required
     />
   );

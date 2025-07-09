@@ -61,6 +61,7 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
               barbers={barbers ?? []}
               selectedBarberId={selectedBarberId}
               onChange={setSelectedBarberId}
+              className="w-full"
             />
 
             <label className="block text-sm font-medium mb-1 mt-4">
