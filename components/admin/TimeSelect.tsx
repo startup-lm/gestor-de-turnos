@@ -6,9 +6,10 @@ interface TimeSelectProps {
   options: string[];
   onChange: (v: string) => void;
   className?: string;
+  selectClassName?: string;
 }
 
-export default function TimeSelect({ label, value, options, onChange, className = "", }: Readonly<TimeSelectProps>) {
+export default function TimeSelect({ label, value, options, onChange, className = "", selectClassName = ""}: Readonly<TimeSelectProps>) {
   return (
     <div className={className}>
       {label && (
@@ -17,7 +18,7 @@ export default function TimeSelect({ label, value, options, onChange, className 
         </label>
       )}
       <select
-        className="w-full border rounded px-3 py-2 text-sm h-full"
+        className={`w-full border rounded px-3 py-2 text-sm ${selectClassName}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required
