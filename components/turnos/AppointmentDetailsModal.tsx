@@ -135,11 +135,11 @@ export default function AppointmentDetailsModal({ onClose, appointment, barbers 
                 <label className="block text-sm font-medium mb-1">
                   Día y horario
                 </label>
-                <div className="flex space-x-4">
-                  <div className="w-2/3">
+                <div className="flex space-x-1">
+                  <div className="w-[70%]">
                     <DatePickerField date={date} onChange={setDate} />
                   </div>
-                  <div className="w-1/3">
+                  <div className="w-[30%]">
                     <TimeSelect label="" value={startTime} options={allAppointments} onChange={setStartTime} />
                   </div>
                 </div>
