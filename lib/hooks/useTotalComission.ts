@@ -16,11 +16,8 @@ export function useTotalCommissions(startDate: Date, endDate: Date) {
 
       // For each barber, fetch appointments and calculate their commissions
       for (const barber of barbers) {
-        const appointments: Appointment[] = await getBarbersAppointmentsFromDates(
-          barber.id!,
-          startDate,
-          endDate
-        );
+        const allAppt: Appointment[] = await getBarbersAppointmentsFromDates(barber.id!, startDate, endDate);
+        const appointments = allAppt.filter(appt => appt.phone !== "0000000000");
 
         const commissionSum = appointments.reduce((sum, appt) => {
           const price = appt.price ?? 0;

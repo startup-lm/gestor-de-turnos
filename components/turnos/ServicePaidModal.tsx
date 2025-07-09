@@ -1,18 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { updateAppointmentPaid } from "@/lib/repository/appointments";
+import { updateAppointment } from "@/lib/repository/appointments";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import { getServices } from "@/lib/repository/services";
 import { Service } from "@/lib/types/Services";
 import Modal from "@/components/ui/Modal";
 import PopupModal from "@/components/ui/PopupModal";
 import { usePopup } from "@/lib/hooks/usePopup";
+import { useAuth } from "@/lib/auth/AuthContext";
 import PayButton from "../buttons/PayButton";
 
 export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: Readonly<{ appointment: { id: number }; onClose: () => void; setIsPaid: (paid: boolean) => void; }>) {
+  const { role } = useAuth();
   const { data } = useFetchOnce<Service[]>(getServices);
   const services: Service[] = data ?? [];
+  const filtered = role === "admin" ? services : services.filter(s => s.id !== 5);
   const [selectedServiceId, setSelectedServiceId] = useState(-1);
   const isDisabled = selectedServiceId < 0;
   const [loading, setLoading] = useState(false);
@@ -23,15 +26,15 @@ export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: R
     if (selectedServiceId === -1) {
       setPrice(0);
     } else {
-      const svc = services.find(s => s.id === selectedServiceId);
+      const svc = filtered.find(s => s.id === selectedServiceId);
       setPrice(svc?.price ?? 0);
     }
-  }, [selectedServiceId, services]);
+  }, [selectedServiceId, filtered]);
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const success = await updateAppointmentPaid(appointment.id, true, price);
+    const success = await updateAppointment(appointment.id, { paid: true, price: price} );
     if (success) setIsPaid(true);
     popup.open(success ? "Turno marcado como pago" : "Error al marcar como pagado", success);
     setLoading(false);
@@ -50,7 +53,7 @@ export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: R
               <option value={-1} disabled style={{ color: "grey" }}>
                 Selecciona un servicio
               </option>
-              {services.map(s => (
+              {filtered.map(s => (
                 <option key={s.id} value={s.id} style={{ color: "black" }}>
                   {s.name}
                 </option>

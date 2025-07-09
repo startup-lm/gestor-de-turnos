@@ -6,13 +6,14 @@ type Props = {
   barbers: Barber[];
   selectedBarberId: number;
   onChange: (id: number) => void;
+  className?: string;
 };
 
-export default function BarberSelector({ barbers, selectedBarberId, onChange }: Readonly<Props>) {
+export default function BarberSelector({ barbers, selectedBarberId, onChange, className = "" }: Readonly<Props>) {
   return (
     <div className="mb-6 flex justify-left">
       <select
-        className="px-4 py-2 border rounded shadow-sm"
+        className={`px-4 py-2 border rounded shadow-sm ${className}`}
         value={selectedBarberId}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
         required
