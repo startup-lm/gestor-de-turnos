@@ -18,7 +18,8 @@ export async function GET(request: Request) {
     .from("appointments")
     .select("barber_id, price")
     .gte("date", start)
-    .lte("date", end);
+    .lte("date", end)
+    .neq("phone", "0000000000");
 
   if (error) return errorResponse(error.message);
 

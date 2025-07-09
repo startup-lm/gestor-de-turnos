@@ -1,19 +1,21 @@
 import React from "react";
 
 interface TimeSelectProps {
-  label: string;
+  label?: string;
   value: string;
   options: string[];
   onChange: (v: string) => void;
   className?: string;
 }
 
-export default function TimeSelect({label,value,options,onChange,className = "",}: Readonly<TimeSelectProps>) {
+export default function TimeSelect({ label, value, options, onChange, className = "", }: Readonly<TimeSelectProps>) {
   return (
     <div className={className}>
-      <label className="block text-sm font-medium mb-1">
-        {label}:
-      </label>
+      {label && (
+        <label className="block text-sm font-medium mb-1">
+          {label}
+        </label>
+      )}
       <select
         className="w-full border rounded px-3 py-2 text-sm"
         value={value}

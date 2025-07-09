@@ -35,7 +35,8 @@ export function useDashboardData(
     }
 
     (async () => {
-      const all = await getBarbersAppointmentsFromDates(barberId, startDate, endDate);
+      const allAppt = await getBarbersAppointmentsFromDates(barberId, startDate, endDate);
+      const all = allAppt.filter(appt => appt.phone !== "0000000000");
 
       const tot = dataType === "revenue" ? all.reduce((sum, a) => sum + (a.price ?? 0), 0) : all.length;
       setTotal(tot);

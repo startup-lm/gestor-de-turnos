@@ -93,9 +93,7 @@ export default function TurnosClient({ initialBarbers }: Readonly<Props>) {
           <AppointmentDetailsModal
             onClose={() => setIsDetailOpen(false)}
             appointment={selectedAppointment}
-            selectedBarber={
-              initialBarbers.find((b) => b.id === selectedBarberId)?.name || ""
-            }
+            barbers={initialBarbers}
           />
         )}
       </div>

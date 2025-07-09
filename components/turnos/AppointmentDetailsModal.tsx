@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { deleteAppointment } from "@/lib/repository/appointments";
-import { Appointment } from "@/lib/types/Appointment";
+import { deleteAppointment, updateAppointment } from "@/lib/repository/appointments";
+import { Appointment, AppointmentUpdates } from "@/lib/types/Appointment";
 import Modal from "@/components/ui/Modal";
 import PopupModal from "@/components/ui/PopupModal";
 import { usePopup } from "@/lib/hooks/usePopup";
@@ -12,16 +10,49 @@ import dynamic from "next/dynamic";
 import ConfirmModal from "../ui/ConfirmModal";
 import DeleteButton from "../buttons/DeleteButton";
 import ChargeButton from "../buttons/ChargeButton";
+import SaveButton from "../buttons/SaveButton";
+import BarberSelector from "./BarberSelector";
+import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
+import { Barber } from "@/lib/types/Barbers";
+import DatePickerField from "../admin/DatePickerField";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { getServices } from "@/lib/repository/services";
+import { Service } from "@/lib/types/Services";
+import TimeSelect from "../admin/TimeSelect";
+import { generateAllAppointments } from "@/utils/appointments";
 
 const ServicePaidModal = dynamic(() => import("./ServicePaidModal"), { ssr: false, loading: () => null });
 
-export default function AppointmentDetailsModal({ onClose, appointment, selectedBarber, }: Readonly<{ onClose: () => void; appointment: Appointment; selectedBarber: string; }>) {
+export default function AppointmentDetailsModal({ onClose, appointment, barbers }: Readonly<{ onClose: () => void; appointment: Appointment; barbers: Barber[] }>) {
+  const { role } = useAuth();
+  const allAppointments = generateAllAppointments();
+  const { data } = useFetchOnce<Service[]>(getServices);
+  const services: Service[] = data ?? [];
+  const filtered = role === "admin" ? services : services.filter(s => s.id !== 5);
   const [showService, setShowService] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
-  const isDisabled = appointment.paid || appointment.client === "No disponible";
   const [loading, setLoading] = useState(false);
+  const [loadingUpdate, setLoadingUpdate] = useState(false);
   const popup = usePopup();
-  const date = new Date(`${appointment.date}T12:00:00-03:00`);
+
+  // datos del turno
+  const [selectedBarberId, setSelectedBarberId] = useState(appointment.barber_id);
+  const [date, setDate] = useState<Date | null>(new Date(`${appointment.date}T${appointment.start_time}-03:00`));
+  const [startTime, setStartTime] = useState(appointment.start_time.slice(0, 5));
+  const [client, setClient] = useState(appointment.client);
+  const [phone, setPhone] = useState(appointment.phone);
+  const [selectedServiceId, setSelectedServiceId] = useState(appointment.service_id);
+  const [price, setPrice] = useState(appointment.price);
+
+  //estados botones
+  const isDisabled = appointment.paid || appointment.phone === "0000000000";
+  const hasChanges = selectedBarberId !== appointment.barber_id ||
+    date?.toISOString().slice(0, 10) !== appointment.date ||
+    startTime !== appointment.start_time ||
+    client !== appointment.client ||
+    phone !== appointment.phone ||
+    price !== appointment.price ||
+    selectedServiceId !== appointment.service_id;
 
   const handleDelete = async () => {
     setLoading(true);
@@ -31,43 +62,101 @@ export default function AppointmentDetailsModal({ onClose, appointment, selected
     setLoading(false);
   };
 
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hasChanges) return;
+    setLoadingUpdate(true);
+    const updates: AppointmentUpdates = {};
+    if (selectedBarberId !== appointment.barber_id) updates.barber_id = selectedBarberId;
+    if (date) {
+      const isoDate = date.toISOString().slice(0, 10);
+      if (isoDate !== appointment.date) updates.date = isoDate;
+    }
+    if (startTime !== appointment.start_time) updates.start_time = startTime;
+    if (client !== appointment.client) updates.client = client;
+    if (phone !== appointment.phone) updates.phone = phone;
+    if (selectedServiceId !== appointment.service_id) updates.service_id = selectedServiceId;
+    if (price !== appointment.price) updates.price = price;
+    if ("start_time" in updates || "service_id" in updates) {
+      const service = services.find(s => s.id === selectedServiceId);
+      const duration = service!.duration;
+      const endDate = new Date(`${date!.toISOString().slice(0, 10)}T${startTime}-03:00`);
+      endDate.setMinutes(endDate.getMinutes() + duration);
+      updates.end_time = endDate.toTimeString().slice(0, 5);
+    }
+    console.log('updates: ', updates);
+    const success = await updateAppointment(appointment.id, updates);
+    popup.open(success ? "Turno editado con éxito" : "Error al editar el turno", success);
+    setLoadingUpdate(false);
+  };
+
   return (
     <>
       <Modal onClose={onClose}>
         <h2 className="text-xl font-bold mb-4 text-center">Detalles del turno</h2>
-        <div className="px-6">
-          <div className="space-y-4 my-5 text-left rounded-2lg">
-            <label className="block text-sm font-medium mb-1">
+        <form onSubmit={handleUpdate} className="space-y-4 px-4">
+          <div className="my-5 text-left rounded-2lg">
+            <label className="block text-sm font-medium mb-1 mt-4">
               Barbero
             </label>
-            <input type="text" value={selectedBarber} readOnly />
+            <BarberSelector barbers={barbers ?? []} selectedBarberId={selectedBarberId} onChange={setSelectedBarberId} className="w-full" />
 
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1 mt-4">
               Día y horario
             </label>
-            <input type="text" value={`${format(date, "EEEE d 'de' MMMM", { locale: es })} - ${appointment.start_time.slice(0, 5)}hs`} readOnly />
+            <div className="flex space-x-4">
+              <div className="w-1/2">
+                <DatePickerField date={date} onChange={setDate} />
+              </div>
+              <div className="w-1/2">
+                <TimeSelect label="" value={startTime} options={allAppointments} onChange={setStartTime} />
+              </div>
+            </div>
 
-            <label className="block text-sm font-medium mb-1">
+
+            <label className="block text-sm font-medium mb-1 mt-4">
               Cliente
             </label>
-            <input type="text" value={appointment.client} readOnly />
+            <input type="text" value={client} onChange={(e) => setClient(e.target.value)} />
 
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1 mt-4">
               Celular
             </label>
-            <input type="text" value={appointment.phone} readOnly />
+            <input type="text" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} />
 
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1 mt-4">
               Servicio
             </label>
-            <input type="text" value={appointment.services?.name} readOnly />
+            <select required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={selectedServiceId} onChange={e => setSelectedServiceId(Number(e.target.value))} >
+              <option value={-1} disabled style={{ color: "grey" }}>
+                Selecciona un servicio
+              </option>
+              {filtered.map(s => (
+                <option key={s.id} value={s.id} style={{ color: "black" }}>
+                  {s.name} ({s.duration} min)
+                </option>
+              ))}
+            </select>
+
+            {appointment.paid && (
+              <>
+                <label className="block text-sm font-medium mb-1 mt-4">
+                  Precio cobrado
+                </label>
+                <input type="text" value={price} onChange={e => setPrice(Number(e.target.value))} />
+              </>
+            )}
           </div>
 
-          <div className="flex justify-center gap-5 mt-10">
+          <div className="flex justify-center mt-10">
+            <SaveButton type="submit" disabled={!hasChanges} loading={loadingUpdate}/>
+          </div>
+
+          <div className="flex justify-center gap-5 mt-5">
             <DeleteButton disabled={isDisabled} loading={loading} onClick={() => setConfirmModal(true)} />
             <ChargeButton onClick={() => setShowService(true)} disabled={isDisabled} loading={loading} isPaid={appointment.paid} />
           </div>
-        </div>
+        </form>
       </Modal>
 
       {popup.show && (
@@ -83,12 +172,12 @@ export default function AppointmentDetailsModal({ onClose, appointment, selected
 
       {showService && (
         <ServicePaidModal
+          appointment={appointment}
+          setIsPaid={() => { }}
           onClose={() => {
             setShowService(false);
             onClose();
           }}
-          appointment={appointment}
-          setIsPaid={() => { }}
         />
       )}
 

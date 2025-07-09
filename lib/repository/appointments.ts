@@ -1,4 +1,4 @@
-import { Appointment } from "../types/Appointment";
+import { Appointment, AppointmentUpdates } from "../types/Appointment";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL!;
 
@@ -45,11 +45,11 @@ export async function deleteAppointment(id: number): Promise<boolean> {
   return res.ok;
 }
 
-export async function updateAppointmentPaid(appointmentId: number,isPaid: boolean,price: number): Promise<boolean> {
+export async function updateAppointment(appointmentId: number, updates: AppointmentUpdates): Promise<boolean> {
   const res = await fetch(`${BASE}/api/appointments`, {
-    method: "PUT",
+    method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ appointmentId, isPaid, price }),
+    body: JSON.stringify({ appointmentId, updates }),
     next: { tags: ["appointments"] },
   });
   return res.ok;
