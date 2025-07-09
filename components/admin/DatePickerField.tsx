@@ -13,7 +13,7 @@ interface Props {
 }
 
 const ButtonInput = React.forwardRef<HTMLButtonElement,{ onClick?: () => void }>(({ onClick }, ref) => (
-  <button type="button" ref={ref} onClick={onClick} className="px-4 py-2 rounded-lg text-sm flex !bg-[var(--accent)]" >
+  <button type="button" ref={ref} onClick={onClick} className="px-4 py-2 mx-auto rounded-lg text-sm flex !bg-[var(--accent)]" >
     <CalendarDays className="w-5 h-5 mr-1" /> Seleccionar fecha
   </button>
 ));
