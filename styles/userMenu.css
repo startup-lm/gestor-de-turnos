@@ -1,0 +1,21 @@
+.user-menu-options {
+    all: unset;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background-color: transparent !important;
+    color: var(--primary) !important;
+    cursor: pointer;
+    text-decoration: none !important;
+}
+
+
+.user-menu-options:hover,
+.user-menu-options:focus {
+    background-color: var(--button-hover) !important;
+    color: var(--primary) !important;
+    text-decoration: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+}

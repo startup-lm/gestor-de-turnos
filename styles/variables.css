@@ -1,0 +1,44 @@
+:root {
+  --background: #1A1A1A;
+  --foreground: #FFFFFF;
+
+  --primary: #5B3A29;
+  --secondary: #EDE0C8;
+  --accent: #D2B48C;
+  --accent-red: #C1272D;
+  --accent-blue: #1E90FF;
+
+  --heading-color: var(--secondary);
+
+  --button-bg: var(--secondary);
+  --button-text: var(--primary);
+  --button-hover: #C0A070;
+
+  --button-home-primary-bg: var(--primary) ;
+  --button-home-primary-text: #FFFFFF;
+  --button-home-primary-hover: var(--secondary);
+
+  --button-home-secondary-bg: var(--secondary);
+  --button-home-secondary-text: var(--primary) ;
+  --button-home-secondary-hover: var(--primary) ;
+
+  --bg-carousel: #2A2A2A;
+  --bg-navbar: #252525;
+
+  --button-green: #22c55e;
+  --button-green-hover: #16a34a;
+
+  --button-whatsapp: #25d366;
+  --button-whatsapp-hover: #128c7e;
+
+  --button-home-disabled: #d1d5db;
+  --button-home-disabled-text: #6b7280;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1A1A1A;
+    --foreground: #EDEDED;
+    --heading-color: #EDEDED;
+  }
+}

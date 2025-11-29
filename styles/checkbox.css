@@ -1,0 +1,30 @@
+.barber-checkbox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  justify-items: center;
+  border: 1px solid var(--primary);
+  background-color: var(--accent);
+  color: var(--background);
+  font-weight: bold;
+  padding: 4px 8px;
+  transition:
+    box-shadow 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.barber-checkbox:hover {
+  background: var(--button-hover);
+  transform: scale(1.03);
+}
+
+.barber-checkbox.selected {
+  border-color: var(--primary);
+  background-color: var(--primary);
+  color: var(--foreground);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.06);
+}

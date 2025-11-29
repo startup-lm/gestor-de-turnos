@@ -1,0 +1,26 @@
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Inter", sans-serif;
+}
+
+h1, h2, h3 {
+  color: var(--heading-color);
+  font-family: "Montserrat", sans-serif;
+}
+
+label, textarea {
+  color: var(--heading-color);
+}
+
+.heading-black {
+  color: var(--background);
+}
+
+a {
+  color: var(--secondary);
+  text-decoration: none;
+}
+a:hover {
+  font-weight: bold;
+}
