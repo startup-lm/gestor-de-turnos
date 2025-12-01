@@ -22,7 +22,6 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
   const { data } = useFetchOnce<Service[]>(getServices);
   const services: Service[] = data ?? [];
   const isGuest = role === "guest";
-  const filtered = role === "admin" ? services : services.filter(s => s.id !== 5);
   const [selectedServiceId, setSelectedServiceId] = useState(-1);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -112,7 +111,7 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
               <option value={-1} disabled style={{ color: "grey" }}>
                 Selecciona un servicio
               </option>
-              {filtered.map(s => (
+              {services.map(s => (
                 <option key={s.id} value={s.id} style={{ color: "black" }}>
                   {s.name} ({s.duration} min)
                 </option>

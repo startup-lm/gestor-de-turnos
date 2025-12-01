@@ -5,7 +5,7 @@ import { socialMediaList } from "@/utils/socialMedia";
 import GoogleMapsLocation from "@/components/nosotros/GoogleMapsLocation";
 import { nuestraHistoria } from "@/utils/nuestraHistoria";
 import Image from "next/image";
-import localHooligans from "@/public/images/local_hooligans.png";
+import local from "@/public/images/local.png";
 
 export const revalidate = 60;
 
@@ -52,8 +52,8 @@ export default async function NosotrosPage() {
             </div>
             <div className="relative h-64 w-full rounded-xl overflow-hidden">
               <Image
-                src={localHooligans}        // import estático recomendado
-                alt="Local Hooligans"
+                src={local}        // import estático recomendado
+                alt="Local"
                 fill
                 className="object-cover"
                 sizes="(max-width:768px) 100vw, 1200px"

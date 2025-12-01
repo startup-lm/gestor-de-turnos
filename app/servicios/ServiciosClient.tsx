@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Card from "@/components/card/Card";
 import EditCardModal from "@/components/card/EditCardModal";
 import { Service } from "@/lib/types/Services";
-import { useAuth } from "@/lib/auth/AuthContext";
 import { usePopup } from "@/lib/hooks/usePopup";
 import { deleteService } from "@/lib/repository/services";
 import ConfirmModal from "@/components/ui/ConfirmModal";
@@ -16,7 +15,6 @@ interface Props {
 }
 
 export default function ServiciosClient({ services }: Readonly<Props>) {
-  const { role } = useAuth();
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedName, setSelectedName] = useState("");
@@ -45,7 +43,6 @@ export default function ServiciosClient({ services }: Readonly<Props>) {
     <>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 justify-center">
         {services.map(svc =>
-          svc.id === 5 && role !== "admin" ? null : (
             <div key={svc.id} className="relative" >
               <Card
                 title={svc.name}
@@ -59,7 +56,6 @@ export default function ServiciosClient({ services }: Readonly<Props>) {
                 }}
               />
             </div>
-          )
         )}
       </div>
 

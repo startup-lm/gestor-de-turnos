@@ -11,7 +11,7 @@ import { Barber } from "@/lib/types/Barbers";
 import { updatePassword } from "@/lib/repository/auth";
 import { useRouter } from "next/navigation";
 import InputPassword from "@/components/input/InputPassword";
-import logo from "@/public/images/logo_hooligans.png";
+import logo from "@/public/images/logo.png";
 
 export default function BarberClient({ barber }: { barber: Barber }) {
     const router = useRouter();

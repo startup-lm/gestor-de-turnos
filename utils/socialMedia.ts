@@ -5,7 +5,7 @@ export const socialMediaList = [
   {
     name: "instagram",
     Icon: FaInstagram,
-    url: "https://instagram.com/hooligansbarberia_",
+    url: "https://instagram.com/barberia",
     text: "Contáctanos por Instagram",
   },
   {
@@ -27,7 +27,7 @@ export const socialMediaList = [
     name: "gmail",
     Icon: FaEnvelope,
     url:
-      "mailto:hooligansbarberia1@gmail.com?subject=Consulta%20de%20turno&body=Hola%2C%20quiero%20consultar%20por%20un%20turno%20en%20la%20barbería.",
+      "mailto:barberia@gmail.com?subject=Consulta%20de%20turno&body=Hola%2C%20quiero%20consultar%20por%20un%20turno%20en%20la%20barbería.",
     text: "Contáctanos por Gmail",
   },
 ];

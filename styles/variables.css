@@ -1,44 +1,45 @@
 :root {
-  --background: #1A1A1A;
-  --foreground: #FFFFFF;
+  --background: #0F172A;        /* azul marino oscuro, elegante */
+  --foreground: #F9FAFB;        /* casi blanco, suave */
 
-  --primary: #5B3A29;
-  --secondary: #EDE0C8;
-  --accent: #D2B48C;
-  --accent-red: #C1272D;
-  --accent-blue: #1E90FF;
+  --primary: #111827;           /* gris/azul muy oscuro para elementos clave */
+  --secondary: #F3F4F6;         /* gris muy claro para fondos y botones */
+
+  --accent: #D4B58A;            /* beige/dorado suave, bastante genérico */
+  --accent-red: #DC2626;        /* rojo tipo barber pole */
+  --accent-blue: #2563EB;       /* azul intenso tipo barber pole */
 
   --heading-color: var(--secondary);
 
   --button-bg: var(--secondary);
   --button-text: var(--primary);
-  --button-hover: #C0A070;
+  --button-hover: #E5E7EB;      /* un poco más oscuro que secondary */
 
-  --button-home-primary-bg: var(--primary) ;
+  --button-home-primary-bg: var(--primary);
   --button-home-primary-text: #FFFFFF;
-  --button-home-primary-hover: var(--secondary);
+  --button-home-primary-hover: #1F2937;  /* aclaramos un toque el hover */
 
   --button-home-secondary-bg: var(--secondary);
-  --button-home-secondary-text: var(--primary) ;
-  --button-home-secondary-hover: var(--primary) ;
+  --button-home-secondary-text: var(--primary);
+  --button-home-secondary-hover: var(--primary);
 
-  --bg-carousel: #2A2A2A;
-  --bg-navbar: #252525;
+  --bg-carousel: #111827;       /* similar al primary, un poco más integrado */
+  --bg-navbar: #020617;         /* aún más oscuro para dar contraste */
 
-  --button-green: #22c55e;
-  --button-green-hover: #16a34a;
+  --button-green: #22C55E;
+  --button-green-hover: #16A34A;
 
-  --button-whatsapp: #25d366;
-  --button-whatsapp-hover: #128c7e;
+  --button-whatsapp: #25D366;
+  --button-whatsapp-hover: #128C7E;
 
-  --button-home-disabled: #d1d5db;
-  --button-home-disabled-text: #6b7280;
+  --button-home-disabled: #D1D5DB;
+  --button-home-disabled-text: #6B7280;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #1A1A1A;
-    --foreground: #EDEDED;
-    --heading-color: #EDEDED;
+    --background: #020617;
+    --foreground: #E5E7EB;
+    --heading-color: #E5E7EB;
   }
 }

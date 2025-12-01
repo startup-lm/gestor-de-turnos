@@ -8,7 +8,7 @@ export const revalidate = 60;
 
 export default async function HomePage() {
   const [rawServices, rawProducts] = await Promise.all([getServices(), getProducts(),]);
-  const services = rawServices.filter((s) => s.id !== 5).map(({ id, name, image }) => ({ id, name, image, }));
+  const services = rawServices.map(({ id, name, image }) => ({ id, name, image, }));
   const products = rawProducts.map(({ id, name, image }) => ({ id, name, image, }));
 
   return (

@@ -5,7 +5,7 @@ import Image from "next/image";
 import React from "react";
 import DeleteCardButton from "./DeleteCardButton";
 import EditCardButton from "./EditCardButton";
-import logo from "@/public/images/logo_hooligans.png";
+import logo from "@/public/images/logo.png";
 
 interface CardProps {
   title: string;

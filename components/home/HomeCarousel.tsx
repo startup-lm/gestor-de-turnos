@@ -8,7 +8,7 @@ import "keen-slider/keen-slider.min.css";
 import { ArrowBigLeft, ArrowBigRight } from "lucide-react";
 import { KeenAutoplayPlugin } from "@/utils/autoplayPlugin";
 import { CarouselItem, CarouselType } from "@/lib/types/Carousel";
-import logo from "@/public/images/logo_hooligans.png";
+import logo from "@/public/images/logo.png";
 
 export default function HomeCarousel({ type, items }: Readonly<{ type: CarouselType; items: CarouselItem[]; }>) {
   const title = type === "productos" ? "Nuestros Productos 🛍️" : "Nuestros Servicios 💈";

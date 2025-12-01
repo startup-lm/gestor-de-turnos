@@ -1,6 +1,6 @@
 import Image from "next/image";
 import BarberInstagram from "./BarberInstagram";
-import logo from "@/public/images/logo_hooligans.png";
+import logo from "@/public/images/logo.png";
 
 export default function BarberCard({ name, photo, instagram }: Readonly<{ name: string; photo: string; instagram: string; }>) {
     const isValidImage = photo && photo !== "null" && photo !== "";

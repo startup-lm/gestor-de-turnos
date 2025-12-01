@@ -10,7 +10,7 @@ import ForgotPasswordModal from "./ForgotPasswordModal";
 import { useAuth } from "@/lib/auth/AuthContext";
 import LoginButton from "../buttons/LoginButton";
 import InputPassword from "../input/InputPassword";
-import logo from "@/public/images/logo_hooligans.png";
+import logo from "@/public/images/logo.png";
 
 export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void; }>) {
   const router = useRouter();

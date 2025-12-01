@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { Barber } from "@/lib/types/Barbers";
-import logo from "@/public/images/logo_hooligans.png";
+import logo from "@/public/images/logo.png";
 
 interface Props {
   barbers: Barber[];

@@ -15,7 +15,6 @@ import BarberSelector from "./BarberSelector";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import { Barber } from "@/lib/types/Barbers";
 import DatePickerField from "../admin/DatePickerField";
-import { useAuth } from "@/lib/auth/AuthContext";
 import { getServices } from "@/lib/repository/services";
 import { Service } from "@/lib/types/Services";
 import TimeSelect from "../admin/TimeSelect";
@@ -27,11 +26,9 @@ import { sendWhatsAppMessage } from "@/utils/whatsapp";
 const ServicePaidModal = dynamic(() => import("./ServicePaidModal"), { ssr: false, loading: () => null });
 
 export default function AppointmentDetailsModal({ onClose, appointment, barbers }: Readonly<{ onClose: () => void; appointment: Appointment; barbers: Barber[] }>) {
-  const { role } = useAuth();
   const allAppointments = generateAllAppointments();
   const { data, loading: loadingFetch } = useFetchOnce<Service[]>(getServices);
   const services: Service[] = data ?? [];
-  const filtered = role === "admin" ? services : services.filter(s => s.id !== 5);
   const [showService, setShowService] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -168,7 +165,7 @@ export default function AppointmentDetailsModal({ onClose, appointment, barbers 
                   <option value={-1} disabled style={{ color: "grey" }}>
                     Selecciona un servicio
                   </option>
-                  {filtered.map(s => (
+                  {services.map(s => (
                     <option key={s.id} value={s.id} style={{ color: "black" }}>
                       {s.name} ({s.duration} min)
                     </option>

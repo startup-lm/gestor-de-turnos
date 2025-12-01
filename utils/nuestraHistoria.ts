@@ -1,6 +1,5 @@
 export const nuestraHistoria: string[] = [
-    `Todo empezó en 2018, cuando Sebastian Fraga agarró su máquina, una silla y un espejo, y empezó a cortar el pelo en el quincho de su casa. Con el tiempo, lo que arrancó como una pasión entre amigos fue creciendo y en mayo de 2024 abrió las puertas de Hooligans en pleno Olivos.`,
-    `Acá no vas a encontrar una barbería cualquiera. En Hooligans se respira buena onda, atención al detalle y cortes hechos con mucha dedicación. Seba está al frente de todo, y cada cliente que se sienta en la silla se lleva más que un buen corte: se lleva una experiencia.`,
-    `Horarios: Estamos abiertos de martes a sábado, de 11 a 20 hs.`,
-  ];
-  
+  `Todo empezó en 2016, cuando Martín López armó una silla, un espejo y su primera máquina en el garage de su casa. Lo que arrancó como un hobby entre amigos pronto se transformó en una pasión: brindar buenos cortes, charlas relajadas y un espacio donde todos se sintieran cómodos.`,
+  `Con el tiempo, esa pequeña idea creció y dio lugar a Barbería Central, un lugar pensado para que cada visita sea una experiencia. Acá no se trata solo de cortarte el pelo o arreglarte la barba: se trata de dedicarte tiempo, escucharte y cuidar cada detalle, desde el servicio hasta el ambiente.`,
+  `Horarios: Estamos abiertos de martes a sábado, de 11 a 20 hs. Te esperamos para que disfrutes de un buen corte, un afeitado prolijo y un rato de desconexión de la rutina.`
+];
