@@ -86,6 +86,7 @@ export default function TurnosClient({ initialBarbers, businessHours, businessSe
             selectedBarber={selectedBarber?.name || ""}
             selectedBarberId={selectedBarberId}
             events={events}
+            businessHours={businessHours}
           />
         )}
 

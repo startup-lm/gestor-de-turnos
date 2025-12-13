@@ -14,9 +14,10 @@ import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import { Service } from "@/lib/types/Services";
 import { getServices } from "@/lib/repository/services";
 import { CalendarEvent } from "@/lib/types/CalendarEvent";
+import { GlobalHours } from "@/lib/types/BusinessHours";
 
-export default function ReservarModal({ onClose, selectedDate, selectedBarber, selectedBarberId, events, }:
-  Readonly<{ onClose: () => void; selectedDate: Date; selectedBarber: string; selectedBarberId: number; events: CalendarEvent[]; }>) {
+export default function ReservarModal({ onClose, selectedDate, selectedBarber, selectedBarberId, events, businessHours }:
+  Readonly<{ onClose: () => void; selectedDate: Date; selectedBarber: string; selectedBarberId: number; events: CalendarEvent[]; businessHours: GlobalHours;}>) {
 
   const { role } = useAuth();
   const { data } = useFetchOnce<Service[]>(getServices);
@@ -30,6 +31,13 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
   const [showWhatsapp, setShowWhatsapp] = useState(false);
   const isDisabled = !name || (isGuest && !phone) || selectedServiceId < 0;
   const popup = usePopup();
+  const setTimeOn = (base: Date, hhmm?: string | null) => {
+    if (!hhmm) return null;
+    const [h, m] = hhmm.split(":").map(Number);
+    const d = new Date(base);
+    d.setHours(h ?? 0, m ?? 0, 0, 0);
+    return d;
+  };
 
   const handleReservar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,10 +47,15 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
     const endDate = new Date(selectedDate);
     endDate.setMinutes(endDate.getMinutes() + duration);
     if (isGuest) {
-      const cierre = new Date(selectedDate);
-      cierre.setHours(20, 0, 0, 0);
-      if (endDate > cierre) {
-        popup.open(`La duración del turno excede el horario de atención al cliente (20:00hs)`, false);
+      const cierre = setTimeOn(selectedDate, businessHours.close_time);
+      const startBreak = setTimeOn(selectedDate, businessHours.lunch_start);
+      const endBreak = setTimeOn(selectedDate, businessHours.lunch_end);
+      const overlapsLunch = startBreak && endBreak ? endDate < endBreak && endDate > startBreak : false;
+      if ((cierre && endDate > cierre) || overlapsLunch) {
+        const lunchWindow = startBreak && endBreak ? `${startBreak.toTimeString().slice(0, 5)}-${endBreak.toTimeString().slice(0, 5)}` : null;
+        const cierreTime = cierre ? cierre.toTimeString().slice(0, 5) : null;
+        const reasons = [lunchWindow && `el horario de almuerzo (${lunchWindow})`, cierreTime && `el horario de cierre (${cierreTime} hs)`].filter(Boolean).join(" o ");
+        popup.open(`No se puede reservar: el turno finaliza dentro de ${reasons}.`, false);
         setLoading(false);
         return;
       }
