@@ -14,8 +14,8 @@ export async function getAppointmentsForBarberAndTime(barber_id: number,date: Da
   return res.json();
 }
 
-export async function createAppointment(input: {client: string;barber_id: number;date: Date;start_time: string;end_time: string;phone: string;service_id: number;}): Promise<{ success: boolean; id?: number }> {
-  const { client, barber_id, date, start_time, end_time, phone, service_id } = input;
+export async function createAppointment(input: {client: string;barber_id: number;date: Date;start_time: string;end_time: string;phone: string;service_id: number;created_by?: string;}): Promise<{ success: boolean; id?: number }> {
+  const { client, barber_id, date, start_time, end_time, phone, service_id, created_by } = input;
   const payload = {
     client,
     barber_id,
@@ -24,6 +24,7 @@ export async function createAppointment(input: {client: string;barber_id: number
     end_time,
     phone,
     service_id,
+    created_by,
   };
   const res = await fetch(`${BASE}/api/appointments`, {
     method: "POST",

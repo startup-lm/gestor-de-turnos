@@ -5,6 +5,8 @@ export interface Appointment {
   date: string;
   start_time: string;
   end_time: string;
+  created_at?: string;
+  created_by?: string;
   phone: string;
   paid: boolean;
   price: number;

@@ -32,7 +32,17 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
     setLoading(true);
     if (isDisabled) return;
     //await deleteAppointmentsByDate({ barber_id: selectedBarberId, date: selectedDate, start_time: startTime, end_time: endTime, });
-    const result = await createAppointment({ client: reason ?? "Bloqueado", barber_id: selectedBarberId, date: selectedDate, start_time: startTime, end_time: endTime, phone: "0000000000", service_id: 1 });
+    const createdBy = barbers.find((barber) => barber.id === selectedBarberId)?.name;
+    const result = await createAppointment({
+      client: reason ?? "Bloqueado",
+      barber_id: selectedBarberId,
+      date: selectedDate,
+      start_time: startTime,
+      end_time: endTime,
+      phone: "0000000000",
+      service_id: 1,
+      created_by: createdBy,
+    });
     const message = result.success ? "Día y horario bloqueados con éxito" : "Error al bloquear día y horario";
     popup.open(message, result.success);
     setLoading(false);

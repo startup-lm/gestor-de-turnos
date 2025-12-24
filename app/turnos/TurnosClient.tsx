@@ -28,14 +28,14 @@ interface Props {
 
 export default function TurnosClient({ initialBarbers, businessHours, businessSettings }: Readonly<Props>) {
   const { barberId, role } = useAuth();
-  const { selectedBarberId, selectedBarber, setBarberId } =
-    useSelectedBarber(initialBarbers, role, barberId);
+  const { selectedBarberId, selectedBarber, setBarberId } = useSelectedBarber(initialBarbers, role, barberId);
   const isMobile = useIsMobile();
   const [isReservarOpen, setIsReservarOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [calendarRefreshSignal, setCalendarRefreshSignal] = useState(0);
 
   const handleSlotClick = (appt: Appointment, evts: CalendarEvent[]) => {
     setSelectedDate(new Date(`${appt.date}T${appt.start_time}:00-03:00`));
@@ -48,6 +48,10 @@ export default function TurnosClient({ initialBarbers, businessHours, businessSe
       setSelectedAppointment(appt);
       setIsDetailOpen(true);
     }
+  };
+
+  const handleAppointmentCreated = () => {
+    setCalendarRefreshSignal((prev) => prev + 1);
   };
 
   return (
@@ -76,6 +80,7 @@ export default function TurnosClient({ initialBarbers, businessHours, businessSe
             onEventClick={handleEventClick}
             businessHours={businessHours}
             businessSettings={businessSettings}
+            refreshSignal={calendarRefreshSignal}
           />
         </div>
 
@@ -87,6 +92,7 @@ export default function TurnosClient({ initialBarbers, businessHours, businessSe
             selectedBarberId={selectedBarberId}
             events={events}
             businessHours={businessHours}
+            onAppointmentCreated={handleAppointmentCreated}
           />
         )}
 

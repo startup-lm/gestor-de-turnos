@@ -16,8 +16,8 @@ import { getServices } from "@/lib/repository/services";
 import { CalendarEvent } from "@/lib/types/CalendarEvent";
 import { GlobalHours } from "@/lib/types/BusinessHours";
 
-export default function ReservarModal({ onClose, selectedDate, selectedBarber, selectedBarberId, events, businessHours }:
-  Readonly<{ onClose: () => void; selectedDate: Date; selectedBarber: string; selectedBarberId: number; events: CalendarEvent[]; businessHours: GlobalHours;}>) {
+export default function ReservarModal({ onClose, selectedDate, selectedBarber, selectedBarberId, events, businessHours, onAppointmentCreated }:
+  Readonly<{ onClose: () => void; selectedDate: Date; selectedBarber: string; selectedBarberId: number; events: CalendarEvent[]; businessHours: GlobalHours; onAppointmentCreated?: () => void;}>) {
 
   const { role } = useAuth();
   const { data } = useFetchOnce<Service[]>(getServices);
@@ -68,6 +68,7 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
       return;
     }
 
+    const createdBy = isGuest ? name : selectedBarber;
     const result = await createAppointment({
       client: name,
       barber_id: selectedBarberId,
@@ -76,10 +77,12 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
       end_time: endDate.toTimeString().slice(0, 5),
       phone,
       service_id: selectedServiceId,
+      created_by: createdBy,
     });
     if (result.success && result.id) {
       setAppointmentId(result.id);
       setShowWhatsapp(true);
+      onAppointmentCreated?.();
     }
     popup.open(result.success ? `Turno reservado con éxito. Tu número de turno es #${result.id}.` : "Error al reservar el turno", result.success);
     setLoading(false);

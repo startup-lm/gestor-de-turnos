@@ -8,13 +8,14 @@ import { transformAppointmentsToEvents } from '@/utils/appointments';
 export function useCalendarData(
   selectedBarberId: number,
   role: string,
-  range: { start: Date; end: Date }
+  range: { start: Date; end: Date },
+  refreshSignal?: number
 ) {
   const fetchAppointments = useCallback(
     () => getBarbersAppointmentsFromDates(selectedBarberId, range.start, range.end),
     [selectedBarberId, range]
   );
-  const realtimeAppointments = useRealtimeData('appointments', fetchAppointments);
+  const realtimeAppointments = useRealtimeData('appointments', fetchAppointments, refreshSignal);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [allAppointments, setAllAppointments] = useState<Appointment[] | null>(null);
 

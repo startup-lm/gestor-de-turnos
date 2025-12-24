@@ -26,11 +26,12 @@ interface CustomCalendarProps {
   onEventClick: (appointment: Appointment) => void;
   businessHours: GlobalHours;
   businessSettings: BusinessSettings;
+  refreshSignal?: number;
 }
 
-export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlotClick, onEventClick, businessHours, businessSettings, }: Readonly<CustomCalendarProps>) {
+export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlotClick, onEventClick, businessHours, businessSettings, refreshSignal, }: Readonly<CustomCalendarProps>) {
   const { currentDate, currentRange, onNavigate, onRangeChange } = useCalendarNavigation();
-  const { events, allAppointments } = useCalendarData(selectedBarberId, role, currentRange);
+  const { events, allAppointments } = useCalendarData(selectedBarberId, role, currentRange, refreshSignal);
 
   const parseHHMM = (s: string) => {
     const [h, m] = s.split(':').map(Number);

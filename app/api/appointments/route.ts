@@ -31,18 +31,21 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { client, barber_id, date, start_time, end_time, phone, service_id, }: { client: string; barber_id: number; date: string; start_time: string; end_time: string; phone: string; service_id: number; } = await request.json();
+  const { client, barber_id, date, start_time, end_time, phone, service_id, created_by }: { client: string; barber_id: number; date: string; start_time: string; end_time: string; phone: string; service_id: number; created_by?: string; } = await request.json();
+  const insertPayload: { client: string; barber_id: number; date: string; start_time: string; end_time: string; phone: string; service_id: number; created_at: string; created_by?: string } = {
+    client,
+    barber_id,
+    date: date.split("T")[0],
+    start_time: `${start_time}:00`,
+    end_time: `${end_time}:00`,
+    phone,
+    service_id,
+    created_at: new Date().toISOString(),
+  };
+  if (created_by) insertPayload.created_by = created_by;
   const { data, error } = await supabaseAdmin
     .from("appointments")
-    .insert({
-      client,
-      barber_id,
-      date: date.split("T")[0],
-      start_time: `${start_time}:00`,
-      end_time: `${end_time}:00`,
-      phone,
-      service_id
-    })
+    .insert(insertPayload)
     .select("id");
 
   if (error) return errorResponse(error.message);

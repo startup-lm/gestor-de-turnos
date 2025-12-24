@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabaseClient } from "../supabase/supabaseClient";
 
-export const useRealtimeData = (table: string, fetchFunction: () => Promise<any>) => {
+export const useRealtimeData = (table: string, fetchFunction: () => Promise<any>, refreshSignal?: number) => {
   const [data, setData] = useState<any[]>([]);
-  
-  useEffect(() => {
-    const fetchData = async () => {
-      const result = await fetchFunction();
-      setData(result);
-    };
 
+  const fetchData = useCallback(async () => {
+    const result = await fetchFunction();
+    setData(result);
+  }, [fetchFunction]);
+
+  useEffect(() => {
     fetchData();
 
     const channel = supabaseClient
@@ -21,7 +21,12 @@ export const useRealtimeData = (table: string, fetchFunction: () => Promise<any>
     return () => {
       supabaseClient.removeChannel(channel);
     };
-  }, [table, fetchFunction]);
+  }, [table, fetchData]);
+
+  useEffect(() => {
+    if (refreshSignal === undefined) return;
+    fetchData();
+  }, [refreshSignal, fetchData]);
 
   return data;
 };
