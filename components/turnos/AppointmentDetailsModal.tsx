@@ -17,6 +17,8 @@ import { Barber } from "@/lib/types/Barbers";
 import DatePickerField from "../admin/DatePickerField";
 import { getServices } from "@/lib/repository/services";
 import { Service } from "@/lib/types/Services";
+import type { GlobalHours } from "@/lib/types/BusinessHours";
+import type { BusinessSettings } from "@/lib/types/BusinessSettings";
 import TimeSelect from "../admin/TimeSelect";
 import { generateAllAppointments } from "@/utils/appointments";
 import Spinner from "../loading/Spinner";
@@ -25,8 +27,26 @@ import { sendWhatsAppMessage } from "@/utils/whatsapp";
 
 const ServicePaidModal = dynamic(() => import("./ServicePaidModal"), { ssr: false, loading: () => null });
 
-export default function AppointmentDetailsModal({ onClose, appointment, barbers }: Readonly<{ onClose: () => void; appointment: Appointment; barbers: Barber[] }>) {
-  const allAppointments = generateAllAppointments();
+export default function AppointmentDetailsModal({
+  onClose,
+  appointment,
+  barbers,
+  businessHours,
+  businessSettings,
+}: Readonly<{
+  onClose: () => void;
+  appointment: Appointment;
+  barbers: Barber[];
+  businessHours: GlobalHours;
+  businessSettings: BusinessSettings;
+}>) {
+  const allAppointments = generateAllAppointments({
+    openTime: businessHours.open_time,
+    closeTime: businessHours.close_time,
+    stepMinutes: businessSettings.slot_step_minutes,
+    breakStart: businessHours.lunch_start,
+    breakEnd: businessHours.lunch_end,
+  });
   const { data, loading: loadingFetch } = useFetchOnce<Service[]>(getServices);
   const services: Service[] = data ?? [];
   const [showService, setShowService] = useState(false);

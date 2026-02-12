@@ -101,6 +101,8 @@ export default function TurnosClient({ initialBarbers, businessHours, businessSe
             onClose={() => setIsDetailOpen(false)}
             appointment={selectedAppointment}
             barbers={initialBarbers}
+            businessHours={businessHours}
+            businessSettings={businessSettings}
           />
         )}
       </div>

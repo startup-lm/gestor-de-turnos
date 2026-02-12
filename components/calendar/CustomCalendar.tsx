@@ -85,10 +85,16 @@ export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlo
           showMultiDayTimes={false}
           tooltipAccessor={null}
           onSelectSlot={(slotInfo: SlotInfo) => {
-            const todayStart = new Date();
-            if (slotInfo.start < todayStart && role === "guest") return;
+            const now = new Date();
+            if (slotInfo.start < now && role === "guest") return;
             if (isClosedDay(slotInfo.start) || isLunchBreak(slotInfo.start)) return;
-            if (events.some(ev => slotInfo.start >= ev.start && slotInfo.start < ev.end)) return;
+            const eventPaddingMs = 60 * 1000;
+            const overlapsEvent = events.some(ev => {
+              const originalStart = new Date(ev.start.getTime() - eventPaddingMs);
+              const originalEnd = new Date(ev.end.getTime() + eventPaddingMs);
+              return slotInfo.start < originalEnd && slotInfo.end > originalStart;
+            });
+            if (overlapsEvent) return;
 
             const appt: Appointment = {
               id: 0,
@@ -111,27 +117,19 @@ export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlo
           date={currentDate}
           onNavigate={onNavigate}
           eventPropGetter={ev => {
-            let backgroundColor: string;
-            if (role === 'guest') backgroundColor = '#A42126';
-            else {
-              if (!ev.isAppt) backgroundColor = '#B0B0B0';
-              else if (!ev.paid) backgroundColor = '#A42126';
-              else backgroundColor = '#1CA74F';
+            let className = 'calendar-event--unpaid';
+            if (role === 'guest') {
+              className = 'calendar-event--unpaid calendar-event--guest';
+            } else {
+              if (!ev.isAppt) className = 'calendar-event--non-appointment';
+              else if (!ev.paid) className = 'calendar-event--unpaid';
+              else className = 'calendar-event--paid';
             }
-            return {
-              style: {
-                backgroundColor,
-                color: 'var(--foreground)',
-                border: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              },
-            };
+            return { className };
           }}
           dayPropGetter={date =>
             isClosedDay(date)
-              ? { className: 'rbc-disabled-day', style: { pointerEvents: 'none', opacity: 0.5, background: 'var(--calendar-disabled-slot)' } }
+              ? { className: 'rbc-disabled-day', style: { pointerEvents: 'none', opacity: 0.5 } }
               : {}
           }
           slotPropGetter={date => {
@@ -139,7 +137,19 @@ export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlo
             const afterClose = businessHours.close_time ? date >= setTimeOn(date, businessHours.close_time)! : false;
             const lunch = isLunchBreak(date);
             if (isClosedDay(date) || beforeOpen || afterClose || lunch) {
-              return { style: { pointerEvents: 'none', backgroundColor: 'var(--calendar-disabled-slot)', opacity: 0.8 } };
+              return { className: 'calendar-disabled-slot', style: { pointerEvents: 'none', opacity: 0.8 } };
+            }
+            const now = new Date();
+            const slotEnd = new Date(date.getTime() + step * 60 * 1000);
+            const eventPaddingMs = 60 * 1000;
+            const overlapsEvent = events.some(ev => {
+              const originalStart = new Date(ev.start.getTime() - eventPaddingMs);
+              const originalEnd = new Date(ev.end.getTime() + eventPaddingMs);
+              return date < originalEnd && slotEnd > originalStart;
+            });
+            const isPastForGuest = role === 'guest' && date < now;
+            if (!isPastForGuest && !overlapsEvent) {
+              return { className: 'calendar-slot--clickable' };
             }
             return {};
           }}

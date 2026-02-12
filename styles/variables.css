@@ -34,6 +34,13 @@
 
   --button-home-disabled: #D1D5DB;
   --button-home-disabled-text: #6B7280;
+
+  --calendar-bg: var(--accent);
+  --calendar-today-header-bg: var(--primary);
+  --calendar-non-appointment: #B0B0B0;
+  --calendar-paid-appointment: #1CA74F;
+  --calendar-unpaid-appointment: #A42126;
+  --calendar-disabled-slot: var(--button-home-disabled);
 }
 
 @media (prefers-color-scheme: dark) {

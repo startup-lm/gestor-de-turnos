@@ -9,6 +9,7 @@ import DatePickerField from "./DatePickerField";
 import TimeSelect from "./TimeSelect";
 import { generateAllAppointments } from "../../utils/appointments";
 import { createAppointment } from "@/lib/repository/appointments";
+import { getCalendarConfig } from "@/lib/repository/calendar";
 import Modal from "@/components/ui/Modal";
 import PopupModal from "@/components/ui/PopupModal";
 import Spinner from "@/components/loading/Spinner";
@@ -17,15 +18,23 @@ import BlockButton from "../buttons/BlockButton";
 
 export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => void }>) {
   const { data: barbers = [], loading: loadingFetch } = useFetchOnce<Barber[]>(getBarbers);
+  const { data: calendarConfig, loading: loadingCalendar } = useFetchOnce(getCalendarConfig);
   const [selectedBarberId, setSelectedBarberId] = useState(-1);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [reason, setReason] = useState("");
-  const allAppointments = generateAllAppointments();
+  const allAppointments = generateAllAppointments({
+    openTime: calendarConfig?.businessHours.open_time,
+    closeTime: calendarConfig?.businessHours.close_time,
+    stepMinutes: calendarConfig?.businessSettings.slot_step_minutes,
+    breakStart: calendarConfig?.businessHours.lunch_start,
+    breakEnd: calendarConfig?.businessHours.lunch_end,
+  });
   const isDisabled = selectedBarberId < 0 || !selectedDate || !startTime || !endTime;
   const [loading, setLoading] = useState(false);
   const popup = usePopup();
+  const isFetching = loadingFetch || loadingCalendar;
 
   const handleBlockDate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +57,7 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
     setLoading(false);
   };
 
-  if (loadingFetch) {
+  if (isFetching) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50">
         <Spinner />

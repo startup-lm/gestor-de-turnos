@@ -1,19 +1,60 @@
 import { Appointment } from "@/lib/types/Appointment";
 import { CalendarEvent } from "@/lib/types/CalendarEvent";
 
-export function generateAllAppointments() {
-  const horarios = [];
-  const inicio = 11;
-  const fin = 20;
+type AppointmentSlotsConfig = {
+  openTime?: string | null;
+  closeTime?: string | null;
+  stepMinutes?: number;
+  breakStart?: string | null;
+  breakEnd?: string | null;
+};
 
-  for (let hora = inicio; hora < fin; hora++) {
-    horarios.push(`${hora}:00`);
-    horarios.push(`${hora}:15`);
-    horarios.push(`${hora}:30`);
-    horarios.push(`${hora}:45`);
+const DEFAULT_OPEN_TIME = "11:00";
+const DEFAULT_CLOSE_TIME = "20:00";
+const DEFAULT_STEP_MINUTES = 15;
+
+const parseTimeToMinutes = (value: string) => {
+  const [hoursRaw, minutesRaw] = value.split(":");
+  const hours = Number(hoursRaw);
+  const minutes = Number(minutesRaw);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+  return hours * 60 + minutes;
+};
+
+const formatMinutes = (totalMinutes: number) => {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+};
+
+export function generateAllAppointments(config: AppointmentSlotsConfig = {}) {
+  const openTime = config.openTime ?? DEFAULT_OPEN_TIME;
+  const closeTime = config.closeTime ?? DEFAULT_CLOSE_TIME;
+  const stepMinutes = config.stepMinutes ?? DEFAULT_STEP_MINUTES;
+  const hasBreakConfig = config.breakStart !== undefined || config.breakEnd !== undefined;
+  const breakStart = hasBreakConfig ? config.breakStart : null;
+  const breakEnd = hasBreakConfig ? config.breakEnd : null;
+  if (stepMinutes <= 0) return [];
+  const startMinutes = parseTimeToMinutes(openTime);
+  const endMinutes = parseTimeToMinutes(closeTime);
+  const breakStartMinutes = breakStart ? parseTimeToMinutes(breakStart) : null;
+  const breakEndMinutes = breakEnd ? parseTimeToMinutes(breakEnd) : null;
+  if (startMinutes === null || endMinutes === null || endMinutes <= startMinutes) {
+    return [];
+  }
+  const horarios: string[] = [];
+  for (let current = startMinutes; current < endMinutes; current += stepMinutes) {
+    const isBreak =
+      breakStartMinutes !== null &&
+      breakEndMinutes !== null &&
+      breakEndMinutes > breakStartMinutes &&
+      current >= breakStartMinutes &&
+      current < breakEndMinutes;
+    if (isBreak) continue;
+    horarios.push(formatMinutes(current));
   }
   return horarios;
-};
+}
 
 export const transformAppointmentsToEvents = (appointments: Appointment[],role: string): CalendarEvent[] => {
   return appointments.map(appt => {
