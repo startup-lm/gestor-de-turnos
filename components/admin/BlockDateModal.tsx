@@ -62,10 +62,13 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
     const startDate = normalizeDate(selectedDate!);
     const endDate = normalizeDate(useRange && selectedEndDate ? selectedEndDate : selectedDate!);
     const createdBy = barbers!.find((barber) => barber.id === selectedBarberId)?.name;
+    const closedDays = calendarConfig?.businessHours.closed_days ?? [];
 
     const datesToBlock: Date[] = [];
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-      datesToBlock.push(new Date(d));
+      if (!closedDays.includes(d.getDay())) {
+        datesToBlock.push(new Date(d));
+      }
     }
 
     const results = await Promise.all(
