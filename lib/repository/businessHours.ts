@@ -5,7 +5,7 @@ const BASE = process.env.NEXT_PUBLIC_APP_URL!;
 
 export const getBusinessHours = async (): Promise<GlobalHours| null> => {
   const res = await fetch(`${BASE}/api/business-hours`, {
-    next: { tags: ["business-hours-global"]},
+    next: { tags: ["business-hours"]},
   });
   if (!res.ok) return null;
   return await res.json();

@@ -96,7 +96,7 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
       await fetch("/api/admin/revalidate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tags: ["business-hours-global", "business-settings"] }),
+        body: JSON.stringify({ tags: ["business-hours", "business-settings"] }),
       });
       popup.open("Horario de atención guardado con éxito", true);
     } catch {

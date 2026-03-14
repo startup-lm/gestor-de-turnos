@@ -34,7 +34,6 @@ export function AuthProvider({
     }
     supabaseClient.auth.getUser().then(({ data: { user: supaUser } }) => {
       setUser(supaUser);
-      saveStoredAuth({ user: supaUser, role, barberId });
     });
 
     const { data: sub } = supabaseClient.auth.onAuthStateChange(
@@ -45,11 +44,6 @@ export function AuthProvider({
           setRole("guest");
           setBarberId(-1);
         }
-        saveStoredAuth({
-          user: currentUser,
-          role,
-          barberId,
-        });
       }
     );
 

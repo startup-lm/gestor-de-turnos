@@ -13,7 +13,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="es">
       <body className="flex flex-col min-h-screen">
         <AuthProvider>
-          <AutoLogoutManager timeoutMinutes={15} />
+          <AutoLogoutManager timeoutMinutes={60} />
           <Navbar />
           <main className="flex-grow">
             {children}

@@ -123,6 +123,32 @@
   background-color: var(--calendar-disabled-slot) !important;
 }
 
+.rbc-time-content .rbc-time-column.rbc-day-slot.rbc-disabled-day,
+.rbc-time-header-cell.rbc-disabled-day {
+  position: relative;
+  overflow: hidden;
+}
+
+.rbc-time-content .rbc-time-column.rbc-day-slot.rbc-disabled-day::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.15) 0 8px,
+    rgba(0, 0, 0, 0.05) 8px 16px
+  );
+  pointer-events: none;
+}
+
+.rbc-time-header-cell.rbc-disabled-day {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.15) 0 8px,
+    rgba(0, 0, 0, 0.05) 8px 16px
+  );
+}
+
 .rbc-time-header .rbc-time-header-cell.rbc-disabled-day.rbc-today .rbc-header {
   background-color: var(--calendar-today-header-bg) !important;
   color: var(--button-home-primary-text) !important;
@@ -138,8 +164,26 @@
   background-color: var(--calendar-disabled-slot);
 }
 
-.rbc-time-gutter .calendar-disabled-slot {
-  background-color: inherit;
+.rbc-time-gutter .calendar-disabled-slot,
+.rbc-time-gutter .calendar-disabled-slot--break {
+  background-color: inherit !important;
+  background-image: none !important;
+  opacity: 1 !important;
+}
+
+.rbc-time-gutter .rbc-time-column.rbc-disabled-day::after {
+  content: none;
+}
+
+.rbc-time-column .calendar-disabled-slot--break {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--calendar-disabled-slot);
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.15) 0 8px,
+    rgba(0, 0, 0, 0.05) 8px 16px
+  );
 }
 
 .rbc-time-slot.calendar-slot--clickable {

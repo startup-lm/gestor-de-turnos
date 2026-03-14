@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 
 export async function GET() {
@@ -21,5 +22,6 @@ export async function PUT(req: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  revalidateTag("business-hours");
   return NextResponse.json(data);
 }

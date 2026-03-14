@@ -1,7 +1,7 @@
 // components/AutoLogoutManager.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 interface Props {
@@ -15,17 +15,17 @@ export default function AutoLogoutManager({ timeoutMinutes }: Props) {
   const timeoutMs = timeoutMinutes * 60 * 1000;
 
   // Función que ejecuta el cierre de sesión
-  const logout = () => {
-    signOut();
-  };
+  const logout = useCallback(() => {
+    void signOut();
+  }, [signOut]);
 
   // Reinicia el temporizador de logout
-  const resetTimer = () => {
+  const resetTimer = useCallback(() => {
     if (timerRef.current) {
       window.clearTimeout(timerRef.current);
     }
     timerRef.current = window.setTimeout(logout, timeoutMs);
-  };
+  }, [logout, timeoutMs]);
 
   useEffect(() => {
     if (!user) {
@@ -54,7 +54,7 @@ export default function AutoLogoutManager({ timeoutMinutes }: Props) {
         window.removeEventListener(ev, resetTimer);
       }
     };
-  }, [user, timeoutMs, signOut]);
+  }, [user, resetTimer]);
 
   return null; 
 }

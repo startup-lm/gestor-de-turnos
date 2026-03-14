@@ -1,4 +1,4 @@
-import {Calendar,CalendarX,Store,Scissors,Users,ChartNoAxesCombined,Wrench,} from "lucide-react";
+import {Calendar,CalendarX,Store,Scissors,Users,ChartNoAxesCombined,Wrench,FileText,} from "lucide-react";
 import type { FC, SVGProps } from "react";
 
 export type NavPath = {
@@ -16,7 +16,10 @@ export function getPaths(role: string): NavPath[] {
     { href: "/nosotros", label: "Nosotros", Icon: Users },
   ];
   if (role !== "guest") paths.push({ href: "/dashboard", label: "Dashboard", Icon: ChartNoAxesCombined });
-  if (role === "admin") paths.push({ href: "/admin", label: "Administrar", Icon: Wrench });
+  if (role === "admin") {
+    paths.push({ href: "/admin/facturacion", label: "Facturación", Icon: FileText });
+    paths.push({ href: "/admin", label: "Administrar", Icon: Wrench });
+  }
 
   return paths;
 }

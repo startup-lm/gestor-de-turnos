@@ -14,13 +14,17 @@ interface CardProps {
   image: string;
   onEdit: () => void;
   onDelete: () => void;
+  onCardClick?: () => void;
 }
 
-export default function Card({ title, price, description, image, onEdit, onDelete }: Readonly<CardProps>) {
+export default function Card({ title, price, description, image, onEdit, onDelete, onCardClick }: Readonly<CardProps>) {
   const { role } = useAuth();
 
   return (
-    <div className="relative w-[320px] h-[326px] border border-[var(--primary)] rounded-lg p-4 flex flex-col items-center text-center bg-[var(--accent)] max-w-xs shadow">
+    <div
+      className="relative w-[320px] h-[326px] border border-[var(--primary)] rounded-lg p-4 flex flex-col items-center text-center bg-[var(--accent)] max-w-xs shadow"
+      onClick={role === "guest" ? onCardClick : undefined}
+    >
       {role === "admin" && (
         <div>
           <div className="absolute top-2 left-2 flex space-x-2">

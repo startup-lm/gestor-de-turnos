@@ -55,6 +55,8 @@ export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlo
   const calendarMax = setTimeOn(currentDate, businessHours.close_time) ?? new Date(new Date(currentDate).setHours(22, 0, 0, 0));
   const step = businessSettings.slot_step_minutes ?? 30;
   const timeslots = 1;
+  const currentView = isMobile ? 'day' : 'week';
+  const availableViews = isMobile ? { day: true } : { week: true };
 
   if (!allAppointments) {
     return <div className="flex justify-center items-center h-96"><Spinner /></div>
@@ -72,8 +74,8 @@ export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlo
         <Calendar
           localizer={localizer}
           events={events}
-          defaultView={isMobile ? 'day' : 'week'}
-          views={isMobile ? ['day'] : ['week']}
+          view={currentView}
+          views={availableViews}
           selectable
           popup={isMobile}
           longPressThreshold={0}
@@ -129,15 +131,17 @@ export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlo
           }}
           dayPropGetter={date =>
             isClosedDay(date)
-              ? { className: 'rbc-disabled-day', style: { pointerEvents: 'none', opacity: 0.5 } }
+              ? { className: 'rbc-disabled-day', style: { pointerEvents: 'none' } }
               : {}
           }
           slotPropGetter={date => {
             const beforeOpen = businessHours.open_time ? date < setTimeOn(date, businessHours.open_time)! : false;
             const afterClose = businessHours.close_time ? date >= setTimeOn(date, businessHours.close_time)! : false;
             const lunch = isLunchBreak(date);
-            if (isClosedDay(date) || beforeOpen || afterClose || lunch) {
-              return { className: 'calendar-disabled-slot', style: { pointerEvents: 'none', opacity: 0.8 } };
+            const closedDay = isClosedDay(date);
+            if (closedDay || beforeOpen || afterClose || lunch) {
+              const className = lunch && !closedDay ? 'calendar-disabled-slot calendar-disabled-slot--break' : 'calendar-disabled-slot';
+              return { className, style: { pointerEvents: 'none' } };
             }
             const now = new Date();
             const slotEnd = new Date(date.getTime() + step * 60 * 1000);

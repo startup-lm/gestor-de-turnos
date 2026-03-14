@@ -42,21 +42,22 @@ export default function ServiciosClient({ services }: Readonly<Props>) {
   return (
     <>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 justify-center">
-        {services.map(svc =>
-            <div key={svc.id} className="relative" >
-              <Card
-                title={svc.name}
-                price={svc.price}
-                description={svc.description}
-                image={svc.image}
-                onEdit={() => handleEdit(svc.id)}
-                onDelete={() => {
-                  setSelectedId(svc.id);
-                  setConfirmModal(true);
-                }}
-              />
-            </div>
-        )}
+        {services.map(svc => (
+          <div key={svc.id} className="relative" >
+            <Card
+              title={svc.name}
+              price={svc.price}
+              description={svc.description}
+              image={svc.image}
+              onEdit={() => handleEdit(svc.id)}
+              onDelete={() => {
+                setSelectedId(svc.id);
+                setConfirmModal(true);
+              }}
+              onCardClick={() => router.push("/turnos")}
+            />
+          </div>
+        ))}
       </div>
 
       {isEditModalOpen && selectedId !== null && (

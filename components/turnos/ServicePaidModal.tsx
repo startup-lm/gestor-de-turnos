@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { updateAppointment } from "@/lib/repository/appointments";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import { getServices } from "@/lib/repository/services";
@@ -12,7 +12,7 @@ import PayButton from "../buttons/PayButton";
 
 export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: Readonly<{ appointment: { id: number }; onClose: () => void; setIsPaid: (paid: boolean) => void; }>) {
   const { data } = useFetchOnce<Service[]>(getServices);
-  const services: Service[] = data ?? [];
+  const services: Service[] = useMemo(() => data ?? [], [data]);
   const [selectedServiceId, setSelectedServiceId] = useState(-1);
   const isDisabled = selectedServiceId < 0;
   const [loading, setLoading] = useState(false);

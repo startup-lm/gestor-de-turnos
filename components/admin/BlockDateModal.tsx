@@ -21,6 +21,8 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
   const { data: calendarConfig, loading: loadingCalendar } = useFetchOnce(getCalendarConfig);
   const [selectedBarberId, setSelectedBarberId] = useState(-1);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
+  const [useRange, setUseRange] = useState(false);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [reason, setReason] = useState("");
@@ -31,7 +33,20 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
     breakStart: calendarConfig?.businessHours.lunch_start,
     breakEnd: calendarConfig?.businessHours.lunch_end,
   });
-  const isDisabled = selectedBarberId < 0 || !selectedDate || !startTime || !endTime;
+  const normalizeTime = (value: string) => value.slice(0, 5);
+  const closeTimeOptionRaw = calendarConfig?.businessHours.close_time ?? null;
+  const closeTimeOption = closeTimeOptionRaw ? normalizeTime(closeTimeOptionRaw) : null;
+  const endTimeOptions = closeTimeOption
+    ? Array.from(new Set([...allAppointments, closeTimeOption].map(normalizeTime))).sort()
+    : allAppointments;
+  const hasDateRangeError = !!(useRange && selectedDate && selectedEndDate && selectedEndDate < selectedDate);
+  const isDisabled =
+    selectedBarberId < 0 ||
+    !selectedDate ||
+    (useRange && !selectedEndDate) ||
+    !startTime ||
+    !endTime ||
+    hasDateRangeError;
   const [loading, setLoading] = useState(false);
   const popup = usePopup();
   const isFetching = loadingFetch || loadingCalendar;
@@ -39,21 +54,40 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
   const handleBlockDate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    if (isDisabled) return;
-    //await deleteAppointmentsByDate({ barber_id: selectedBarberId, date: selectedDate, start_time: startTime, end_time: endTime, });
-    const createdBy = barbers.find((barber) => barber.id === selectedBarberId)?.name;
-    const result = await createAppointment({
-      client: reason ?? "Bloqueado",
-      barber_id: selectedBarberId,
-      date: selectedDate,
-      start_time: startTime,
-      end_time: endTime,
-      phone: "0000000000",
-      service_id: 1,
-      created_by: createdBy,
-    });
-    const message = result.success ? "Día y horario bloqueados con éxito" : "Error al bloquear día y horario";
-    popup.open(message, result.success);
+    if (isDisabled) {
+      setLoading(false);
+      return;
+    }
+    const normalizeDate = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const startDate = normalizeDate(selectedDate!);
+    const endDate = normalizeDate(useRange && selectedEndDate ? selectedEndDate : selectedDate!);
+    const createdBy = barbers!.find((barber) => barber.id === selectedBarberId)?.name;
+
+    const datesToBlock: Date[] = [];
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      datesToBlock.push(new Date(d));
+    }
+
+    const results = await Promise.all(
+      datesToBlock.map((date) =>
+        createAppointment({
+          client: reason ?? "Bloqueado",
+          barber_id: selectedBarberId,
+          date,
+          start_time: startTime,
+          end_time: endTime,
+          phone: "0000000000",
+          service_id: 1,
+          created_by: createdBy,
+        })
+      )
+    );
+
+    const allOk = results.every((r) => r.success);
+    const message = allOk
+      ? "Día(s) y horario bloqueados con éxito"
+      : "Se bloquearon algunos días, pero hubo errores en otros";
+    popup.open(message, allOk);
     setLoading(false);
   };
 
@@ -84,12 +118,43 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
             />
 
             <label className="block text-sm font-medium mb-1 mt-4">
-              Fecha
+              {useRange ? "Desde" : "Fecha"}
             </label>
             <DatePickerField
               date={selectedDate}
-              onChange={setSelectedDate}
+              onChange={(d) => {
+                setSelectedDate(d);
+                if (d && selectedEndDate && selectedEndDate < d) {
+                  setSelectedEndDate(d);
+                }
+              }}
             />
+
+            <label className="block text-sm font-medium mb-1 mt-4">
+              <input
+                type="checkbox"
+                checked={useRange}
+                onChange={(e) => setUseRange(e.target.checked)}
+              />{" "}
+              Bloquear rango de días
+            </label>
+
+            {useRange && (
+              <>
+                <label className="block text-sm font-medium mb-1 mt-4">
+                  Hasta
+                </label>
+                <DatePickerField
+                  date={selectedEndDate}
+                  onChange={setSelectedEndDate}
+                />
+                {hasDateRangeError && (
+                  <p className="text-sm mt-1">
+                    La fecha Hasta debe ser igual o posterior a la fecha de inicio.
+                  </p>
+                )}
+              </>
+            )}
 
             <div className="flex space-x-6 my-4">
               <TimeSelect
@@ -102,7 +167,7 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
               <TimeSelect
                 label="Fin"
                 value={endTime}
-                options={allAppointments.filter((t) => t > startTime)}
+                options={endTimeOptions.filter((t) => t > startTime)}
                 onChange={setEndTime}
                 className="flex-1"
               />

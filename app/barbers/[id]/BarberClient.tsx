@@ -17,18 +17,19 @@ export default function BarberClient({ barber }: { barber: Barber }) {
     const router = useRouter();
     const [name, setName] = useState(barber.name);
     const [email, setEmail] = useState(barber.email);
-    const [instagram, setInstagram] = useState(barber.instagram);
+    const [instagram, setInstagram] = useState<string>(barber.instagram ?? "");
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const popup = usePopup();
+    const norm = (value: string | null | undefined) => (value ?? "").trim();
     const hasChanges = useMemo(() => {
         const changedPassword = password.length >= 6 && password === confirmPassword;
         return (
             name !== barber.name ||
             email !== barber.email ||
-            instagram !== (barber.instagram || "") ||
+            norm(instagram) !== norm(barber.instagram) ||
             imageFile !== null ||
             changedPassword
         );
@@ -60,7 +61,7 @@ export default function BarberClient({ barber }: { barber: Barber }) {
                 return;
             }
         }
-        const barberUpdated = await updateBarber(barber.id!, { name, email, instagram, image: imageUrl, });
+        const barberUpdated = await updateBarber(barber.id!, { name, email, instagram: norm(instagram), image: imageUrl, });
         let passwordUpdated = true;
         if (wantsToChangePassword) passwordUpdated = await updatePassword(confirmPassword);
         const success = barberUpdated && passwordUpdated;
@@ -99,7 +100,7 @@ export default function BarberClient({ barber }: { barber: Barber }) {
                         <label className="block text-sm font-medium mb-1 mt-4">
                             Instagram
                         </label>
-                        <input type="text" value={instagram} onChange={(e) => setInstagram(e.target.value)} required placeholder="@instagram" className="border p-2 rounded w-full" />
+                        <input type="text" value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@instagram" className="border p-2 rounded w-full" />
 
                         <label className="block text-sm font-medium mb-1 mt-4">
                             Email

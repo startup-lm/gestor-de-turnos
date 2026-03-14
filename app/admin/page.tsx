@@ -29,6 +29,10 @@ export default function AdminPage() {
           Ver Ventas
         </button>
 
+        <button className="w-full px-4 py-2 rounded text-2xl whitespace-nowrap" onClick={() => router.push("/admin/facturacion")} >
+          Facturación
+        </button>
+
         <button className="w-full px-4 py-2 rounded text-2xl whitespace-nowrap" onClick={() => { setCreateType("Producto"); setActiveModal("create"); }} >
           Agregar Producto
         </button>

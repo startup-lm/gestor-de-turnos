@@ -9,9 +9,11 @@ type AppointmentSlotsConfig = {
   breakEnd?: string | null;
 };
 
-const DEFAULT_OPEN_TIME = "11:00";
+const DEFAULT_OPEN_TIME = "10:30";
 const DEFAULT_CLOSE_TIME = "20:00";
-const DEFAULT_STEP_MINUTES = 15;
+const DEFAULT_STEP_MINUTES = 30;
+const DEFAULT_BREAK_START = "14:00";
+const DEFAULT_BREAK_END = "15:00";
 
 const parseTimeToMinutes = (value: string) => {
   const [hoursRaw, minutesRaw] = value.split(":");
@@ -32,8 +34,8 @@ export function generateAllAppointments(config: AppointmentSlotsConfig = {}) {
   const closeTime = config.closeTime ?? DEFAULT_CLOSE_TIME;
   const stepMinutes = config.stepMinutes ?? DEFAULT_STEP_MINUTES;
   const hasBreakConfig = config.breakStart !== undefined || config.breakEnd !== undefined;
-  const breakStart = hasBreakConfig ? config.breakStart : null;
-  const breakEnd = hasBreakConfig ? config.breakEnd : null;
+  const breakStart = hasBreakConfig ? config.breakStart : DEFAULT_BREAK_START;
+  const breakEnd = hasBreakConfig ? config.breakEnd : DEFAULT_BREAK_END;
   if (stepMinutes <= 0) return [];
   const startMinutes = parseTimeToMinutes(openTime);
   const endMinutes = parseTimeToMinutes(closeTime);
