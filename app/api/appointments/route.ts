@@ -8,7 +8,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   let query = supabaseAdmin
     .from("appointments")
-    .select(`*, barbers(name), services(name)`);
+    .select(`*, barbers(name), services(name)`)
+    .is("deleted_at", null);
   for (const [key, value] of searchParams.entries()) {
     if (key === "start_date") {
       query = query.gte("date", value);
@@ -71,7 +72,7 @@ export async function DELETE(request: Request) {
   const { id }: { id: number } = await request.json();
   const { data, error } = await supabaseAdmin
     .from("appointments")
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", id)
     .select();
   if (error) return errorResponse(error.message);

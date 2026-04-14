@@ -1,5 +1,6 @@
 "use client";
 
+import { format } from "date-fns";
 import { useState } from "react";
 import { deleteAppointment, updateAppointment } from "@/lib/repository/appointments";
 import { Appointment, AppointmentUpdates } from "@/lib/types/Appointment";
@@ -124,6 +125,11 @@ export default function AppointmentDetailsModal({
     <>
       <Modal onClose={onClose}>
         <h2 className="text-xl font-bold mb-4 text-center">Detalles del turno</h2>
+        {appointment.updated_at && (
+          <p className="text-xs text-center -mt-3 mb-4 text-[var(--button-home-disabled-text)]">
+            Última actualización: {format(new Date(appointment.updated_at), "dd/MM/yyyy HH:mm")}
+          </p>
+        )}
         <form onSubmit={handleUpdate} className="space-y-4 px-4">
           <div className="my-5 text-left rounded-2lg">
             <label className="block text-sm font-medium mb-1 mt-4">

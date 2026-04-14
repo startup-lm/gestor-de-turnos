@@ -17,6 +17,8 @@ export interface Appointment {
   services?: {
     name?: string;
   } | null;
+  deleted_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface AppointmentUpdates {
@@ -29,4 +31,6 @@ export interface AppointmentUpdates {
   paid?: boolean;
   price?: number;
   service_id?: number;
+  deleted_at?: string | null;
+  updated_at?: string | null;
 };

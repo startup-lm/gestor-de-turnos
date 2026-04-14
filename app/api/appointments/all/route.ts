@@ -17,6 +17,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabaseAdmin
     .from("appointments")
     .select("barber_id, price")
+    .is("deleted_at", null)
     .gte("date", start)
     .lte("date", end)
     .neq("phone", "0000000000");
