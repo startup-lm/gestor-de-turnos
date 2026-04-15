@@ -1,0 +1,21 @@
+# Contexto Estricto para el Asistente IA - Gestor de Turnos
+
+Estas reglas definen el protocolo central de trabajo que cualquier Agente de IA o desarrollador debe respetar al crear o mutar código. No desvíes ninguna de estas pautas.
+
+## 1. Patrón del Entorno
+- La aplicación principal opera en Next.js (Versión 15.2 LTS, App Router). No utilices patrones antiguos `pages/` de Next ni propongas `getServerSideProps`.
+- Los estilos visuales se apoyan fundamentalmente en Tailwind CSS v4, pero la identidad global (*Brand Colors*) reside imperativamente en `variables.css`. Se prohíbe inyectar hexadecimales duros estáticos (ej: literal `#FF0000`) dentro de componentes; deben usar tokens como `bg-[var(--accent)]`.
+
+## 2. Lenguaje y Comunicación de las UI
+- Toda respuesta de consola o mensaje destinado al usuario final (modales, alertas, notificaciones emergentes) debe redactarse en español genérico, manteniéndose cortés y claro (Ej. "Turno eliminado con éxito"). Las descripciones comerciales mantienen este estándar profesional.
+
+## 3. Tratamiento Estricto de la Base de Datos
+- Supabase se asume transaccional. Absolutamente todas las eliminaciones de los *Turnos* usan **Soft Deletion**. No ejecutes métodos destructivos `.delete()` a manos llenas. Siempre aplica actualización de parámetros `deleted_at = NOW()` y recuerda añadir validadamente el filtro `.is("deleted_at", null)` en las métricas y listados (`GET`).
+- Las transacciones de escritura se ejecutan centralmente sobre `app/api/...` para proteger RLS o ejecutar lógica privilegiada mediante `supabaseAdmin` cuando se lo requiere. El Frontend nunca ejecuta sentencias DDL.
+
+## 4. Patrones de Retorno y Recolección de Errores (Error Hooks)
+- Prohíbido abusar de `console.log()` sueltos.
+- Cuando utilices esquemas de API bajo la API de Next.js, mantén el patrón existente devolviendo `{ errorResponse, successResponse }` en todos los endpoint de los routes principales (`@/lib/api/response` o equivalente según el contexto visual).  
+- Para las excepciones de BD, envía el string detallado del server al handler local, sin reventar la vista del usuario ni mostrar stacks de Postgres explícitos sin curar (try-catch limpios con mensajes de fallback `status 500`).
+
+Respeta irrevocablemente los tipos tipados globalmente en `@/lib/types`. Si vas a inyectar un nuevo estado a la DB, añade el atributo en su contrato central para prevenir desincronizaciones de IntelliSense.
