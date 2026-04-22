@@ -69,10 +69,13 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { id }: { id: number } = await request.json();
+  const { id, deleted_by }: { id: number, deleted_by?: string } = await request.json();
+  const updatePayload: any = { deleted_at: new Date().toISOString() };
+  if (deleted_by) updatePayload.deleted_by = deleted_by;
+
   const { data, error } = await supabaseAdmin
     .from("appointments")
-    .update({ deleted_at: new Date().toISOString() })
+    .update(updatePayload)
     .eq("id", id)
     .select();
   if (error) return errorResponse(error.message);

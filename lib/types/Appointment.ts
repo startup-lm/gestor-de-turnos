@@ -18,6 +18,7 @@ export interface Appointment {
     name?: string;
   } | null;
   deleted_at?: string | null;
+  deleted_by?: string;
   updated_at?: string | null;
 }
 

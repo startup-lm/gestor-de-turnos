@@ -36,11 +36,11 @@ export async function createAppointment(input: {client: string;barber_id: number
   return res.json();
 }
 
-export async function deleteAppointment(id: number): Promise<boolean> {
+export async function deleteAppointment(id: number, deletedBy?: string): Promise<boolean> {
   const res = await fetch(`${BASE}/api/appointments`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id }),
+    body: JSON.stringify({ id, deleted_by: deletedBy }),
     next: { tags: ["appointments"] },
   });
   return res.ok;

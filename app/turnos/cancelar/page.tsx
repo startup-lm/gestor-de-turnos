@@ -42,7 +42,7 @@ export default function CancelarTurnoPage() {
   const handleConfirmDelete = async () => {
     if (!appointment) return;
     setLoading(true);
-    const deleted = await deleteAppointment(appointment.id);
+    const deleted = await deleteAppointment(appointment.id, appointment.client);
     popup.open(deleted ? "Turno cancelado con éxito" : "Error al cancelar el Turno", deleted);
     setShowWhatsapp(deleted);
     setLoading(false);

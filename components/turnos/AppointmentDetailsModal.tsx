@@ -79,7 +79,8 @@ export default function AppointmentDetailsModal({
 
   const handleDelete = async () => {
     setLoading(true);
-    const success = await deleteAppointment(appointment.id);
+    const barberName = barbers?.find(b => b.id === selectedBarberId)?.name || "admin";
+    const success = await deleteAppointment(appointment.id, barberName);
     popup.open(success ? "Turno eliminado con éxito" : "Error al eliminar el turno", success);
     setConfirmModal(false);
     setLoading(false);
