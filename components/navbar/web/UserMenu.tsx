@@ -34,6 +34,7 @@ export default function UserMenu() {
   return (
     <div ref={ref} className="relative">
       <button
+        data-testid="user-menu-btn"
         onClick={handleUserClick}
         aria-label="Menú de usuario"
         className="inline-flex items-center justify-center p-0 !bg-[var(--bg-navbar)] cursor-pointer transition"
@@ -61,11 +62,13 @@ export default function UserMenu() {
               </Link>
             </li>
             <li>
-              <NavbarLogoutButton
-                className="user-menu-options"
-                onLoggedOut={() => setMenuOpen(false)}
-                onCanceled={() => setMenuOpen(false)}
-              />
+              <div data-testid="logout-btn-wrapper">
+                <NavbarLogoutButton
+                  className="user-menu-options"
+                  onLoggedOut={() => setMenuOpen(false)}
+                  onCanceled={() => setMenuOpen(false)}
+                />
+              </div>
             </li>
           </ul>
         </div>

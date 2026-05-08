@@ -1,24 +1,18 @@
-import { useEffect, useState, useCallback } from "react";
+import useSWR from "swr";
 
-export function useFetchOnce<T>(fetchFunction: () => Promise<T>) {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
+export function useFetchOnce<T>(key: string, fetchFunction: () => Promise<T>) {
+  const { data, error, isLoading, mutate } = useSWR<T>(key, fetchFunction, {
+    revalidateOnFocus: false, // Opcional, pero para imitar "FetchOnce" con SWR no revalidamos todo el tiempo
+    dedupingInterval: 60000, // 1 minuto de caché mínimo
+  });
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await fetchFunction();
-      setData(result);
-    } catch (err) {
-      console.error("Error en useFetchOnce:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchFunction]);
+  if (error) {
+    console.error(`Error en SWR fetching ${key}:`, error);
+  }
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return { data, loading, refetch: fetchData };
+  return {
+    data: data ?? null,
+    loading: isLoading,
+    refetch: mutate,
+  };
 }

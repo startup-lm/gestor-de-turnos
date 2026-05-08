@@ -2,7 +2,14 @@
 import { NextResponse } from "next/server";
 import { successResponse, errorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
+import { createSupabaseServerClient } from "@/lib/supabase/supabaseServer";
 import { revalidateTag } from "next/cache";
+import {
+  AppointmentInsertSchema,
+  AppointmentPutSchema,
+  AppointmentPatchSchema,
+  AppointmentDeleteSchema,
+} from "@/lib/schemas";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -32,18 +39,27 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { client, barber_id, date, start_time, end_time, phone, service_id, created_by }: { client: string; barber_id: number; date: string; start_time: string; end_time: string; phone: string; service_id: number; created_by?: string; } = await request.json();
-  const insertPayload: { client: string; barber_id: number; date: string; start_time: string; end_time: string; phone: string; service_id: number; created_at: string; created_by?: string } = {
+  const body = await request.json();
+  const parsed = AppointmentInsertSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return errorResponse(parsed.error.errors[0].message, 400);
+  }
+
+  const { client, barber_id, date, start_time, end_time, phone, service_id, created_by, client_id } = parsed.data;
+
+  const insertPayload: Record<string, unknown> = {
     client,
     barber_id,
     date: date.split("T")[0],
     start_time: `${start_time}:00`,
     end_time: `${end_time}:00`,
-    phone,
+    phone: phone ?? "",
     service_id,
     created_at: new Date().toISOString(),
   };
   if (created_by) insertPayload.created_by = created_by;
+  if (client_id) insertPayload.client_id = client_id;
   const { data, error } = await supabaseAdmin
     .from("appointments")
     .insert(insertPayload)
@@ -55,12 +71,19 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const { appointmentId, isPaid, price }: { appointmentId: number; isPaid: boolean; price: number } =
-    await request.json();
+  const body = await request.json();
+  const parsed = AppointmentPutSchema.safeParse(body);
 
-  const { error } = await supabaseAdmin
+  if (!parsed.success) {
+    return errorResponse("Datos inválidos para actualizar el turno", 400);
+  }
+
+  const { appointmentId, isPaid, price, payment_method } = parsed.data;
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
     .from("appointments")
-    .update({ paid: isPaid, price })
+    .update({ paid: isPaid, price, payment_method })
     .eq("id", appointmentId);
 
   if (error) return errorResponse(error.message);
@@ -69,11 +92,19 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { id, deleted_by }: { id: number, deleted_by?: string } = await request.json();
+  const body = await request.json();
+  const parsed = AppointmentDeleteSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return errorResponse("Datos inválidos para eliminar el turno", 400);
+  }
+
+  const { id, deleted_by } = parsed.data;
   const updatePayload: any = { deleted_at: new Date().toISOString() };
   if (deleted_by) updatePayload.deleted_by = deleted_by;
 
-  const { data, error } = await supabaseAdmin
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
     .from("appointments")
     .update(updatePayload)
     .eq("id", id)
@@ -85,8 +116,16 @@ export async function DELETE(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const { appointmentId, updates }: { appointmentId: number; updates: Record<string, any>; } = await request.json();
-  const { error } = await supabaseAdmin
+  const body = await request.json();
+  const parsed = AppointmentPatchSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return errorResponse("Datos inválidos para modificar el turno", 400);
+  }
+
+  const { appointmentId, updates } = parsed.data;
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
     .from("appointments")
     .update(updates)
     .eq("id", appointmentId);

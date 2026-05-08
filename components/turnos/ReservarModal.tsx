@@ -1,92 +1,42 @@
 "use client";
 
-import { useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { createAppointment } from "@/lib/repository/appointments";
 import Modal from "@/components/ui/Modal";
 import PopupModal from "@/components/ui/PopupModal";
-import { usePopup } from "@/lib/hooks/usePopup";
 import { sendConfirmAppointment } from "../../utils/whatsapp";
 import ReserveButton from "../buttons/ReserveButton";
-import { useAuth } from "@/lib/auth/AuthContext";
-import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
-import { Service } from "@/lib/types/Services";
-import { getServices } from "@/lib/repository/services";
 import { CalendarEvent } from "@/lib/types/CalendarEvent";
-import { GlobalHours } from "@/lib/types/BusinessHours";
+import ClientAutocompleteFields from "./ClientAutocompleteFields";
+import { useReservarLogic } from "@/lib/hooks/useReservarLogic";
 
-export default function ReservarModal({ onClose, selectedDate, selectedBarber, selectedBarberId, events, businessHours, onAppointmentCreated }:
-  Readonly<{ onClose: () => void; selectedDate: Date; selectedBarber: string; selectedBarberId: number; events: CalendarEvent[]; businessHours: GlobalHours; onAppointmentCreated?: () => void;}>) {
+interface Props {
+  onClose: () => void;
+  selectedDate: Date;
+  selectedBarber: string;
+  selectedBarberId: number;
+  events: CalendarEvent[];
+  onAppointmentCreated?: () => void;
+}
 
-  const { role } = useAuth();
-  const { data } = useFetchOnce<Service[]>(getServices);
-  const services: Service[] = data ?? [];
-  const isGuest = role === "guest";
-  const [selectedServiceId, setSelectedServiceId] = useState(-1);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [appointmentId, setAppointmentId] = useState(0);
-  const [showWhatsapp, setShowWhatsapp] = useState(false);
-  const isDisabled = !name || (isGuest && !phone) || selectedServiceId < 0;
-  const popup = usePopup();
-  const setTimeOn = (base: Date, hhmm?: string | null) => {
-    if (!hhmm) return null;
-    const [h, m] = hhmm.split(":").map(Number);
-    const d = new Date(base);
-    d.setHours(h ?? 0, m ?? 0, 0, 0);
-    return d;
-  };
-
-  const handleReservar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const service = services.find(s => s.id === selectedServiceId);
-    const duration = service!.duration;
-    const endDate = new Date(selectedDate);
-    endDate.setMinutes(endDate.getMinutes() + duration);
-    if (isGuest) {
-      const cierre = setTimeOn(selectedDate, businessHours.close_time);
-      const startBreak = setTimeOn(selectedDate, businessHours.lunch_start);
-      const endBreak = setTimeOn(selectedDate, businessHours.lunch_end);
-      const overlapsLunch = startBreak && endBreak ? endDate < endBreak && endDate > startBreak : false;
-      if ((cierre && endDate > cierre) || overlapsLunch) {
-        const lunchWindow = startBreak && endBreak ? `${startBreak.toTimeString().slice(0, 5)}-${endBreak.toTimeString().slice(0, 5)}` : null;
-        const cierreTime = cierre ? cierre.toTimeString().slice(0, 5) : null;
-        const reasons = [lunchWindow && `el horario de almuerzo (${lunchWindow})`, cierreTime && `el horario de cierre (${cierreTime} hs)`].filter(Boolean).join(" o ");
-        popup.open(`No se puede reservar: el turno finaliza dentro de ${reasons}.`, false);
-        setLoading(false);
-        return;
-      }
-    }
-    const conflict = events.some(ev => selectedDate < ev.end! && endDate > ev.start!);
-    if (isGuest && conflict) {
-      const msg = `Tu turno de ${selectedDate.toTimeString().slice(0, 5)} a ${endDate.toTimeString().slice(0, 5)} coincide con otro ya agendado. Por favor, elegí otro horario.`;
-      popup.open(msg, false);
-      setLoading(false);
-      return;
-    }
-
-    const createdBy = isGuest ? name : selectedBarber;
-    const result = await createAppointment({
-      client: name,
-      barber_id: selectedBarberId,
-      date: selectedDate,
-      start_time: selectedDate.toTimeString().slice(0, 5),
-      end_time: endDate.toTimeString().slice(0, 5),
-      phone,
-      service_id: selectedServiceId,
-      created_by: createdBy,
-    });
-    if (result.success && result.id) {
-      setAppointmentId(result.id);
-      setShowWhatsapp(true);
-      onAppointmentCreated?.();
-    }
-    popup.open(result.success ? `Turno reservado con éxito. Tu número de turno es #${result.id}.` : "Error al reservar el turno", result.success);
-    setLoading(false);
-  };
+export default function ReservarModal({ onClose, selectedDate, selectedBarber, selectedBarberId, events, onAppointmentCreated }: Readonly<Props>) {
+  const {
+    isGuest,
+    services,
+    selectedServiceId,
+    setSelectedServiceId,
+    name,
+    setName,
+    phone,
+    setPhone,
+    loading,
+    appointmentId,
+    showWhatsapp,
+    bienvenidaName,
+    isDisabled,
+    popup,
+    handleReservar,
+  } = useReservarLogic(selectedDate, selectedBarber, selectedBarberId, events, onAppointmentCreated);
 
   const handleWhatsapp = () => {
     sendConfirmAppointment(appointmentId, selectedDate, selectedDate.toTimeString().slice(0, 5), name);
@@ -109,16 +59,35 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
             </label>
             <input type="text" value={`${format(selectedDate, "EEEE d 'de' MMMM", { locale: es })} - ${selectedDate.toTimeString().slice(0, 5)}hs`} readOnly />
 
-            <label className="block text-sm font-medium mb-1 mt-4">
-              Nombre
-            </label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="Nombre y Apellido" />
+            {!isGuest ? (
+              <ClientAutocompleteFields
+                name={name}
+                phone={phone}
+                onNameChange={setName}
+                onPhoneChange={setPhone}
+                onClientResolved={() => {}}
+              />
+            ) : (
+              <>
+                <label className="block text-sm font-medium mb-1 mt-4">
+                  Nombre
+                </label>
+                <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="Nombre y Apellido" />
 
-            <label className="block text-sm font-medium mb-1 mt-4">
-              Celular
-            </label>
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required={isGuest} placeholder="11-2345-6789" 
-              minLength={isGuest ? 10 : undefined} maxLength={isGuest ? 10 : undefined} />
+                <label className="block text-sm font-medium mb-1 mt-4">
+                  Celular
+                </label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  required={isGuest}
+                  placeholder="1123456789"
+                  maxLength={10}
+                  inputMode="numeric"
+                />
+              </>
+            )}
 
             <label className="block text-sm font-medium mb-1 mt-4">
               Servicio

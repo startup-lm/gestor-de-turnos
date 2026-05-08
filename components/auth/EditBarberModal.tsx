@@ -14,7 +14,7 @@ import SaveButton from "../buttons/SaveButton";
 import { deleteAuthUser } from "@/lib/repository/auth";
 
 export default function EditBarberModal({ onClose }: Readonly<{ onClose: () => void }>) {
-  const { data: barbers = [], loading: fetchLoading } = useFetchOnce<Barber[]>(getBarbers);
+  const { data: barbers = [], loading: fetchLoading } = useFetchOnce<Barber[]>("barbers", getBarbers);
   const [selectedBarberId, setSelectedBarberId] = useState<number>(-1);
   const [commission, setCommission] = useState<string>("");
   const [saleCommission, setSaleCommission] = useState<string>("");

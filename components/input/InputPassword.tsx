@@ -8,9 +8,10 @@ interface InputPasswordProps {
   placeholder?: string;
   error?: string;
   requiered?: boolean;
+  "data-testid"?: string;
 }
 
-export default function InputPassword({ label,value,onChange, placeholder = "", error, requiered=false}: Readonly<InputPasswordProps>) {
+export default function InputPassword({ label,value,onChange, placeholder = "", error, requiered=false, "data-testid": dataTestId }: Readonly<InputPasswordProps>) {
   const [isVisible, setIsVisible] = useState(false);
 
   return (
@@ -18,6 +19,7 @@ export default function InputPassword({ label,value,onChange, placeholder = "", 
       <label className="block text-sm font-medium mb-1 mt-4">{label}</label>
       <div className="relative">
         <input
+          data-testid={dataTestId}
           type={isVisible ? "text" : "password"}
           value={value}
           onChange={onChange}

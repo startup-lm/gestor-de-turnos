@@ -9,16 +9,16 @@ import DatePickerField from "./DatePickerField";
 import TimeSelect from "./TimeSelect";
 import { generateAllAppointments } from "../../utils/appointments";
 import { createAppointment } from "@/lib/repository/appointments";
-import { getCalendarConfig } from "@/lib/repository/calendar";
 import Modal from "@/components/ui/Modal";
 import PopupModal from "@/components/ui/PopupModal";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
 import Spinner from "@/components/loading/Spinner";
 import { usePopup } from "@/lib/hooks/usePopup";
 import BlockButton from "../buttons/BlockButton";
 
 export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => void }>) {
-  const { data: barbers = [], loading: loadingFetch } = useFetchOnce<Barber[]>(getBarbers);
-  const { data: calendarConfig, loading: loadingCalendar } = useFetchOnce(getCalendarConfig);
+  const { data: barbers = [], loading: loadingFetch } = useFetchOnce<Barber[]>("barbers", getBarbers);
+  const { businessHours, businessSettings } = useBusinessContext();
   const [selectedBarberId, setSelectedBarberId] = useState(-1);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
@@ -27,14 +27,14 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
   const [endTime, setEndTime] = useState("");
   const [reason, setReason] = useState("");
   const allAppointments = generateAllAppointments({
-    openTime: calendarConfig?.businessHours.open_time,
-    closeTime: calendarConfig?.businessHours.close_time,
-    stepMinutes: calendarConfig?.businessSettings.slot_step_minutes,
-    breakStart: calendarConfig?.businessHours.lunch_start,
-    breakEnd: calendarConfig?.businessHours.lunch_end,
+    openTime: businessHours.open_time,
+    closeTime: businessHours.close_time,
+    stepMinutes: businessSettings.slot_step_minutes,
+    breakStart: businessHours.lunch_start,
+    breakEnd: businessHours.lunch_end,
   });
   const normalizeTime = (value: string) => value.slice(0, 5);
-  const closeTimeOptionRaw = calendarConfig?.businessHours.close_time ?? null;
+  const closeTimeOptionRaw = businessHours.close_time ?? null;
   const closeTimeOption = closeTimeOptionRaw ? normalizeTime(closeTimeOptionRaw) : null;
   const endTimeOptions = closeTimeOption
     ? Array.from(new Set([...allAppointments, closeTimeOption].map(normalizeTime))).sort()
@@ -49,7 +49,7 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
     hasDateRangeError;
   const [loading, setLoading] = useState(false);
   const popup = usePopup();
-  const isFetching = loadingFetch || loadingCalendar;
+  const isFetching = loadingFetch;
 
   const handleBlockDate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +62,7 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
     const startDate = normalizeDate(selectedDate!);
     const endDate = normalizeDate(useRange && selectedEndDate ? selectedEndDate : selectedDate!);
     const createdBy = barbers!.find((barber) => barber.id === selectedBarberId)?.name;
-    const closedDays = calendarConfig?.businessHours.closed_days ?? [];
+    const closedDays = businessHours.closed_days ?? [];
 
     const datesToBlock: Date[] = [];
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {

@@ -42,7 +42,7 @@ export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
   const comision = barbers.find(b => b.id === selectedBarberId)?.commission ?? 0;
   const comisionVenta = barbers.find(b => b.id === selectedBarberId)?.sale_commission ?? 0;
   const { totalSalesRevenue: ingresosVentas, totalSales: ventasCount, } = useSalesRevenueForBarber(selectedBarberId, startDate, endDate);
-  const { summary, pieData } = useBarberCutsData(startDate, endDate);
+  const { summary, pieData, paymentTotals } = useBarberCutsData(startDate, endDate);
   const { totalSalesRevenue, totalSales, totalSalesCommission } = useTotalRevenueForAllSales(startDate, endDate, barbers);
   const totalCommissions = useTotalCommissions(startDate, endDate);
 
@@ -97,7 +97,7 @@ export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
       {role === "admin" && (
         <div className="flex flex-col md:flex-row gap-4 mt-10">
           <section className="w-full md:w-1/2">
-            <Summary data={summary} salesData={{totalSales, totalSalesRevenue, totalSalesCommission}} totalCommissions={totalCommissions} />
+            <Summary data={summary} salesData={{totalSales, totalSalesRevenue, totalSalesCommission}} totalCommissions={totalCommissions} paymentTotals={paymentTotals} />
           </section>
 
           <section className="w-full md:w-1/2">

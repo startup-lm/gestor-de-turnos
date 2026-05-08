@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import withPWAInit from "@ducanh2912/next-pwa";
 
 const host = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname;
 
@@ -28,4 +29,12 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const withPWA = withPWAInit({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+});
+
+export default withPWA(nextConfig);

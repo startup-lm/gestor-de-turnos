@@ -10,7 +10,9 @@ export interface Appointment {
   phone: string;
   paid: boolean;
   price: number;
+  payment_method?: string | null;
   service_id: number;
+  client_id?: number | null;
   barbers?: {
     name?: string;
   } | null;
@@ -31,7 +33,9 @@ export interface AppointmentUpdates {
   phone?: string;
   paid?: boolean;
   price?: number;
+  payment_method?: string | null;
   service_id?: number;
+  client_id?: number | null;
   deleted_at?: string | null;
   updated_at?: string | null;
 };

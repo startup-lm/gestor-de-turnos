@@ -11,13 +11,14 @@ import { usePopup } from "@/lib/hooks/usePopup";
 import PayButton from "../buttons/PayButton";
 
 export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: Readonly<{ appointment: { id: number }; onClose: () => void; setIsPaid: (paid: boolean) => void; }>) {
-  const { data } = useFetchOnce<Service[]>(getServices);
+  const { data } = useFetchOnce<Service[]>("services", getServices);
   const services: Service[] = useMemo(() => data ?? [], [data]);
   const [selectedServiceId, setSelectedServiceId] = useState(-1);
   const isDisabled = selectedServiceId < 0;
   const [loading, setLoading] = useState(false);
   const popup = usePopup();
   const [price, setPrice] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState("Efectivo");
 
   useEffect(() => {
     if (selectedServiceId === -1) {
@@ -31,7 +32,7 @@ export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: R
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const success = await updateAppointment(appointment.id, { paid: true, price: price} );
+    const success = await updateAppointment(appointment.id, { paid: true, price: price, payment_method: paymentMethod } );
     if (success) setIsPaid(true);
     popup.open(success ? "Turno marcado como pago" : "Error al marcar como pagado", success);
     setLoading(false);
@@ -60,7 +61,15 @@ export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: R
             <label className="block text-sm font-medium mb-1 mt-4">
               Precio
             </label>
-            <input type="number" value={price} onChange={e => setPrice(Number(e.target.value))} required className="mb-4" min={0}/>
+            <input type="number" value={price} onChange={e => setPrice(Number(e.target.value))} required className="mb-4 w-full border p-2 rounded bg-[var(--background)] text-[var(--foreground)]" min={0}/>
+
+            <label className="block text-sm font-medium mb-1 mt-4">
+              Método de Pago
+            </label>
+            <select required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+              <option value="Efectivo">Efectivo</option>
+              <option value="MercadoPago">Mercado Pago</option>
+            </select>
           </div>
           <div className="flex justify-center mt-10">
             <PayButton type="submit" disabled={isDisabled} loading={loading} />

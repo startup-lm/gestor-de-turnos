@@ -15,8 +15,8 @@ import Spinner from "../loading/Spinner";
 import { createSale } from "@/lib/repository/sales";
 
 export default function RegisterSaleModal({ onClose }: Readonly<{ onClose: () => void; }>) {
-  const { data } = useFetchOnce<Product[]>(getProducts);
-  const { data: barbers = [], loading: loadingFetch } = useFetchOnce<Barber[]>(getBarbers);
+  const { data } = useFetchOnce<Product[]>("products", getProducts);
+  const { data: barbers = [], loading: loadingFetch } = useFetchOnce<Barber[]>("barbers", getBarbers);
   const [selectedBarberId, setSelectedBarberId] = useState(-1);
   const products = useMemo<Product[]>(() => data ?? [], [data]);
   const [selectedProductId, setSelectedProductId] = useState(-1);

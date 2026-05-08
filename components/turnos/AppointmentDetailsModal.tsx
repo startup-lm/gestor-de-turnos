@@ -1,30 +1,23 @@
 "use client";
 
 import { format } from "date-fns";
-import { useState } from "react";
-import { deleteAppointment, updateAppointment } from "@/lib/repository/appointments";
-import { Appointment, AppointmentUpdates } from "@/lib/types/Appointment";
+import { Appointment } from "@/lib/types/Appointment";
 import Modal from "@/components/ui/Modal";
 import PopupModal from "@/components/ui/PopupModal";
-import { usePopup } from "@/lib/hooks/usePopup";
 import dynamic from "next/dynamic";
 import ConfirmModal from "../ui/ConfirmModal";
 import DeleteButton from "../buttons/DeleteButton";
 import ChargeButton from "../buttons/ChargeButton";
 import SaveButton from "../buttons/SaveButton";
 import BarberSelector from "./BarberSelector";
-import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import { Barber } from "@/lib/types/Barbers";
 import DatePickerField from "../admin/DatePickerField";
-import { getServices } from "@/lib/repository/services";
-import { Service } from "@/lib/types/Services";
-import type { GlobalHours } from "@/lib/types/BusinessHours";
-import type { BusinessSettings } from "@/lib/types/BusinessSettings";
 import TimeSelect from "../admin/TimeSelect";
 import { generateAllAppointments } from "@/utils/appointments";
 import Spinner from "../loading/Spinner";
-import { FaWhatsapp } from "react-icons/fa";
-import { sendWhatsAppMessage } from "@/utils/whatsapp";
+import ClientAutocompleteFields from "./ClientAutocompleteFields";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { useAppointmentDetailsLogic } from "@/lib/hooks/useAppointmentDetailsLogic";
 
 const ServicePaidModal = dynamic(() => import("./ServicePaidModal"), { ssr: false, loading: () => null });
 
@@ -32,15 +25,12 @@ export default function AppointmentDetailsModal({
   onClose,
   appointment,
   barbers,
-  businessHours,
-  businessSettings,
 }: Readonly<{
   onClose: () => void;
   appointment: Appointment;
   barbers: Barber[];
-  businessHours: GlobalHours;
-  businessSettings: BusinessSettings;
 }>) {
+  const { businessHours, businessSettings } = useBusinessContext();
   const allAppointments = generateAllAppointments({
     openTime: businessHours.open_time,
     closeTime: businessHours.close_time,
@@ -48,71 +38,14 @@ export default function AppointmentDetailsModal({
     breakStart: businessHours.lunch_start,
     breakEnd: businessHours.lunch_end,
   });
-  const { data, loading: loadingFetch } = useFetchOnce<Service[]>(getServices);
-  const services: Service[] = data ?? [];
-  const [showService, setShowService] = useState(false);
-  const [confirmModal, setConfirmModal] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [loadingUpdate, setLoadingUpdate] = useState(false);
-  const popup = usePopup();
 
-  // datos del turno
-  const [selectedBarberId, setSelectedBarberId] = useState(appointment.barber_id);
-  const [date, setDate] = useState<Date | null>(new Date(`${appointment.date}T${appointment.start_time}-03:00`));
-  const [startTime, setStartTime] = useState(appointment.start_time.slice(0, 5));
-  const [endTime, setEndTime] = useState(appointment.end_time.slice(0, 5));
-  const [client, setClient] = useState(appointment.client);
-  const [phone, setPhone] = useState(appointment.phone);
-  const [selectedServiceId, setSelectedServiceId] = useState(appointment.service_id);
-  const [price, setPrice] = useState(appointment.price);
-
-  //estados botones
-  const isBlockedRange = appointment.phone === "0000000000";
-  const hasChanges = selectedBarberId !== appointment.barber_id ||
-    date?.toISOString().slice(0, 10) !== appointment.date ||
-    startTime !== appointment.start_time ||
-    endTime !== appointment.end_time ||
-    client !== appointment.client ||
-    phone !== appointment.phone ||
-    price !== appointment.price ||
-    selectedServiceId !== appointment.service_id;
-
-  const handleDelete = async () => {
-    setLoading(true);
-    const barberName = barbers?.find(b => b.id === selectedBarberId)?.name || "admin";
-    const success = await deleteAppointment(appointment.id, barberName);
-    popup.open(success ? "Turno eliminado con éxito" : "Error al eliminar el turno", success);
-    setConfirmModal(false);
-    setLoading(false);
-  };
-
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!hasChanges) return;
-    setLoadingUpdate(true);
-    const updates: AppointmentUpdates = {};
-    if (selectedBarberId !== appointment.barber_id) updates.barber_id = selectedBarberId;
-    if (date) {
-      const isoDate = date.toISOString().slice(0, 10);
-      if (isoDate !== appointment.date) updates.date = isoDate;
-    }
-    if (startTime !== appointment.start_time) updates.start_time = startTime;
-    if (endTime !== appointment.end_time) updates.end_time = endTime;
-    if (client !== appointment.client) updates.client = client;
-    if (phone !== appointment.phone) updates.phone = phone;
-    if (selectedServiceId !== appointment.service_id) updates.service_id = selectedServiceId;
-    if (price !== appointment.price) updates.price = price;
-    if (!isBlockedRange && ("start_time" in updates || "service_id" in updates)) {
-      const service = services.find(s => s.id === selectedServiceId);
-      const duration = service!.duration;
-      const endDate = new Date(`${date!.toISOString().slice(0, 10)}T${startTime}-03:00`);
-      endDate.setMinutes(endDate.getMinutes() + duration);
-      updates.end_time = endDate.toTimeString().slice(0, 5);
-    }
-    const success = await updateAppointment(appointment.id, updates);
-    popup.open(success ? "Turno editado con éxito" : "Error al editar el turno", success);
-    setLoadingUpdate(false);
-  };
+  const {
+    loadingFetch, services, showService, setShowService, confirmModal, setConfirmModal,
+    loading, loadingUpdate, popup,
+    selectedBarberId, setSelectedBarberId, date, setDate, startTime, setStartTime,
+    endTime, setEndTime, client, setClient, phone, setPhone, selectedServiceId, setSelectedServiceId,
+    price, setPrice, isBlockedRange, hasChanges, handleDelete, handleUpdate,
+  } = useAppointmentDetailsLogic(appointment, barbers);
 
   if (loadingFetch) {
     return (
@@ -169,21 +102,14 @@ export default function AppointmentDetailsModal({
                   </div>
                 </div>
 
-
-                <label className="block text-sm font-medium mb-1 mt-4">
-                  Cliente
-                </label>
-                <input type="text" value={client} onChange={(e) => setClient(e.target.value)} />
-
-                <label className="block text-sm font-medium mb-1 mt-4">
-                  Celular
-                </label>
-                <div className="flex items-center space-x-1 mt-1">
-                  <input type="text" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} />
-                  <button onClick={() => sendWhatsAppMessage('Hola, te escribimos por lo siguiente...', phone)} className="btn-whatsapp !rounded-lg !px-2 !py-1.5" aria-label="Enviar Whatsapp" title="Enviar Whatsapp" >
-                    <FaWhatsapp size={30} color="white" />
-                  </button>
-                </div>
+                <ClientAutocompleteFields
+                  name={client}
+                  phone={phone}
+                  onNameChange={setClient}
+                  onPhoneChange={setPhone}
+                  onClientResolved={() => {}}
+                  showWhatsapp
+                />
 
                 <label className="block text-sm font-medium mb-1 mt-4">
                   Servicio

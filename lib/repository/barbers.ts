@@ -43,7 +43,7 @@ export const getBarberByEmail = async (email: string): Promise<Barber | null> =>
   return res.json();
 };
 
-export const updateBarber = async (id: number,values: Record<string, any>): Promise<boolean> => {
+export const updateBarber = async (id: number, values: Record<string, any>): Promise<boolean> => {
   const res = await fetch(`${BASE}/api/barbers`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -55,9 +55,9 @@ export const updateBarber = async (id: number,values: Record<string, any>): Prom
 };
 
 export async function getBarberById(id: number): Promise<Barber> {
-  const res = await fetch(`${BASE}/api/barbers?id=${id}`, { next: {tags: ["barbers"], revalidate: 60}, });
+  const res = await fetch(`${BASE}/api/barbers?id=${id}`, { next: { tags: ["barbers"], revalidate: 60 }, });
   if (!res.ok) {
-    const emptyBarber = {id: id,  name: "", role: "barber", image: "", email: "", instagram: "" } as Barber;
+    const emptyBarber = { id: id, name: "", role: "barber", image: "", email: "", instagram: "" } as Barber;
     return emptyBarber
   }
   return res.json();

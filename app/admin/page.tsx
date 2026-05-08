@@ -35,27 +35,27 @@ export default function AdminPage() {
           </button>
         )}
 
-        <button className="w-full px-4 py-2 rounded text-2xl whitespace-nowrap" onClick={() => { setCreateType("Producto"); setActiveModal("create"); }} >
+        <button data-testid="btn-add-product" className="w-full px-4 py-2 rounded text-2xl whitespace-nowrap" onClick={() => { setCreateType("Producto"); setActiveModal("create"); }} >
           Agregar Producto
         </button>
 
-        <button className="w-full px-4 py-2 rounded text-2xl whitespace-nowrap" onClick={() => { setCreateType("Servicio"); setActiveModal("create"); }} >
+        <button data-testid="btn-add-service" className="w-full px-4 py-2 rounded text-2xl whitespace-nowrap" onClick={() => { setCreateType("Servicio"); setActiveModal("create"); }} >
           Agregar Servicio
         </button>
 
-        <button className="w-full px-4 py-2 rounded text-2xl whitespace-nowrap" onClick={() => setActiveModal("block")} >
+        <button data-testid="btn-block-dates" className="w-full px-4 py-2 rounded text-2xl whitespace-nowrap" onClick={() => setActiveModal("block")} >
           Bloquear Horarios
         </button>
 
-        <button className="w-full px-4 py-2 rounded text-2xl whitespace-nowrap" onClick={() => setActiveModal("signup")} >
+        <button data-testid="btn-add-barber" className="w-full px-4 py-2 rounded text-2xl whitespace-nowrap" onClick={() => setActiveModal("signup")} >
           Agregar Barbero
         </button>
 
-        <button className="w-full px-4 py-2 rounded text-2xl whitespace-nowrap" onClick={() => setActiveModal("edit")} >
+        <button data-testid="btn-edit-barber" className="w-full px-4 py-2 rounded text-2xl whitespace-nowrap" onClick={() => setActiveModal("edit")} >
           Editar Barbero
         </button>
 
-        <button className="w-full px-4 py-2 rounded text-2xl whitespace-nowrap" onClick={() => setActiveModal("hours")}>
+        <button data-testid="btn-business-hours" className="w-full px-4 py-2 rounded text-2xl whitespace-nowrap" onClick={() => setActiveModal("hours")}>
           Días y horarios de atención
         </button>
       </div>

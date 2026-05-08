@@ -29,9 +29,9 @@ const ENV_LABELS: Record<ArcaEnvironment, string> = {
 
 export default function ArcaPage() {
   const popup = usePopup();
-  const { data: config, loading: loadingConfig, refetch: refetchConfig } = useFetchOnce<ArcaConfig>(getArcaConfig);
-  const { data: status, loading: loadingStatus, refetch: refetchStatus } = useFetchOnce<ArcaStatus>(getArcaStatus);
-  const { data: invoices, loading: loadingInvoices, refetch: refetchInvoices } = useFetchOnce<ArcaInvoiceRecord[]>(getArcaInvoices);
+  const { data: config, loading: loadingConfig, refetch: refetchConfig } = useFetchOnce<ArcaConfig>("arcaConfig", getArcaConfig);
+  const { data: status, loading: loadingStatus, refetch: refetchStatus } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);
+  const { data: invoices, loading: loadingInvoices, refetch: refetchInvoices } = useFetchOnce<ArcaInvoiceRecord[]>("arcaInvoices", getArcaInvoices);
 
   const [environment, setEnvironment] = useState<ArcaEnvironment>("mock");
   const [cuit, setCuit] = useState("");

@@ -19,14 +19,24 @@ export interface BarberTotals {
   totalRevenue: number;
 };
 
+export interface PaymentMethodTotals {
+  Efectivo: number;
+  MercadoPago: number;
+  Otros: number;
+}
+
 export function useBarberCutsData(startDate: Date, endDate: Date) {
   const [pieData, setPieData] = useState<PieData[]>([]);
   const [summary, setSummary] = useState<BarberTotalData>({ totalAppt: 0, totalRevenue: 0 });
+  const [paymentTotals, setPaymentTotals] = useState<PaymentMethodTotals>({ Efectivo: 0, MercadoPago: 0, Otros: 0 });
 
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const totals: BarberTotals[] = await getTotalAndRevenueForAllBarbers(startDate, endDate);
+      const response = await getTotalAndRevenueForAllBarbers(startDate, endDate);
+      const totals: BarberTotals[] = response.barberTotals || [];
+      const payTotals: PaymentMethodTotals = response.paymentMethodTotals || { Efectivo: 0, MercadoPago: 0, Otros: 0 };
+      
       const barbers: Barber[] = await getBarbers();
       if (!mounted) return;
 
@@ -42,11 +52,12 @@ export function useBarberCutsData(startDate: Date, endDate: Date) {
 
       setPieData(data);
       setSummary({ totalAppt: totalApptAll, totalRevenue: totalRevenueAll });
+      setPaymentTotals(payTotals);
     })();
     return () => {
       mounted = false;
     };
   }, [startDate, endDate]);
 
-  return { summary, pieData };
+  return { summary, pieData, paymentTotals };
 }

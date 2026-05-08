@@ -1,16 +1,17 @@
 "use client";
 
 import CountUp from "react-countup";
-import { BarberTotalData } from "@/lib/hooks/useBarberCutsdata";
+import { BarberTotalData, PaymentMethodTotals } from "@/lib/hooks/useBarberCutsdata";
 import { TotalSalesData } from "@/lib/hooks/useTotalSalesRevenue";
 
 interface SummaryProps {
   data: BarberTotalData;
   salesData: TotalSalesData;
   totalCommissions: number;
+  paymentTotals?: PaymentMethodTotals;
 }
 
-export default function Summary({ data, salesData, totalCommissions }: Readonly<SummaryProps>) {
+export default function Summary({ data, salesData, totalCommissions, paymentTotals }: Readonly<SummaryProps>) {
   const { totalAppt, totalRevenue } = data;
   const { totalSalesRevenue, totalSales, totalSalesCommission } = salesData;
   const combinedRevenue = totalRevenue + totalSalesRevenue;
@@ -65,7 +66,7 @@ export default function Summary({ data, salesData, totalCommissions }: Readonly<
 
           <div className="flex flex-col items-center">
             <span className="text-base font-medium uppercase text-[var(--button-home-disabled)] tracking-wide">
-              Ganancias
+              Ganancias Netas
             </span>
             <span className="mt-2 text-5xl font-extrabold text-green-600">
               <CountUp start={0} end={netProfit} duration={2} prefix="$" separator="." />
@@ -73,6 +74,28 @@ export default function Summary({ data, salesData, totalCommissions }: Readonly<
           </div>
         </div>
       </div>
+
+      {paymentTotals && (
+        <div className="mt-8 pt-6 border-t border-[var(--button-home-disabled)]">
+          <h4 className="text-sm font-semibold uppercase text-center mb-4 tracking-wider text-gray-500">
+            Ingresos por Turnos según Método de Pago
+          </h4>
+          <div className="flex justify-around text-center">
+            <div>
+              <p className="text-xs text-[var(--button-home-disabled)] uppercase">Efectivo</p>
+              <p className="text-xl font-bold text-gray-800 dark:text-gray-200">
+                ${paymentTotals.Efectivo.toLocaleString('es-AR')}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-[var(--button-home-disabled)] uppercase">Mercado Pago</p>
+              <p className="text-xl font-bold text-blue-500">
+                ${paymentTotals.MercadoPago.toLocaleString('es-AR')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

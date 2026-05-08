@@ -12,8 +12,7 @@ import { formats } from '@/components/calendar/CalendarFormats';
 import { useCalendarData } from '@/lib/hooks/useCalendarData';
 import { useCalendarNavigation } from '@/lib/hooks/useCalendarNavigation';
 import DatePickerField from '../admin/DatePickerField';
-import type { GlobalHours } from '@/lib/types/BusinessHours';
-import type { BusinessSettings } from '@/lib/types/BusinessSettings';
+import { useBusinessContext } from '@/lib/context/BusinessContext';
 
 moment.locale('es');
 const localizer = momentLocalizer(moment);
@@ -24,12 +23,11 @@ interface CustomCalendarProps {
   isMobile: boolean;
   onSlotClick: (appointment: Appointment, events: CalendarEvent[]) => void;
   onEventClick: (appointment: Appointment) => void;
-  businessHours: GlobalHours;
-  businessSettings: BusinessSettings;
   refreshSignal?: number;
 }
 
-export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlotClick, onEventClick, businessHours, businessSettings, refreshSignal, }: Readonly<CustomCalendarProps>) {
+export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlotClick, onEventClick, refreshSignal, }: Readonly<CustomCalendarProps>) {
+  const { businessHours, businessSettings } = useBusinessContext();
   const { currentDate, currentRange, onNavigate, onRangeChange } = useCalendarNavigation();
   const { events, allAppointments } = useCalendarData(selectedBarberId, role, currentRange, refreshSignal);
 

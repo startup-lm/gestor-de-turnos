@@ -57,9 +57,10 @@ export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void;
             <label className="block text-sm font-medium mb-1 mt-3">
               Email
             </label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="tumail@gmail.com" />
+            <input data-testid="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="tumail@gmail.com" />
 
             <InputPassword
+              data-testid="login-password"
               label="Contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -75,7 +76,9 @@ export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void;
           </div>
 
           <div className="flex justify-center mt-10">
-            <LoginButton type="submit" loading={loading} disabled={isDisabled} onMouseEnter={() => router.prefetch("/turnos")} />
+            <div data-testid="login-submit-wrapper">
+              <LoginButton type="submit" loading={loading} disabled={isDisabled} onMouseEnter={() => router.prefetch("/turnos")} />
+            </div>
           </div>
         </form>
       </Modal>

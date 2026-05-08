@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import dynamic from "next/dynamic";
 import Spinner from "@/components/loading/Spinner";
 import { Barber } from "@/lib/types/Barbers";
@@ -10,6 +9,7 @@ import BarberCheckbox from "@/components/turnos/BarberCheckbox";
 import { CalendarEvent } from "@/lib/types/CalendarEvent";
 import { useSelectedBarber } from "@/lib/hooks/useSelectedBarber";
 import { useIsMobile } from "@/lib/hooks/useMediaQuery";
+import { useTurnosStore } from "@/lib/store/useTurnosStore";
 import { GlobalHours } from "@/lib/types/BusinessHours";
 import { BusinessSettings } from "@/lib/types/BusinessSettings";
 
@@ -22,36 +22,30 @@ const AppointmentDetailsModal = dynamic(() => import("@/components/turnos/Appoin
 
 interface Props {
   initialBarbers: Barber[];
-  businessHours: GlobalHours;
-  businessSettings: BusinessSettings;
 }
 
-export default function TurnosClient({ initialBarbers, businessHours, businessSettings }: Readonly<Props>) {
+export default function TurnosClient({ initialBarbers }: Readonly<Props>) {
   const { barberId, role } = useAuth();
   const { selectedBarberId, selectedBarber, setBarberId } = useSelectedBarber(initialBarbers, role, barberId);
   const isMobile = useIsMobile();
-  const [isReservarOpen, setIsReservarOpen] = useState(false);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [calendarRefreshSignal, setCalendarRefreshSignal] = useState(0);
+  
+  const {
+    isReservarOpen, isDetailOpen, selectedAppointment, selectedDate, events, calendarRefreshSignal,
+    openReservar, closeReservar, openDetail, closeDetail, triggerCalendarRefresh
+  } = useTurnosStore();
 
   const handleSlotClick = (appt: Appointment, evts: CalendarEvent[]) => {
-    setSelectedDate(new Date(`${appt.date}T${appt.start_time}:00-03:00`));
-    setEvents(evts);
-    setIsReservarOpen(true);
+    openReservar(new Date(`${appt.date}T${appt.start_time}:00-03:00`), evts);
   };
 
   const handleEventClick = (appt: Appointment) => {
     if (role !== "guest") {
-      setSelectedAppointment(appt);
-      setIsDetailOpen(true);
+      openDetail(appt);
     }
   };
 
   const handleAppointmentCreated = () => {
-    setCalendarRefreshSignal((prev) => prev + 1);
+    triggerCalendarRefresh();
   };
 
   return (
@@ -78,31 +72,26 @@ export default function TurnosClient({ initialBarbers, businessHours, businessSe
             isMobile={isMobile}
             onSlotClick={handleSlotClick}
             onEventClick={handleEventClick}
-            businessHours={businessHours}
-            businessSettings={businessSettings}
             refreshSignal={calendarRefreshSignal}
           />
         </div>
 
         {isReservarOpen && (
           <ReservarModal
-            onClose={() => setIsReservarOpen(false)}
+            onClose={closeReservar}
             selectedDate={selectedDate}
             selectedBarber={selectedBarber?.name || ""}
             selectedBarberId={selectedBarberId}
             events={events}
-            businessHours={businessHours}
             onAppointmentCreated={handleAppointmentCreated}
           />
         )}
 
         {isDetailOpen && selectedAppointment && (
           <AppointmentDetailsModal
-            onClose={() => setIsDetailOpen(false)}
+            onClose={closeDetail}
             appointment={selectedAppointment}
             barbers={initialBarbers}
-            businessHours={businessHours}
-            businessSettings={businessSettings}
           />
         )}
       </div>
