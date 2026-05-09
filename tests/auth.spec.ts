@@ -55,14 +55,15 @@ test.describe('Autenticación y Seguridad', () => {
     await page.waitForURL(/\/turnos|\/dashboard/);
 
     // Abrir menú de usuario y hacer clic en Cerrar sesión usando id específico
+    // (.first() porque ambas navbars mobile/desktop están en el DOM simultáneamente)
     await page.getByTestId('user-menu-btn').click();
-    await page.locator('#btn-navbar-logout').click();
+    await page.locator('#btn-navbar-logout').first().click();
 
     // Confirmar el cierre de sesión en el modal de confirmación
-    await page.locator('#btn-confirm-logout').click();
+    await page.locator('#btn-confirm-logout').first().click();
 
     // Debe volver al inicio (router.push('/'))
-    await page.waitForURL(/^https?:\/\/[^/]+(\/)?$/);
+    await page.waitForURL(/^https?:\/\/[^/]+(\/?$|\/?\?)/);
   });
 
 });

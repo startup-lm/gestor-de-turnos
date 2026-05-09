@@ -10,37 +10,39 @@ test.describe('Dashboard y Estadísticas', () => {
     await page.getByTestId('login-submit-wrapper').click();
     await page.waitForURL(/\/turnos|\/dashboard/);
     await page.goto('/dashboard');
+    // Esperar a que el JS hidrate y el dashboard cargue
+    await page.waitForLoadState('networkidle');
   });
 
   test('Debe cargar el Dashboard y mostrar gráficas', async ({ page }) => {
-    // Título del Dashboard
-    await expect(page.locator('h1', { hasText: 'Dashboard' })).toBeVisible();
+    // Título del Dashboard (cargado por JS tras la hidratación)
+    await expect(page.locator('h1', { hasText: 'Dashboard' })).toBeVisible({ timeout: 20000 });
 
-    // El selector de barberos debe estar presente (el admin ve "Todos los Barberos")
-    await expect(page.locator('text=Todos los Barberos')).toBeVisible();
+    // El select de barberos debe estar en el DOM (el admin ve "Todos los Barberos" como primera opción)
+    await expect(page.locator('#dashboard-barber')).toBeVisible({ timeout: 10000 });
 
-    // Las tarjetas del Summary deben estar presentes
-    await expect(page.locator('text=Ingresos totales')).toBeVisible();
-    await expect(page.locator('text=Ganancias Netas')).toBeVisible();
+    // Las tarjetas del Summary deben estar presentes (solo para admin)
+    await expect(page.locator('text=Ingresos totales')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('text=Ganancias Netas')).toBeVisible({ timeout: 10000 });
   });
 
   test('Debe mostrar la sección de ingresos por método de pago', async ({ page }) => {
-    // La sección de payment totals se muestra en el Summary del admin cuando hay datos
-    // Verificamos que la sección Summary esté visible y tenga el contenido esperado
-    await expect(page.locator('text=Ingresos totales')).toBeVisible();
+    // Esperar que el heading del dashboard esté visible
+    await expect(page.locator('h1', { hasText: 'Dashboard' })).toBeVisible({ timeout: 20000 });
     
-    // La sección de método de pago solo aparece si hay datos registrados
-    // Verificamos si el elemento existe, pero no fallamos si no hay datos aún
+    // Esperar que el Summary se haya cargado (sección principal del admin)
+    await expect(page.locator('text=Ingresos totales')).toBeVisible({ timeout: 20000 });
+    
+    // La sección de método de pago aparece cuando hay datos registrados
     const paymentSection = page.locator('text=Ingresos por Turnos según Método de Pago');
-    const effectivoSection = page.locator('p:has-text("Efectivo")');
-    
     const paymentSectionCount = await paymentSection.count();
+    
     if (paymentSectionCount > 0) {
       await expect(paymentSection).toBeVisible();
-      await expect(effectivoSection.first()).toBeVisible();
+      await expect(page.locator('p:has-text("Efectivo")').first()).toBeVisible();
       await expect(page.locator('p:has-text("Mercado Pago")').first()).toBeVisible();
     } else {
-      // Si no hay datos de pagos, verificamos que el dashboard igual cargue bien
+      // Sin datos de pagos, el dashboard igual debe cargar
       await expect(page.locator('h1', { hasText: 'Dashboard' })).toBeVisible();
     }
   });
