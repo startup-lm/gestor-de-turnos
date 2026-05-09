@@ -1,15 +1,12 @@
 import { test, expect } from '@playwright/test';
+import { login } from './utils/auth-helpers';
 
 test.describe('Flujo Operativo del Barbero', () => {
 
   test.beforeEach(async ({ page }) => {
     // Iniciar sesión como barbero antes de cada test
     await page.goto('/turnos');
-    await page.getByTestId('user-menu-btn').click();
-    await page.getByTestId('login-email').fill('barber@gmail.com');
-    await page.getByTestId('login-password').fill('123');
-    await page.getByTestId('login-submit-wrapper').click();
-    await page.waitForURL(/\/turnos/);
+    await login(page, 'barber@gmail.com', '123');
   });
 
   test('Debe poder abrir el detalle de un turno existente y cobrarlo', async ({ page }) => {
