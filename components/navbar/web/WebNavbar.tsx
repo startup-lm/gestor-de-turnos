@@ -20,7 +20,7 @@ export default function WebNavbar({ paths }: Readonly<{ paths: NavPath[]; }>) {
         <ul className="flex space-x-6">
           {paths.map((p) => (
             <li key={p.href}>
-              <Link href={p.href} prefetch className={`whitespace-nowrap px-2 py-1 hover:text-[var(--accent)] ${path === p.href ? "text-[var(--accent)] font-semibold" : "text-[var(--foreground)]"}`} >
+              <Link id={`nav-link-${p.href.replace(/\//g, "")}`} href={p.href} prefetch className={`whitespace-nowrap px-2 py-1 hover:text-[var(--accent)] ${path === p.href ? "text-[var(--accent)] font-semibold" : "text-[var(--foreground)]"}`} >
                 {p.label}
               </Link>
             </li>

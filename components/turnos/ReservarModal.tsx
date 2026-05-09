@@ -52,12 +52,12 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
             <label className="block text-sm font-medium mb-1 mt-4" >
               Barbero
             </label>
-            <input type="text" value={selectedBarber} readOnly />
+            <input id="reservar-barber" type="text" value={selectedBarber} readOnly />
 
             <label className="block text-sm font-medium mb-1 mt-4">
               Día y horario
             </label>
-            <input type="text" value={`${format(selectedDate, "EEEE d 'de' MMMM", { locale: es })} - ${selectedDate.toTimeString().slice(0, 5)}hs`} readOnly />
+            <input id="reservar-datetime" type="text" value={`${format(selectedDate, "EEEE d 'de' MMMM", { locale: es })} - ${selectedDate.toTimeString().slice(0, 5)}hs`} readOnly />
 
             {!isGuest ? (
               <ClientAutocompleteFields
@@ -72,12 +72,13 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
                 <label className="block text-sm font-medium mb-1 mt-4">
                   Nombre
                 </label>
-                <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="Nombre y Apellido" />
+                <input id="reservar-guest-name" type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="Nombre y Apellido" />
 
                 <label className="block text-sm font-medium mb-1 mt-4">
                   Celular
                 </label>
                 <input
+                  id="reservar-guest-phone"
                   type="tel"
                   value={phone}
                   onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
@@ -92,7 +93,7 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
             <label className="block text-sm font-medium mb-1 mt-4">
               Servicio
             </label>
-            <select required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={selectedServiceId} onChange={e => setSelectedServiceId(Number(e.target.value))} >
+            <select id="reservar-service" required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={selectedServiceId} onChange={e => setSelectedServiceId(Number(e.target.value))} >
               <option value={-1} disabled style={{ color: "grey" }}>
                 Selecciona un servicio
               </option>
@@ -105,7 +106,7 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
           </div>
 
           <div className="flex justify-center mt-10">
-            <ReserveButton type="submit" loading={loading} disabled={isDisabled} />
+            <ReserveButton id="btn-reservar-submit" type="submit" loading={loading} disabled={isDisabled} />
           </div>
         </form>
       </Modal>

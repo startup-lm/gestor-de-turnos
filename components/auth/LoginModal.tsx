@@ -57,9 +57,10 @@ export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void;
             <label className="block text-sm font-medium mb-1 mt-3">
               Email
             </label>
-            <input data-testid="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="tumail@gmail.com" />
+            <input id="login-email" data-testid="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="tumail@gmail.com" />
 
             <InputPassword
+              id="login-password"
               data-testid="login-password"
               label="Contraseña"
               value={password}
@@ -69,7 +70,7 @@ export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void;
             />
 
             <div className="text-right text-xs mb-3 mt-1">
-              <button type="button" className="forgot-password-button" onClick={() => setForgotOpen(true)} >
+              <button id="btn-forgot-password" type="button" className="forgot-password-button" onClick={() => setForgotOpen(true)} >
                 ¿Olvidaste tu contraseña?
               </button>
             </div>
@@ -77,7 +78,7 @@ export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void;
 
           <div className="flex justify-center mt-10">
             <div data-testid="login-submit-wrapper">
-              <LoginButton type="submit" loading={loading} disabled={isDisabled} onMouseEnter={() => router.prefetch("/turnos")} />
+              <LoginButton id="btn-login-submit" type="submit" loading={loading} disabled={isDisabled} onMouseEnter={() => router.prefetch("/turnos")} />
             </div>
           </div>
         </form>

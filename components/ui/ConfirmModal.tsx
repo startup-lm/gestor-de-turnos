@@ -21,9 +21,9 @@ export default function ConfirmModal({ title, onConfirm, onCancel,loading,button
         </h2>
         <div className="flex justify-center mt-10">
           {button === "delete" ? (
-            <DeleteButton onClick={onConfirm} loading={loading} />
+            <DeleteButton id="btn-confirm-delete" onClick={onConfirm} loading={loading} />
           ) : (
-            <LogoutButton onClick={onConfirm} loading={loading} />
+            <LogoutButton id="btn-confirm-logout" onClick={onConfirm} loading={loading} />
           )}
         </div>
       </div>

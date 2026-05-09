@@ -114,6 +114,7 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
               Barbero
             </label>
             <BarberSelector
+              id="block-barber"
               barbers={barbers ?? []}
               selectedBarberId={selectedBarberId}
               onChange={setSelectedBarberId}
@@ -135,6 +136,7 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
 
             <label className="block text-sm font-medium mb-1 mt-4">
               <input
+                id="block-use-range"
                 type="checkbox"
                 checked={useRange}
                 onChange={(e) => setUseRange(e.target.checked)}
@@ -161,6 +163,7 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
 
             <div className="flex space-x-6 my-4">
               <TimeSelect
+                id="block-start-time"
                 label="Inicio"
                 value={startTime}
                 options={allAppointments}
@@ -168,6 +171,7 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
                 className="flex-1"
               />
               <TimeSelect
+                id="block-end-time"
                 label="Fin"
                 value={endTime}
                 options={endTimeOptions.filter((t) => t > startTime)}
@@ -179,11 +183,11 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
             <label className="block text-sm font-medium mb-1 mt-4">
               Motivo
             </label>
-            <input value={reason} onChange={(e) => setReason(e.target.value)} required />
+            <input id="block-reason" value={reason} onChange={(e) => setReason(e.target.value)} required />
           </div>
 
           <div className="flex justify-center mt-10">
-            <BlockButton type="submit" disabled={isDisabled} loading={loading} />
+            <BlockButton id="btn-block-submit" type="submit" disabled={isDisabled} loading={loading} />
           </div>
         </form>
       </Modal>

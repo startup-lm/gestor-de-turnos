@@ -18,6 +18,7 @@ export default function BarberCheckbox({ barbers, selectedBarberId, onChange, }:
         const isSelected = b.id === selectedBarberId;
         return (
           <button key={b.id} type="button" onClick={() => onChange(b.id!)}
+            data-testid={`barber-checkbox-${b.id}`}
             className={`w-36 h-30 justify-items-center barber-checkbox ${isSelected ? "selected" : ""} `} >
             <Image
               src={b.image || logo}

@@ -111,6 +111,7 @@ export default function ClientAutocompleteFields({
       <label className="block text-sm font-medium mb-1 mt-4">Cliente</label>
       <div className="relative">
         <input
+          id="client-name"
           type="text"
           value={name}
           onChange={(e) => handleNameChange(e.target.value)}
@@ -129,6 +130,7 @@ export default function ClientAutocompleteFields({
       <div className="relative flex items-center space-x-1">
         <div className="relative flex-1">
           <input
+            id="client-phone"
             type="text"
             value={phone}
             onChange={(e) => handlePhoneChange(e.target.value)}
@@ -145,6 +147,7 @@ export default function ClientAutocompleteFields({
         </div>
         {showWhatsapp && (
           <button
+            id="btn-client-whatsapp"
             type="button"
             onClick={() => sendWhatsAppMessage("Hola, te escribimos por lo siguiente...", phone)}
             className="btn-whatsapp !rounded-lg !px-2 !py-1.5"

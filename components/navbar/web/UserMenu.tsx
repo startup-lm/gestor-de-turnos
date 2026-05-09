@@ -53,6 +53,7 @@ export default function UserMenu() {
           <ul className="text-sm divide-y divide-[var(--primary)]/50">
             <li>
               <Link
+                id="web-nav-profile"
                 href={`/barbers/${barberId}`}
                 onClick={() => setMenuOpen(false)}
                 className="user-menu-options"

@@ -24,7 +24,7 @@ export default function NavbarLogoutButton({ className = "", onLoggedOut, onCanc
 
   return (
     <>
-      <button onClick={() => setConfirmOpen(true)} className={className} aria-label="Cerrar sesión" >
+      <button id="btn-navbar-logout" onClick={() => setConfirmOpen(true)} className={className} aria-label="Cerrar sesión" >
         <LogOut className="w-4 h-4 mr-2 inline" />
         Cerrar sesión
       </button>

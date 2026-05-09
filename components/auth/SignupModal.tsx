@@ -63,14 +63,15 @@ export default function SignupModal({ onClose }: Readonly<{ onClose: () => void 
             <label className="block text-sm font-medium mb-1 mt-4">
               Nombre<span className="text-red-500"> *</span>
             </label>
-            <input value={name} onChange={(e) => setName(e.target.value)} required
+            <input id="signup-name" value={name} onChange={(e) => setName(e.target.value)} required
             />
             <label className="block text-sm font-medium mb-1 mt-4">
               Email<span className="text-red-500"> *</span>
             </label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="tumail@gmail.com" />
+            <input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="tumail@gmail.com" />
 
             <InputPassword
+              id="signup-password"
               label="Contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -81,7 +82,7 @@ export default function SignupModal({ onClose }: Readonly<{ onClose: () => void 
 
             <label className="block text-sm font-medium mb-1 mt-4">Ganancia por corte</label>
             <div className="relative w-30">
-              <input type="number" min="0" max="100" step="0.1" value={Number(commission)}
+              <input id="signup-commission" type="number" min="0" max="100" step="0.1" value={Number(commission)}
                 onChange={(e) => setCommission(e.target.value)} className="border rounded p-2 pr-8" />
               <span className="font-medium absolute right-2 top-1/2 -translate-y-1/2">%</span>
             </div>
@@ -89,16 +90,16 @@ export default function SignupModal({ onClose }: Readonly<{ onClose: () => void 
             <label className="block text-sm font-medium mb-1 mt-4">
               Instagram<span className="text-red-500"> *</span>
             </label>
-            <input value={instagram} onChange={(e) => setInstagram(e.target.value)} required placeholder="@instagram" />
+            <input id="signup-instagram" value={instagram} onChange={(e) => setInstagram(e.target.value)} required placeholder="@instagram" />
 
             <label className="block text-sm font-medium mb-1 mt-4">
               Foto de perfil
             </label>
-            <input type="file" accept="image/*" onChange={(e) => e.target.files && setImage(e.target.files[0])} />
+            <input id="signup-profile-image" type="file" accept="image/*" onChange={(e) => e.target.files && setImage(e.target.files[0])} />
           </div>
 
           <div className="flex justify-center mt-10">
-            <AddButton type="submit" loading={loading} disabled={isDisabled} />
+            <AddButton id="btn-signup-submit" type="submit" loading={loading} disabled={isDisabled} />
           </div>
 
         </form>

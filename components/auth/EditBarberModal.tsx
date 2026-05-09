@@ -86,6 +86,7 @@ export default function EditBarberModal({ onClose }: Readonly<{ onClose: () => v
             <div>
               <label className="block text-sm font-medium mb-1">Barbero</label>
               <BarberSelector
+                id="edit-barber-selector"
                 barbers={barbers ?? []}
                 selectedBarberId={selectedBarberId}
                 onChange={handleBarberChange}
@@ -96,7 +97,7 @@ export default function EditBarberModal({ onClose }: Readonly<{ onClose: () => v
             <div className={formDisabled ? "opacity-50 pointer-events-none" : ""}>
               <label className="block text-sm font-medium mb-1">Ganancia por corte</label>
               <div className="relative w-30">
-                <input type="number" min="0" max="100" step="0.1" value={Number(commission)}
+                <input id="edit-barber-commission" type="number" min="0" max="100" step="0.1" value={Number(commission)}
                   onChange={(e) => setCommission(e.target.value)} disabled={formDisabled} className="border rounded p-2 pr-8" />
                 <span className="font-medium absolute right-2 top-1/2 -translate-y-1/2">%</span>
               </div>
@@ -105,7 +106,7 @@ export default function EditBarberModal({ onClose }: Readonly<{ onClose: () => v
             <div className={formDisabled ? "opacity-50 pointer-events-none" : ""}>
               <label className="block text-sm font-medium mb-1">Ganancia por venta</label>
               <div className="relative w-30">
-                <input type="number" min="0" max="100" step="0.1" value={Number(saleCommission)}
+                <input id="edit-barber-sale-commission" type="number" min="0" max="100" step="0.1" value={Number(saleCommission)}
                   onChange={(e) => setSaleCommission(e.target.value)} disabled={formDisabled} className="border rounded p-2 pr-8" />
                 <span className="font-medium absolute right-2 top-1/2 -translate-y-1/2">%</span>
               </div>
@@ -120,6 +121,7 @@ export default function EditBarberModal({ onClose }: Readonly<{ onClose: () => v
                     className="flex items-center gap-2 cursor-pointer select-none"
                   >
                     <input
+                      id={`edit-barber-status-${label.toLowerCase()}`}
                       type="radio"
                       name="status"
                       checked={statusEnabled === value}
@@ -144,6 +146,7 @@ export default function EditBarberModal({ onClose }: Readonly<{ onClose: () => v
 
           <div className="flex justify-center mt-10">
             <SaveButton
+              id="btn-edit-barber-save"
               type="submit"
               disabled={!canSave}
               loading={loading}

@@ -33,7 +33,7 @@ export default function MobileNavbar({ paths }: Readonly<{ paths: NavPath[]; }>)
             const Icon = p.Icon;
             return (
               <li key={p.href} className="w-full">
-                <Link href={p.href} onClick={closeMenu} prefetch className="block w-full text-left p-2 rounded" >
+                <Link id={`mobile-nav-link-${p.href.replace(/\//g, "")}`} href={p.href} onClick={closeMenu} prefetch className="block w-full text-left p-2 rounded" >
                   <Icon className="w-4 h-4 mr-2 mb-1 inline" />
                   {p.label}
                 </Link>
@@ -42,7 +42,7 @@ export default function MobileNavbar({ paths }: Readonly<{ paths: NavPath[]; }>)
           })}
           {role !== "guest" && (
             <li>
-              <Link href={`/barbers/${barberId}`} onClick={closeMenu} prefetch className="block w-full text-left p-2 rounded" >
+              <Link id="mobile-nav-profile" href={`/barbers/${barberId}`} onClick={closeMenu} prefetch className="block w-full text-left p-2 rounded" >
                 <UserRoundCog className="w-4 h-4 mr-2 mb-1 inline" />
                 Mi Perfil
               </Link>

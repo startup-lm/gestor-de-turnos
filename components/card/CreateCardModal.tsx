@@ -57,7 +57,7 @@ export default function CreateCardModal({ type, onClose }: Readonly<Props>) {
     <>
       <Modal onClose={onClose}>
         <h2 className="text-xl font-bold mb-4 text-center">
-          Crear {type}
+          Agregar {type}
         </h2>
         <form onSubmit={handleSave} className="space-y-4 px-8">
           <div className="text-left rounded-2lg mt-5 shadow-lg">
@@ -66,6 +66,7 @@ export default function CreateCardModal({ type, onClose }: Readonly<Props>) {
               Nombre<span className="text-red-500"> *</span>
             </label>
             <input
+              id="card-name"
               className="border p-2 rounded w-full"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -77,6 +78,7 @@ export default function CreateCardModal({ type, onClose }: Readonly<Props>) {
               Descripción<span className="text-red-500"> *</span>
             </label>
             <textarea
+              id="card-description"
               className="border p-2 rounded w-full"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -88,6 +90,7 @@ export default function CreateCardModal({ type, onClose }: Readonly<Props>) {
               Precio<span className="text-red-500"> *</span>
             </label>
             <input
+              id="card-price"
               type="number"
               inputMode="decimal"
               min="0"
@@ -105,6 +108,7 @@ export default function CreateCardModal({ type, onClose }: Readonly<Props>) {
                   Duración del servicio (en minutos)<span className="text-red-500"> *</span>
                 </label>
                 <input 
+                  id="card-duration"
                   type="number" 
                   inputMode="decimal" 
                   value={duration} 
@@ -119,6 +123,7 @@ export default function CreateCardModal({ type, onClose }: Readonly<Props>) {
               Imágen<span className="text-red-500"> *</span>
             </label>
             <input
+              id="card-image"
               type="file"
               accept="image/*"
               onChange={(e) =>
@@ -129,7 +134,7 @@ export default function CreateCardModal({ type, onClose }: Readonly<Props>) {
           </div>
 
           <div className="flex justify-center mt-10">
-            <AddButton type="submit" loading={loading} disabled={isDisabled} />
+            <AddButton id="btn-card-add" type="submit" loading={loading} disabled={isDisabled} />
           </div>
         </form>
       </Modal>
