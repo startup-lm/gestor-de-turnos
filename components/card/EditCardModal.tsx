@@ -62,35 +62,35 @@ export default function EditCardModal({ id, name, description, price, duration, 
             <label className="block text-sm font-medium mb-1" >
               Nombre
             </label>
-            <input value={newName} onChange={e => setNewName(e.target.value)} required className="mb-4" />
+            <input id="edit-card-name" value={newName} onChange={e => setNewName(e.target.value)} required className="mb-4" />
 
             <label className="block text-sm font-medium mb-1">
               Descripción
             </label>
-            <textarea className="border p-2 rounded w-full mb-4" value={newDesc} onChange={e => setNewDesc(e.target.value)} required />
+            <textarea id="edit-card-description" className="border p-2 rounded w-full mb-4" value={newDesc} onChange={e => setNewDesc(e.target.value)} required />
 
             <label className="block text-sm font-medium mb-1">
               Precio
             </label>
-            <input type="number" inputMode="decimal" value={newPrice} onChange={e => setNewPrice(Number(e.target.value))} required className="mb-4" />
+            <input id="edit-card-price" type="number" inputMode="decimal" value={newPrice} onChange={e => setNewPrice(Number(e.target.value))} required className="mb-4" />
 
             {type === "Servicio" && (
               <>
                 <label className="block text-sm font-medium mb-1">
                   Duración del servicio (en minutos)
                 </label>
-                <input type="number" inputMode="decimal" value={newDuration} onChange={e => setNewDuration(Number(e.target.value))} required className="mb-4" />
+                <input id="edit-card-duration" type="number" inputMode="decimal" value={newDuration} onChange={e => setNewDuration(Number(e.target.value))} required className="mb-4" />
               </>
             )}
 
             <label className="block text-sm font-medium mb-1">
               Modificar imagen
             </label>
-            <input type="file" accept="image/*" onChange={(e) => e.target.files && setSelectedFile(e.target.files[0])} />
+            <input id="edit-card-image" type="file" accept="image/*" onChange={(e) => e.target.files && setSelectedFile(e.target.files[0])} />
           </div>
 
           <div className="flex justify-center mt-10">
-            <SaveButton type="submit" disabled={isDisabled} loading={loading} />
+            <SaveButton id="btn-edit-card-save" type="submit" disabled={isDisabled} loading={loading} />
           </div>
 
         </form>

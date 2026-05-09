@@ -23,7 +23,7 @@ test.describe('Páginas Públicas (Guest)', () => {
   test('Debe cargar la página Nosotros con información y mapa', async ({ page }) => {
     await page.goto('/nosotros');
     // Verificar título principal
-    await expect(page.getByRole('heading', { name: 'Nuestro Equipo' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sobre Nosotros' })).toBeVisible();
     
     // Verificar que los barberos aparezcan en la página
     const barbers = page.locator('.grid > div');
@@ -31,7 +31,7 @@ test.describe('Páginas Públicas (Guest)', () => {
 
     // Verificar mapa y redes sociales
     await expect(page.getByRole('heading', { name: '¿Dónde estamos?' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Nuestras Redes' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Nuestras Redes Sociales' })).toBeVisible();
     
     // Verificar que el iframe del mapa esté cargado
     const iframe = page.locator('iframe');

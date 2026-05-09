@@ -16,7 +16,7 @@ export default function MobileAuthButtons({ role, closeMenu }: Readonly<{ role: 
   return (
     <div className="mt-auto p-4 w-full flex-shrink-0 flex flex-col items-start">
       {role === "guest" ? (
-        <button onClick={handleOpen} className="btn-auth-mobile text-sm !p-2" aria-label="Iniciar sesión" >
+        <button id="btn-mobile-login" onClick={handleOpen} className="btn-auth-mobile text-sm !p-2" aria-label="Iniciar sesión" >
           <LogIn className="w-4 h-4 mr-2 mb-1 inline" />
           Iniciar sesión
         </button>

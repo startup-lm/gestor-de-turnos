@@ -30,7 +30,7 @@ export default function CancelAppointmentModal({ appointment, onConfirm, onCance
           </p>
         </div>
         <div className="flex justify-center mt-10">
-          <CancelButton onClick={onConfirm} loading={loading} />
+          <CancelButton id="btn-cancel-appt-confirm" onClick={onConfirm} loading={loading} />
         </div>
       </div>
     </Modal>

@@ -72,6 +72,7 @@ export default function RegisterSaleModal({ onClose }: Readonly<{ onClose: () =>
               Barbero
             </label>
             <BarberSelector
+              id="sale-barber"
               barbers={barbers ?? []}
               selectedBarberId={selectedBarberId}
               onChange={setSelectedBarberId}
@@ -81,7 +82,7 @@ export default function RegisterSaleModal({ onClose }: Readonly<{ onClose: () =>
             <label className="block text-sm font-medium mb-1 mt-4">
               Producto
             </label>
-            <select required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={selectedProductId} onChange={e => setSelectedProductId(Number(e.target.value))} >
+            <select id="sale-product" required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={selectedProductId} onChange={e => setSelectedProductId(Number(e.target.value))} >
               <option value={-1} disabled style={{ color: "grey" }}>
                 Selecciona un producto
               </option>
@@ -95,25 +96,25 @@ export default function RegisterSaleModal({ onClose }: Readonly<{ onClose: () =>
             <label className="block text-sm font-medium mb-1 mt-4">
               Precio
             </label>
-            <input type="number" value={price} onChange={e => setPrice(Number(e.target.value))} required min={0} />
+            <input id="sale-price" type="number" value={price} onChange={e => setPrice(Number(e.target.value))} required min={0} />
 
             <label className="block text-sm font-medium mb-1 mt-4">
               Cantidad
             </label>
-            <input type="number" value={quantity} onChange={e => setQuantity(Number(e.target.value))} required min={0} />
+            <input id="sale-quantity" type="number" value={quantity} onChange={e => setQuantity(Number(e.target.value))} required min={0} />
 
             <label className="block text-sm font-medium mb-1 mt-4">
               Observaciones
             </label>
-            <input value={details} onChange={(e) => setDetailes(e.target.value)} />
+            <input id="sale-details" value={details} onChange={(e) => setDetailes(e.target.value)} />
 
             <label className="block text-sm font-medium mb-1 mt-4">
               Total a cobrar
             </label>
-            <input type="number" value={price * quantity} readOnly />
+            <input id="sale-total" type="number" value={price * quantity} readOnly />
           </div>
           <div className="flex justify-center mt-10">
-            <PayButton type="submit" disabled={isDisabled} loading={loading} />
+            <PayButton id="btn-sale-submit" type="submit" disabled={isDisabled} loading={loading} />
           </div>
         </form>
       </Modal>

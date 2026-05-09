@@ -47,7 +47,7 @@ export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: R
             <label className="block text-sm font-medium mb-1 mt-4">
               Servicio
             </label>
-            <select required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={selectedServiceId} onChange={e => setSelectedServiceId(Number(e.target.value))} >
+            <select id="paid-service" required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={selectedServiceId} onChange={e => setSelectedServiceId(Number(e.target.value))} >
               <option value={-1} disabled style={{ color: "grey" }}>
                 Selecciona un servicio
               </option>
@@ -61,18 +61,18 @@ export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: R
             <label className="block text-sm font-medium mb-1 mt-4">
               Precio
             </label>
-            <input type="number" value={price} onChange={e => setPrice(Number(e.target.value))} required className="mb-4 w-full border p-2 rounded bg-[var(--background)] text-[var(--foreground)]" min={0}/>
+            <input id="paid-price" type="number" value={price} onChange={e => setPrice(Number(e.target.value))} required className="mb-4 w-full border p-2 rounded bg-[var(--background)] text-[var(--foreground)]" min={0}/>
 
             <label className="block text-sm font-medium mb-1 mt-4">
               Método de Pago
             </label>
-            <select required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+            <select id="paid-payment-method" required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
               <option value="Efectivo">Efectivo</option>
               <option value="MercadoPago">Mercado Pago</option>
             </select>
           </div>
           <div className="flex justify-center mt-10">
-            <PayButton type="submit" disabled={isDisabled} loading={loading} />
+            <PayButton id="btn-paid-submit" type="submit" disabled={isDisabled} loading={loading} />
           </div>
         </form>
       </Modal>

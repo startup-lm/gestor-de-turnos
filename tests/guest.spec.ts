@@ -30,26 +30,32 @@ test.describe('Flujo Público (Guest)', () => {
   test('Debe poder hacer una reserva exitosa y ver el modal', async ({ page }) => {
     await page.goto('/turnos');
     
+    // Primero debemos seleccionar un barbero (requisito para que el calendario sea interactivo)
+    const barberBtn = page.locator('.barber-checkbox').first();
+    await expect(barberBtn).toBeVisible({ timeout: 10000 });
+    await barberBtn.click();
+    
+    // Esperar a que el calendario sea interactivo (se quita el overlay de opacidad)
+    await page.waitForTimeout(500);
+    
     // Hacer clic en un slot libre en el calendario (react-big-calendar usa .rbc-time-slot)
-    // Para simplificar, buscamos un slot en la vista semanal o diaria
     const todaySlot = page.locator('.rbc-time-slot').nth(20); // click a media mañana
     await todaySlot.click({ force: true });
     
     // Se debería abrir el modal de reserva
-    const modalTitle = page.locator('h2', { hasText: /Reservar/i });
+    const modalTitle = page.locator('h2', { hasText: /Reserva tu turno/i });
     await expect(modalTitle).toBeVisible();
 
-    // Llenar el formulario
+    // Llenar el formulario (vista guest: campos nombre y teléfono)
     await page.fill('input[placeholder*="Nombre"]', 'Playwright Tester');
-    await page.fill('input[placeholder*="Tel"]', '1122334455'); // 10 dígitos validos
+    await page.fill('input[placeholder*="1123456789"]', '1122334455'); // 10 dígitos válidos
     
     // Seleccionar servicio
-    const selectService = page.locator('select');
+    const selectService = page.locator('#reservar-service');
     await selectService.selectOption({ index: 1 }); // Selecciona la primera opción válida (no el placeholder)
 
     // Clic en el botón "Reservar"
-    // Puede ser que el modal tenga un botón tipo submit o con texto Reservar
-    await page.locator('button:has-text("Reservar")').click();
+    await page.locator('#btn-reservar-submit').click();
 
     // Debería aparecer un PopupModal con texto "exito" o "Número de turno"
     const successMsg = page.locator('text=/éxito|Número de turno/i');

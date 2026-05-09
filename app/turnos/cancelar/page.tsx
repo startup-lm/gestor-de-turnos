@@ -73,11 +73,11 @@ export default function CancelarTurnoPage() {
             <label className="block text-sm font-medium mb-2">
               Ingresa tu número de celular
             </label>
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required placeholder="11-2345-6789" />
+            <input id="cancel-phone" type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required placeholder="11-2345-6789" />
           </div>
 
           <div className="flex justify-center mt-10">
-            <CancelButton type="submit" disabled={isDisabled} loading={loading} />
+            <CancelButton id="btn-cancel-search" type="submit" disabled={isDisabled} loading={loading} />
           </div>
         </form>
 

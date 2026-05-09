@@ -25,7 +25,7 @@ interface Props {
 export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
   const { barberId, role } = useAuth();
   const barbers = role === "admin" ? initialBarbers : initialBarbers.filter(b => b.id === barberId);
-  const [selectedBarberId, setSelectedBarberId] = useState(barberId);
+  const [selectedBarberId, setSelectedBarberId] = useState(role === "admin" ? 0 : barberId);
   const today = useMemo(() => {
     const d = new Date();
     d.setHours(13, 0, 0, 0);
@@ -75,6 +75,7 @@ export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
             startDate={startDate}
             endDate={endDate}
             onDateChange={handleDateChange}
+            showAll={role === "admin"}
           />
         </aside>
 

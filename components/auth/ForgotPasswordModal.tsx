@@ -40,6 +40,7 @@ export default function ForgotPasswordModal({ onClose }: Readonly<{ onClose: () 
               Email
             </label>
             <input
+              id="forgot-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -48,7 +49,7 @@ export default function ForgotPasswordModal({ onClose }: Readonly<{ onClose: () 
             />
           </div>
           <div className="flex justify-center mt-10">
-            <SendButton type="submit" loading={loading} disabled={isDisabled} />
+            <SendButton id="btn-forgot-submit" type="submit" loading={loading} disabled={isDisabled} />
           </div>
         </form>
       </Modal>

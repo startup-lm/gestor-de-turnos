@@ -69,7 +69,7 @@ export default function AppointmentDetailsModal({
             <label className="block text-sm font-medium mb-1 mt-4">
               Barbero
             </label>
-            <BarberSelector barbers={barbers ?? []} selectedBarberId={selectedBarberId} onChange={setSelectedBarberId} className="w-full" />
+            <BarberSelector id="appt-barber" barbers={barbers ?? []} selectedBarberId={selectedBarberId} onChange={setSelectedBarberId} className="w-full" />
 
             {isBlockedRange ? (
               <>
@@ -79,14 +79,14 @@ export default function AppointmentDetailsModal({
                 <DatePickerField date={date} onChange={setDate} />
 
                 <div className="flex space-x-6 my-4">
-                  <TimeSelect label="Inicio" value={startTime} options={allAppointments} onChange={setStartTime} className="flex-1" />
-                  <TimeSelect label="Fin" value={endTime} options={allAppointments.filter((t) => t > startTime)} onChange={setEndTime} className="flex-1" />
+                  <TimeSelect id="appt-blocked-start-time" label="Inicio" value={startTime} options={allAppointments} onChange={setStartTime} className="flex-1" />
+                  <TimeSelect id="appt-blocked-end-time" label="Fin" value={endTime} options={allAppointments.filter((t) => t > startTime)} onChange={setEndTime} className="flex-1" />
                 </div>
 
                 <label className="block text-sm font-medium mb-1 mt-4">
                   Motivo
                 </label>
-                <input type="text" value={client} onChange={(e) => setClient(e.target.value)} />
+                <input id="appt-blocked-reason" type="text" value={client} onChange={(e) => setClient(e.target.value)} />
               </>
             ) : (
               <>
@@ -98,7 +98,7 @@ export default function AppointmentDetailsModal({
                     <DatePickerField date={date} onChange={setDate} />
                   </div>
                   <div className="w-[30%]">
-                    <TimeSelect label="" value={startTime} options={allAppointments} onChange={setStartTime} className="h-full" selectClassName="h-full" />
+                    <TimeSelect id="appt-start-time" label="" value={startTime} options={allAppointments} onChange={setStartTime} className="h-full" selectClassName="h-full" />
                   </div>
                 </div>
 
@@ -114,7 +114,7 @@ export default function AppointmentDetailsModal({
                 <label className="block text-sm font-medium mb-1 mt-4">
                   Servicio
                 </label>
-                <select required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={selectedServiceId} onChange={e => setSelectedServiceId(Number(e.target.value))} >
+                <select id="appt-service" required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={selectedServiceId} onChange={e => setSelectedServiceId(Number(e.target.value))} >
                   <option value={-1} disabled style={{ color: "grey" }}>
                     Selecciona un servicio
                   </option>
@@ -130,7 +130,7 @@ export default function AppointmentDetailsModal({
                     <label className="block text-sm font-medium mb-1 mt-4">
                       Precio cobrado
                     </label>
-                    <input type="text" value={price} onChange={e => setPrice(Number(e.target.value))} />
+                    <input id="appt-price" type="text" value={price} onChange={e => setPrice(Number(e.target.value))} />
                   </>
                 )}
               </>
@@ -139,12 +139,12 @@ export default function AppointmentDetailsModal({
           </div>
 
           <div className="flex justify-center mt-10">
-            <SaveButton type="submit" disabled={!hasChanges} loading={loadingUpdate} />
+            <SaveButton id="btn-appt-save" type="submit" disabled={!hasChanges} loading={loadingUpdate} />
           </div>
 
           <div className="flex justify-center gap-5 mt-5">
-            <DeleteButton disabled={appointment.paid} loading={loading} onClick={() => setConfirmModal(true)} />
-            <ChargeButton onClick={() => setShowService(true)} disabled={appointment.paid || isBlockedRange} loading={loading} isPaid={appointment.paid} />
+            <DeleteButton id="btn-appt-delete" disabled={appointment.paid} loading={loading} onClick={() => setConfirmModal(true)} />
+            <ChargeButton id="btn-appt-charge" onClick={() => setShowService(true)} disabled={appointment.paid || isBlockedRange} loading={loading} isPaid={appointment.paid} />
           </div>
         </form>
       </Modal>

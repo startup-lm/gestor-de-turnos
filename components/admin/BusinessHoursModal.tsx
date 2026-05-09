@@ -126,6 +126,7 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
             <div>
               <label className="block font-medium mb-1">Apertura</label>
               <input
+                id="biz-open-time"
                 type="time"
                 value={fmt(hours.open_time)}
                 className="time-input border rounded px-1 py-1 w-full"
@@ -137,6 +138,7 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
             <div>
               <label className="block font-medium mb-1">Cierre</label>
               <input
+                id="biz-close-time"
                 type="time"
                 value={fmt(hours.close_time)}
                 className="time-input border rounded px-1 py-1 w-full"
@@ -148,6 +150,7 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
             <div className="sm:col-span-2 mt-4">
               <label className="inline-flex items-center gap-2 select-none">
                 <input
+                  id="biz-lunch-enabled"
                   type="checkbox"
                   checked={lunchEnabled}
                   onChange={(e) => onToggleLunch(e.target.checked)}
@@ -159,6 +162,7 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
             <div>
               <label className="block font-medium mb-1">Desde</label>
               <input
+                id="biz-lunch-start"
                 type="time"
                 disabled={!lunchEnabled}
                 value={fmt(hours.lunch_start)}
@@ -175,6 +179,7 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
             <div>
               <label className="block font-medium mb-1">Hasta</label>
               <input
+                id="biz-lunch-end"
                 type="time"
                 disabled={!lunchEnabled}
                 value={fmt(hours.lunch_end)}
@@ -196,7 +201,7 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
                 const isOpen = !hours.closed_days.includes(idx);
                 return (
                   <label key={idx} className="inline-flex items-center gap-1">
-                    <input type="checkbox" checked={isOpen} onChange={() => toggleDay(idx)} />
+                    <input id={`biz-day-${idx}`} type="checkbox" checked={isOpen} onChange={() => toggleDay(idx)} />
                     {label}
                   </label>
                 );
@@ -210,6 +215,7 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
           <div className="mt-6 border-t pt-4 text-sm">
             <label className="block font-medium mb-1">Intervalo de turnos</label>
             <select
+              id="biz-slot-step"
               className="border rounded px-2 py-1"
               value={settings.slot_step_minutes}
               onChange={(e) =>
@@ -224,7 +230,7 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
           </div>
 
           <div className="flex justify-center mt-10">
-            <SaveButton type="submit" disabled={isDisabled} loading={loading} />
+            <SaveButton id="btn-biz-save" type="submit" disabled={isDisabled} loading={loading} />
           </div>
         </form>
       </Modal>

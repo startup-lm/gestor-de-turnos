@@ -55,6 +55,7 @@ export default function ResetPasswordPage() {
         <form onSubmit={handleSubmit}>
 
           <InputPassword
+            id="reset-new-password"
             label="Nueva contraseña"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
@@ -63,6 +64,7 @@ export default function ResetPasswordPage() {
           />
 
           <InputPassword
+            id="reset-confirm-password"
             label="Confirmar nueva contraseña"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -71,7 +73,7 @@ export default function ResetPasswordPage() {
           />
 
           <div className="flex justify-center mt-10">
-            <SaveButton type="submit" disabled={isDisabled} loading={loading} />
+            <SaveButton id="btn-reset-password-submit" type="submit" disabled={isDisabled} loading={loading} />
           </div>
 
         </form>
