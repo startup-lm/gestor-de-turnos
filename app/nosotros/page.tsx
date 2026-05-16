@@ -1,16 +1,31 @@
 import { getBarbers } from "@/lib/repository/barbers";
 import BarberCard from "@/components/nosotros/BarberCard";
 import BarberSocialMedia from "@/components/nosotros/BarberSocialMedia";
-import { socialMediaList } from "@/utils/socialMedia";
 import GoogleMapsLocation from "@/components/nosotros/GoogleMapsLocation";
-import { nuestraHistoria } from "@/utils/nuestraHistoria";
+import { getBusinessSettings } from "@/lib/repository/businessSettings";
+import { FaInstagram, FaFacebook, FaTiktok, FaWhatsapp, FaLink } from "react-icons/fa";
 import Image from "next/image";
 import local from "@/public/images/local.png";
 
 export const revalidate = 60;
 
 export default async function NosotrosPage() {
-  const barbers = await getBarbers();
+  const [barbers, settings] = await Promise.all([getBarbers(), getBusinessSettings()]);
+  
+  const iconMap: Record<string, React.ReactNode> = {
+    instagram: <FaInstagram size={30} className="inline-block" />,
+    facebook: <FaFacebook size={30} className="inline-block" />,
+    tiktok: <FaTiktok size={30} className="inline-block" />,
+    whatsapp: <FaWhatsapp size={30} className="inline-block" />,
+  };
+  
+  const ourStory = settings.our_story || [
+    'Todo empezó en 2016, cuando armé una silla, un espejo y mi primera máquina en el garage de mi casa. Lo que arrancó como un hobby pronto se transformó en una pasión: brindar buenos cortes, charlas relajadas y un espacio donde todos se sintieran cómodos.',
+    'Con el tiempo, esa pequeña idea creció y dio lugar a este lugar, pensado para que cada visita sea una experiencia. Acá no se trata solo de cortarte el pelo o arreglarte la barba: se trata de dedicarte tiempo, escucharte y cuidar cada detalle.',
+    'Te esperamos para que disfrutes de un buen corte, un afeitado prolijo y un rato de desconexión de la rutina.'
+  ];
+  
+  const activeSocials = (settings.social_media || []).filter(s => s.active);
 
   return (
     <div className="p-5 flex flex-col items-center text-center">
@@ -34,9 +49,9 @@ export default async function NosotrosPage() {
         <section className="h-full flex flex-col bg-[var(--bg-carousel)] p-6 rounded-xl shadow-md">
           <h2 className="text-2xl font-semibold mb-4">Nuestra Historia</h2>
           <div className="flex-1 w-full px-4 text-left space-y-4">
-            {nuestraHistoria.map((p, i) => (
-              <p key={i} className={i === nuestraHistoria.length - 1 ? "font-semibold" : ""}>
-                <span dangerouslySetInnerHTML={{ __html: p }} />
+            {ourStory.map((p, i) => (
+              <p key={i} className={i === ourStory.length - 1 ? "font-semibold" : ""}>
+                <span>{p}</span>
               </p>
             ))}
           </div>
@@ -66,9 +81,14 @@ export default async function NosotrosPage() {
         <section className="h-full flex flex-col bg-[var(--bg-carousel)] p-6 rounded-xl shadow-md">
           <h2 className="text-2xl font-semibold mb-4">Nuestras Redes Sociales</h2>
           <div className="flex flex-col items-center space-y-10 mt-2 text-xl">
-            {socialMediaList.map(({ name, Icon, url, text }) => (
-              <BarberSocialMedia key={name} url={url} icon={<Icon size={30} className="inline-block" />} text={text} />
-            ))}
+            {activeSocials.length > 0 ? activeSocials.map((social) => (
+              <BarberSocialMedia 
+                key={social.name} 
+                url={social.url} 
+                icon={iconMap[social.name] || <FaLink size={30} className="inline-block" />} 
+                text={`Contactanos por ${social.name.charAt(0).toUpperCase() + social.name.slice(1)}`} 
+              />
+            )) : <p className="text-sm text-gray-500">No hay redes sociales configuradas.</p>}
           </div>
         </section>
 

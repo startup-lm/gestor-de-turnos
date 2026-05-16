@@ -68,6 +68,7 @@ export async function POST(request: Request) {
 
   if (error) return errorResponse(error.message);
   revalidateTag("appointments");
+  revalidateTag(`appointments-${barber_id}-${date.split("T")[0]}`);
   return NextResponse.json({ success: true, id: data?.[0]?.id });
 }
 
@@ -82,13 +83,21 @@ export async function PUT(request: Request) {
   const { appointmentId, isPaid, price, payment_method } = parsed.data;
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("appointments")
     .update({ paid: isPaid, price, payment_method })
-    .eq("id", appointmentId);
+    .eq("id", appointmentId)
+    .select();
 
   if (error) return errorResponse(error.message);
+  
   revalidateTag("appointments");
+  if (data && data.length > 0) {
+    const updated = data[0];
+    if (updated.barber_id && updated.date) {
+      revalidateTag(`appointments-${updated.barber_id}-${updated.date}`);
+    }
+  }
   return successResponse();
 }
 
@@ -112,7 +121,13 @@ export async function DELETE(request: Request) {
     .select();
   if (error) return errorResponse(error.message);
   if (!data || data.length === 0) return errorResponse("No existe ese número de turno", 404);
+  
+  const deletedAppt = data[0];
   revalidateTag("appointments");
+  if (deletedAppt.barber_id && deletedAppt.date) {
+    revalidateTag(`appointments-${deletedAppt.barber_id}-${deletedAppt.date}`);
+  }
+  
   return successResponse();
 }
 
@@ -126,12 +141,19 @@ export async function PATCH(request: Request) {
 
   const { appointmentId, updates } = parsed.data;
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("appointments")
     .update(updates)
-    .eq("id", appointmentId);
+    .eq("id", appointmentId)
+    .select();
 
   if (error) return errorResponse(error.message);
   revalidateTag("appointments");
+  if (data && data.length > 0) {
+    const updated = data[0];
+    if (updated.barber_id && updated.date) {
+      revalidateTag(`appointments-${updated.barber_id}-${updated.date}`);
+    }
+  }
   return successResponse();
 }

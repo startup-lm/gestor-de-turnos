@@ -13,13 +13,17 @@ import {
   MessageCircle,
   CreditCard,
   FileText,
-  CalendarDays
+  CalendarDays,
+  Share2,
+  BookOpen
 } from "lucide-react";
 import WhatsAppSettingsModal from "@/components/admin/WhatsAppSettingsModal";
 import PaymentSettingsModal from "@/components/admin/PaymentSettingsModal";
+import SocialMediaSettingsModal from "@/components/admin/SocialMediaSettingsModal";
+import OurStorySettingsModal from "@/components/admin/OurStorySettingsModal";
 
 export default function AdminPage() {
-  const [activeModal, setActiveModal] = useState<"whatsapp" | "payments" | "hours" | "block" | null>(null);
+  const [activeModal, setActiveModal] = useState<"whatsapp" | "payments" | "hours" | "block" | "social" | "story" | null>(null);
   const router = useRouter();
 
   const adminCards = [
@@ -31,6 +35,8 @@ export default function AdminPage() {
     { label: "Horarios", description: "Días de atención", icon: Clock, onClick: () => setActiveModal("hours") },
     { label: "WhatsApp", description: "Teléfono del local", icon: MessageCircle, onClick: () => setActiveModal("whatsapp") },
     { label: "Pagos", description: "Métodos aceptados", icon: CreditCard, onClick: () => setActiveModal("payments") },
+    { label: "Redes", description: "Links de RRSS", icon: Share2, onClick: () => setActiveModal("social") },
+    { label: "Historia", description: "Texto Nosotros", icon: BookOpen, onClick: () => setActiveModal("story") },
   ];
 
   return (
@@ -65,6 +71,8 @@ export default function AdminPage() {
       {activeModal === "payments" && <PaymentSettingsModal onClose={() => setActiveModal(null)} />}
       {activeModal === "block" && (<BlockDateModal onClose={() => setActiveModal(null)} />)}
       {activeModal === "hours" && <BusinessHoursModal onClose={() => setActiveModal(null)} />}
+      {activeModal === "social" && <SocialMediaSettingsModal onClose={() => setActiveModal(null)} />}
+      {activeModal === "story" && <OurStorySettingsModal onClose={() => setActiveModal(null)} />}
     </div>
   );
 }

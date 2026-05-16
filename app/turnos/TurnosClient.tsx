@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Spinner from "@/components/loading/Spinner";
+import { CalendarSkeleton } from "@/components/loading/Skeleton";
 import { Barber } from "@/lib/types/Barbers";
 import { Appointment } from "@/lib/types/Appointment";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -13,7 +14,7 @@ import { useTurnosStore } from "@/lib/store/useTurnosStore";
 
 const CustomCalendar = dynamic(() => import("@/components/calendar/CustomCalendar"), {
   ssr: false,
-  loading: () => (<div className="h-96 flex items-center justify-center"><Spinner /></div>)
+  loading: () => <CalendarSkeleton />
 });
 const ReservarModal = dynamic(() => import("@/components/turnos/ReservarModal"), { ssr: false, loading: () => null });
 const AppointmentDetailsModal = dynamic(() => import("@/components/turnos/AppointmentDetailsModal"), { ssr: false, loading: () => null });

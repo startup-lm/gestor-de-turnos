@@ -151,7 +151,7 @@ export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlo
             });
             const isPastForGuest = role === 'guest' && date < now;
             if (!isPastForGuest && !overlapsEvent) {
-              return { className: 'calendar-slot--clickable' };
+              return { className: 'calendar-slot--clickable active:scale-[0.98] transition-transform duration-100' };
             }
             return {};
           }}
