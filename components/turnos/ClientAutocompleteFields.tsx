@@ -5,6 +5,8 @@ import { Client } from "@/lib/types/Client";
 import { searchClients } from "@/lib/repository/clients";
 import { FaWhatsapp } from "react-icons/fa";
 import { sendWhatsAppMessage } from "@/utils/whatsapp";
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 
 interface Props {
   name: string;
@@ -57,11 +59,11 @@ export default function ClientAutocompleteFields({
   };
 
   const handlePhoneChange = (v: string) => {
-    const digits = v.replace(/\D/g, "").slice(0, 10);
-    onPhoneChange(digits);
+    // With react-phone-number-input, v is already formatted (e.g. +5491123456789)
+    onPhoneChange(v || "");
     onClientResolved(null);
     setActiveField("phone");
-    if (digits.length >= 2) scheduleSearch(digits);
+    if (v && v.length >= 2) scheduleSearch(v);
     else setSuggestions([]);
   };
 
@@ -129,19 +131,29 @@ export default function ClientAutocompleteFields({
       <label className="block text-sm font-medium mb-1 mt-4">Celular</label>
       <div className="relative flex items-center space-x-1">
         <div className="relative flex-1">
-          <input
+          <PhoneInput
             id="client-phone"
-            type="text"
+            defaultCountry="AR"
             value={phone}
-            onChange={(e) => handlePhoneChange(e.target.value)}
+            onChange={(value) => handlePhoneChange(value || "")}
             onFocus={() => {
               setActiveField("phone");
               if (phone.length >= 2) fetchSuggestions(phone);
             }}
             placeholder="1123456789"
             autoComplete="off"
-            maxLength={10}
-            inputMode="numeric"
+            className="w-full"
+            numberInputProps={{
+              className: "w-full border-none focus:outline-none p-0 bg-transparent text-[var(--foreground)]",
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              border: '1px solid var(--border)',
+              padding: '0.5rem',
+              borderRadius: '0.375rem',
+              backgroundColor: 'var(--background)'
+            }}
           />
           <Dropdown field="phone" />
         </div>

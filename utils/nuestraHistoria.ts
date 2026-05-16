@@ -1,5 +1,0 @@
-export const nuestraHistoria: string[] = [
-  `Todo empezó en 2016, cuando Martín López armó una silla, un espejo y su primera máquina en el garage de su casa. Lo que arrancó como un hobby entre amigos pronto se transformó en una pasión: brindar buenos cortes, charlas relajadas y un espacio donde todos se sintieran cómodos.`,
-  `Con el tiempo, esa pequeña idea creció y dio lugar a Barbería Central, un lugar pensado para que cada visita sea una experiencia. Acá no se trata solo de cortarte el pelo o arreglarte la barba: se trata de dedicarte tiempo, escucharte y cuidar cada detalle, desde el servicio hasta el ambiente.`,
-  `Horarios: Estamos abiertos de martes a sábado, de 11 a 20 hs. Te esperamos para que disfrutes de un buen corte, un afeitado prolijo y un rato de desconexión de la rutina.`
-];

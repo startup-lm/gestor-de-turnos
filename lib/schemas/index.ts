@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidPhoneNumber } from "libphonenumber-js";
 
 // --- Appointments ---
 export const AppointmentInsertSchema = z.object({
@@ -11,6 +12,7 @@ export const AppointmentInsertSchema = z.object({
   service_id: z.number().int().positive("Servicio inválido"),
   created_by: z.string().optional(),
   client_id: z.number().int().positive().optional().nullable(),
+  type: z.enum(["appointment", "block"]).optional().default("appointment"),
 });
 
 export const AppointmentPutSchema = z.object({
@@ -33,5 +35,12 @@ export const AppointmentDeleteSchema = z.object({
 // --- Clients ---
 export const ClientUpsertSchema = z.object({
   name: z.string().min(1, "El nombre es obligatorio"),
-  phone: z.string().length(10, "El teléfono debe tener 10 dígitos").regex(/^\d+$/, "Solo números permitidos"),
+  phone: z.string().refine((val) => {
+    try {
+      // Validate using libphonenumber-js. We assume default country AR if not prefixed with '+'.
+      return isValidPhoneNumber(val, 'AR');
+    } catch {
+      return false;
+    }
+  }, { message: "Número de teléfono inválido" }),
 });

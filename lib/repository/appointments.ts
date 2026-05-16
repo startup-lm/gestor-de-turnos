@@ -8,7 +8,7 @@ export async function getAppointmentsForBarberAndTime(barber_id: number,date: Da
   if (barber_id !== 0) params.set("barber_id", barber_id.toString());
 
   const res = await fetch(`${BASE}/api/appointments?${params}`, {
-    next: { tags: ["appointments"] },
+    next: { tags: ["appointments", `appointments-${barber_id}-${dateParam}`] },
   });
   if (!res.ok) return [];
   return res.json();

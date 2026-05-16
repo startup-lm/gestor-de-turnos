@@ -8,6 +8,7 @@ export interface Appointment {
   created_at?: string;
   created_by?: string;
   phone: string;
+  type?: "appointment" | "block";
   paid: boolean;
   price: number;
   payment_method?: string | null;

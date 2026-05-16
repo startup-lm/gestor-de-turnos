@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BusinessSettings } from "@/lib/types/BusinessSettings";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL!;
