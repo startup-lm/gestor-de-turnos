@@ -32,9 +32,11 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
       try {
         setLoadingFetch(true);
         const [h, s] = await Promise.all([getBusinessHours(), getBusinessSettings()]);
-        setHours(h);
+        if (h) {
+          setHours(h);
+          setLunchEnabled(Boolean(h.lunch_start && h.lunch_end));
+        }
         setSettings(s ?? { slot_step_minutes: 30 });
-        setLunchEnabled(Boolean(h.lunch_start && h.lunch_end));
       } finally {
         setLoadingFetch(false);
       }

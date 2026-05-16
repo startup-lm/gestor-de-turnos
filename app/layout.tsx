@@ -26,8 +26,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               {children}
             </main>
             <Footer />
+            <WhatsappIcon />
           </BusinessProvider>
-          <WhatsappIcon />
         </AuthProvider>
       </body>
     </html>

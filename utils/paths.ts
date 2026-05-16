@@ -17,7 +17,6 @@ export function getPaths(role: string): NavPath[] {
   ];
   if (role !== "guest") paths.push({ href: "/dashboard", label: "Dashboard", Icon: ChartNoAxesCombined });
   if (role === "admin") {
-    paths.push({ href: "/admin/facturacion", label: "Facturación", Icon: FileText });
     paths.push({ href: "/admin", label: "Administrar", Icon: Wrench });
   }
 

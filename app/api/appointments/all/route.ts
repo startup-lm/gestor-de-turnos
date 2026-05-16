@@ -1,6 +1,5 @@
 import { NextResponse }    from "next/server";
 import { errorResponse }   from "@/lib/api/response";
-import { supabaseAdmin }   from "@/lib/supabase/supabaseAdmin";
 import { createSupabaseServerClient } from "@/lib/supabase/supabaseServer";
 
 interface RawRow {

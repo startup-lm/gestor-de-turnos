@@ -134,13 +134,14 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
               }}
             />
 
-            <label className="block text-sm font-medium mb-1 mt-4">
+            <label className="flex items-center gap-2 text-sm font-medium mb-1 mt-4 cursor-pointer select-none">
               <input
                 id="block-use-range"
                 type="checkbox"
                 checked={useRange}
                 onChange={(e) => setUseRange(e.target.checked)}
-              />{" "}
+                className="w-4 h-4 cursor-pointer accent-[var(--primary)]"
+              />
               Bloquear rango de días
             </label>
 

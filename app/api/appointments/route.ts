@@ -43,10 +43,10 @@ export async function POST(request: Request) {
   const parsed = AppointmentInsertSchema.safeParse(body);
 
   if (!parsed.success) {
-    return errorResponse(parsed.error.errors[0].message, 400);
+    return errorResponse(parsed.error.issues[0].message, 400);
   }
 
-  const { client, barber_id, date, start_time, end_time, phone, service_id, created_by, client_id } = parsed.data;
+  const { client, barber_id, date, start_time, end_time, phone, service_id, created_by, client_id, type } = parsed.data;
 
   const insertPayload: Record<string, unknown> = {
     client,
@@ -56,6 +56,7 @@ export async function POST(request: Request) {
     end_time: `${end_time}:00`,
     phone: phone ?? "",
     service_id,
+    type,
     created_at: new Date().toISOString(),
   };
   if (created_by) insertPayload.created_by = created_by;

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { GlobalHours } from "@/lib/types/BusinessHours";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL!;

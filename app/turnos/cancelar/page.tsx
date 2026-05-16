@@ -8,6 +8,7 @@ import { usePopup } from "@/lib/hooks/usePopup";
 import { Appointment } from "@/lib/types/Appointment";
 import CancelAppointmentModal from "@/components/turnos/CancelAppointmentModal";
 import { sendCancelAppointment } from "@/utils/whatsapp";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
 
 const PopupModal = dynamic(() => import("@/components/ui/PopupModal"), { ssr: false, loading: () => null });
 
@@ -20,6 +21,7 @@ export default function CancelarTurnoPage() {
   const isDisabled = !appointmentId || !phone;
   const [showWhatsapp, setShowWhatsapp] = useState(false);
   const popup = usePopup();
+  const { businessSettings } = useBusinessContext();
 
   const handleDelete = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,8 +31,8 @@ export default function CancelarTurnoPage() {
     const appt = await getAppointmentById(numericId);
     setLoading(false);
     if (!appt) popup.open("No existe ese número de turno", false);
-    else if (appt?.paid || appt?.phone === "0000000000") popup.open("No es posible cancelar este turno", false);
-    else if (appt?.phone !== phone) popup.open("El número de teléfono no pertenece al turno", false);
+    else if (appt?.paid || appt?.phone === "0000000000" || appt?.type === "block") popup.open("No es posible cancelar este turno", false);
+    else if (appt?.phone !== phone && appt?.phone !== `+549${phone}`) popup.open("El número de teléfono no pertenece al turno", false);
     else {
       setAppointment(appt);
       setShowConfirm(true);
@@ -49,7 +51,7 @@ export default function CancelarTurnoPage() {
   }
 
   const handleWhatsapp = () => {
-    sendCancelAppointment(appointment!.date, appointment!.start_time, appointment!.client);
+    sendCancelAppointment(appointment!.date, appointment!.start_time, appointment!.client, businessSettings?.phone);
   };
 
   return (
@@ -73,7 +75,7 @@ export default function CancelarTurnoPage() {
             <label className="block text-sm font-medium mb-2">
               Ingresa tu número de celular
             </label>
-            <input id="cancel-phone" type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required placeholder="11-2345-6789" />
+            <input id="cancel-phone" type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required placeholder="1123456789" />
           </div>
 
           <div className="flex justify-center mt-10">

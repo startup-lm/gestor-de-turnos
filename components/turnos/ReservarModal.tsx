@@ -9,6 +9,9 @@ import ReserveButton from "../buttons/ReserveButton";
 import { CalendarEvent } from "@/lib/types/CalendarEvent";
 import ClientAutocompleteFields from "./ClientAutocompleteFields";
 import { useReservarLogic } from "@/lib/hooks/useReservarLogic";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 
 interface Props {
   onClose: () => void;
@@ -32,14 +35,15 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
     loading,
     appointmentId,
     showWhatsapp,
-    bienvenidaName,
     isDisabled,
     popup,
     handleReservar,
   } = useReservarLogic(selectedDate, selectedBarber, selectedBarberId, events, onAppointmentCreated);
 
+  const { businessSettings } = useBusinessContext();
+
   const handleWhatsapp = () => {
-    sendConfirmAppointment(appointmentId, selectedDate, selectedDate.toTimeString().slice(0, 5), name);
+    sendConfirmAppointment(appointmentId, selectedDate, selectedDate.toTimeString().slice(0, 5), name, businessSettings?.phone);
     onClose();
   };
 
@@ -77,15 +81,25 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
                 <label className="block text-sm font-medium mb-1 mt-4">
                   Celular
                 </label>
-                <input
+                <PhoneInput
                   id="reservar-guest-phone"
-                  type="tel"
+                  defaultCountry="AR"
                   value={phone}
-                  onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  onChange={(value) => setPhone(value || "")}
                   required={isGuest}
                   placeholder="1123456789"
-                  maxLength={10}
-                  inputMode="numeric"
+                  className="w-full"
+                  numberInputProps={{
+                    className: "w-full border-none focus:outline-none p-0 bg-transparent text-[var(--foreground)]",
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    border: '1px solid var(--border)',
+                    padding: '0.5rem',
+                    borderRadius: '0.375rem',
+                    backgroundColor: 'var(--background)'
+                  }}
                 />
               </>
             )}
@@ -97,7 +111,7 @@ export default function ReservarModal({ onClose, selectedDate, selectedBarber, s
               <option value={-1} disabled style={{ color: "grey" }}>
                 Selecciona un servicio
               </option>
-              {services.map(s => (
+              {services?.map(s => (
                 <option key={s.id} value={s.id} style={{ color: "black" }}>
                   {s.name} ({s.duration} min)
                 </option>

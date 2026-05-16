@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { GlobalHours } from "@/lib/types/BusinessHours";
 import { BusinessSettings } from "@/lib/types/BusinessSettings";
 import { getBusinessHours } from "./businessHours";

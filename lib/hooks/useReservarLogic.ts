@@ -18,8 +18,7 @@ export function useReservarLogic(
 ) {
   const { role } = useAuth();
   const { businessHours } = useBusinessContext();
-  const { data, loading: loadingFetch } = useFetchOnce<Service[]>("services", getServices);
-  const services: Service[] = data ?? [];
+  const { data: services = [] } = useFetchOnce<Service[]>("services", getServices);
   const isGuest = role === "guest";
 
   const [selectedServiceId, setSelectedServiceId] = useState(-1);
@@ -35,7 +34,7 @@ export function useReservarLogic(
 
   // Reconocimiento por teléfono para clientes (guest)
   useEffect(() => {
-    if (!isGuest || phone.length !== 10) {
+    if (!isGuest || phone.length < 10) {
       setBienvenidaName(null);
       return;
     }
@@ -62,7 +61,7 @@ export function useReservarLogic(
   const handleReservar = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const service = services.find(s => s.id === selectedServiceId);
+    const service = services?.find(s => s.id === selectedServiceId);
     if (!service) {
       setLoading(false);
       return;
@@ -94,9 +93,20 @@ export function useReservarLogic(
       return;
     }
 
+    let finalPhone = phone;
+    if (finalPhone && finalPhone.startsWith("+54") && !finalPhone.startsWith("+549")) {
+      const rest = finalPhone.slice(3);
+      if (rest.length !== 10) {
+        popup.open("El número de Argentina debe tener exactamente 10 dígitos.", false);
+        setLoading(false);
+        return;
+      }
+      finalPhone = `+549${rest}`;
+    }
+
     let clientId: number | undefined;
-    if (name && phone) {
-      const clientRecord = await upsertClient(name, phone);
+    if (name && finalPhone) {
+      const clientRecord = await upsertClient(name, finalPhone);
       if (clientRecord) clientId = clientRecord.id;
     }
 
@@ -107,7 +117,7 @@ export function useReservarLogic(
       date: selectedDate,
       start_time: selectedDate.toTimeString().slice(0, 5),
       end_time: endDate.toTimeString().slice(0, 5),
-      phone,
+      phone: finalPhone,
       service_id: selectedServiceId,
       created_by: createdBy,
       client_id: clientId,

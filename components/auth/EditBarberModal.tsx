@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import { getBarbers, updateBarber } from "@/lib/repository/barbers";
 import { Barber } from "@/lib/types/Barbers";
@@ -13,9 +13,14 @@ import { Check } from "lucide-react";
 import SaveButton from "../buttons/SaveButton";
 import { deleteAuthUser } from "@/lib/repository/auth";
 
-export default function EditBarberModal({ onClose }: Readonly<{ onClose: () => void }>) {
+interface Props {
+  barberId?: number;
+  onClose: () => void;
+}
+
+export default function EditBarberModal({ barberId, onClose }: Readonly<Props>) {
   const { data: barbers = [], loading: fetchLoading } = useFetchOnce<Barber[]>("barbers", getBarbers);
-  const [selectedBarberId, setSelectedBarberId] = useState<number>(-1);
+  const [selectedBarberId, setSelectedBarberId] = useState<number>(barberId ?? -1);
   const [commission, setCommission] = useState<string>("");
   const [saleCommission, setSaleCommission] = useState<string>("");
   const [initialCommission, setInitialCommission] = useState<string>("");
@@ -52,6 +57,13 @@ export default function EditBarberModal({ onClose }: Readonly<{ onClose: () => v
       setInitialStatus(true);
     }
   };
+
+  useEffect(() => {
+    if (barbers && barbers.length > 0 && selectedBarberId !== -1) {
+      handleBarberChange(selectedBarberId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [barbers, selectedBarberId]);
 
   const canSave = !formDisabled && (commission !== initialCommission || statusEnabled !== initialStatus || saleCommission !== initialSaleCommission);
   const handleSave = async (e: React.FormEvent) => {

@@ -16,7 +16,10 @@ export default function DateRangeCalendar({ startDate, endDate, onChange }: Read
       locale={es}
       weekStartsOn={1}
       ranges={[{ startDate, endDate, key: "selection" }]}
-      onChange={(item) => onChange({ startDate: item.selection.startDate, endDate: item.selection.endDate }) }
+      onChange={(item) => onChange({ 
+        startDate: item.selection.startDate ?? new Date(), 
+        endDate: item.selection.endDate ?? new Date() 
+      })}
       moveRangeOnFirstSelection={false}
       months={1}
       direction="horizontal"

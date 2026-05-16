@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   const parsed = ClientUpsertSchema.safeParse(body);
 
   if (!parsed.success) {
-    return errorResponse(parsed.error.errors[0].message, 400);
+    return errorResponse(parsed.error.issues[0].message, 400);
   }
 
   const { name, phone } = parsed.data;

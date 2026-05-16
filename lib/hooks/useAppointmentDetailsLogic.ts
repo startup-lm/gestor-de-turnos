@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import { getServices } from "@/lib/repository/services";
 import { deleteAppointment, updateAppointment } from "@/lib/repository/appointments";
-import { searchClients, upsertClient } from "@/lib/repository/clients";
+import { upsertClient } from "@/lib/repository/clients";
 import { Appointment, AppointmentUpdates } from "@/lib/types/Appointment";
 import { Barber } from "@/lib/types/Barbers";
 import { Service } from "@/lib/types/Services";

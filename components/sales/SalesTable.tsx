@@ -43,7 +43,6 @@ export default function SalesTable() {
 
   useEffect(() => {
     void loadPage(page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const handlePrev = () => {
