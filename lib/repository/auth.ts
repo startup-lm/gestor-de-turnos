@@ -1,6 +1,7 @@
 import { supabaseClient } from "../supabase/supabaseClient";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL!
+import { getBaseUrl } from "@/utils/getBaseUrl";
+const BASE = getBaseUrl();
 
 export const signUp = async (email: string, password: string) => {
   const { data, error } = await supabaseClient.auth.signUp({

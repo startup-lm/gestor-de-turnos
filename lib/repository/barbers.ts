@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Barber } from "../types/Barbers";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL!
+import { getBaseUrl } from "@/utils/getBaseUrl";
+const BASE = getBaseUrl();
 
 export const getBarbers = async (): Promise<Barber[]> => {
   const res = await fetch(`${BASE}/api/barbers`);

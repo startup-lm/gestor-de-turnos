@@ -1,6 +1,7 @@
 import { Appointment, AppointmentUpdates } from "../types/Appointment";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL!;
+import { getBaseUrl } from "@/utils/getBaseUrl";
+const BASE = getBaseUrl();
 
 export async function getAppointmentsForBarberAndTime(barber_id: number,date: Date): Promise<Appointment[]> {
   const dateParam = date.toISOString().split("T")[0];

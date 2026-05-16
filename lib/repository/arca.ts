@@ -7,7 +7,8 @@ import type {
   ArcaStatus,
 } from "@/lib/types/Arca";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL!;
+import { getBaseUrl } from "@/utils/getBaseUrl";
+const BASE = getBaseUrl();
 
 export async function getArcaConfig(): Promise<ArcaConfig> {
   const res = await fetch(`${BASE}/api/arca/config`, {
