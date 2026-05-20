@@ -9,11 +9,12 @@ import Modal from "@/components/ui/Modal";
 import PopupModal from "@/components/ui/PopupModal";
 import { usePopup } from "@/lib/hooks/usePopup";
 import PayButton from "../buttons/PayButton";
+import { Appointment } from "@/lib/types/Appointment";
 
-export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: Readonly<{ appointment: { id: number }; onClose: () => void; setIsPaid: (paid: boolean) => void; }>) {
+export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: Readonly<{ appointment: Appointment; onClose: () => void; setIsPaid: (paid: boolean) => void; }>) {
   const { data } = useFetchOnce<Service[]>("services", getServices);
   const services: Service[] = useMemo(() => data ?? [], [data]);
-  const [selectedServiceId, setSelectedServiceId] = useState(-1);
+  const [selectedServiceId, setSelectedServiceId] = useState(appointment.service_id ?? -1);
   const isDisabled = selectedServiceId < 0;
   const [loading, setLoading] = useState(false);
   const popup = usePopup();

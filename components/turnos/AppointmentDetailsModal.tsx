@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { format } from "date-fns";
 import { Appointment } from "@/lib/types/Appointment";
 import Modal from "@/components/ui/Modal";
@@ -31,6 +32,7 @@ export default function AppointmentDetailsModal({
   barbers: Barber[];
 }>) {
   const { businessHours, businessSettings } = useBusinessContext();
+  const hasPaidRef = useRef(false);
   const allAppointments = generateAllAppointments({
     openTime: businessHours.open_time,
     closeTime: businessHours.close_time,
@@ -178,10 +180,16 @@ export default function AppointmentDetailsModal({
       {showService && (
         <ServicePaidModal
           appointment={appointment}
-          setIsPaid={() => { }}
+          setIsPaid={(paid) => {
+            if (paid) {
+              hasPaidRef.current = true;
+            }
+          }}
           onClose={() => {
             setShowService(false);
-            onClose();
+            if (hasPaidRef.current) {
+              onClose();
+            }
           }}
         />
       )}
