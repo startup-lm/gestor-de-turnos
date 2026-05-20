@@ -15,19 +15,22 @@ import {
   FileText,
   CalendarDays,
   Share2,
-  BookOpen
+  BookOpen,
+  PlusCircle
 } from "lucide-react";
 import WhatsAppSettingsModal from "@/components/admin/WhatsAppSettingsModal";
 import PaymentSettingsModal from "@/components/admin/PaymentSettingsModal";
 import SocialMediaSettingsModal from "@/components/admin/SocialMediaSettingsModal";
 import OurStorySettingsModal from "@/components/admin/OurStorySettingsModal";
+import RegisterSaleModal from "@/components/sales/RegisterSaleModal";
 
 export default function AdminPage() {
-  const [activeModal, setActiveModal] = useState<"whatsapp" | "payments" | "hours" | "block" | "social" | "story" | null>(null);
+  const [activeModal, setActiveModal] = useState<"whatsapp" | "payments" | "hours" | "block" | "social" | "story" | "sale" | null>(null);
   const router = useRouter();
 
   const adminCards = [
     { label: "Ventas", description: "Historial de productos", icon: ShoppingBag, onClick: () => router.push("/admin/ventas") },
+    { label: "Nueva Venta", description: "Registrar venta", icon: PlusCircle, onClick: () => setActiveModal("sale") },
     { label: "Ver Turnos", description: "Agenda completa", icon: Calendar, onClick: () => router.push("/admin/turnos") },
     { label: "Facturación", description: "ARCA / AFIP", icon: FileText, onClick: () => router.push("/admin/facturacion"), show: process.env.NEXT_PUBLIC_ENABLE_ARCA === "true" },
     { label: "Barberos", description: "Gestión de personal", icon: Users, onClick: () => router.push("/admin/barberos") },
@@ -73,6 +76,7 @@ export default function AdminPage() {
       {activeModal === "hours" && <BusinessHoursModal onClose={() => setActiveModal(null)} />}
       {activeModal === "social" && <SocialMediaSettingsModal onClose={() => setActiveModal(null)} />}
       {activeModal === "story" && <OurStorySettingsModal onClose={() => setActiveModal(null)} />}
+      {activeModal === "sale" && <RegisterSaleModal onClose={() => setActiveModal(null)} />}
     </div>
   );
 }
