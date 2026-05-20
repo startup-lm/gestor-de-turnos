@@ -87,14 +87,14 @@ export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void;
             </div>
 
             <div className="text-right">
-              <button 
+              <span 
                 id="btn-forgot-password" 
-                type="button" 
-                className="text-[var(--accent)]/70 hover:text-[var(--accent)] font-semibold transition-colors text-xs inline-block mt-1" 
+                role="button" 
+                className="text-[var(--accent)]/70 hover:text-[var(--accent)] font-semibold transition-all text-xs inline-block mt-1 cursor-pointer hover:underline" 
                 onClick={() => setForgotOpen(true)} 
               >
                 ¿Olvidaste tu contraseña?
-              </button>
+              </span>
             </div>
           </div>
 
