@@ -67,12 +67,12 @@ export default function WhatsAppSettingsModal({ onClose }: Readonly<Props>) {
 
   return (
     <>
-      <Modal onClose={onClose}>
+      <Modal onClose={onClose} size="md">
         <h2 className="text-2xl font-bold mb-6 text-center text-[var(--foreground)]">WhatsApp del Local</h2>
 
-        <div className="space-y-6 px-2">
+        <div className="space-y-6 px-2 text-left">
             <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
                 Teléfono de Contacto
               </label>
               <PhoneInput
@@ -81,29 +81,29 @@ export default function WhatsAppSettingsModal({ onClose }: Readonly<Props>) {
                 value={phone}
                 onChange={(value) => setPhone(value || "")}
                 placeholder="1123456789"
-                className="w-full"
+                className="w-full text-sm"
                 numberInputProps={{
-                  className: "w-full border-none focus:outline-none p-0 bg-transparent text-[var(--foreground)]",
+                  className: "w-full border-none focus:outline-none p-0 bg-transparent text-[var(--foreground)] text-sm",
                 }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  border: '1px solid var(--border)',
-                  padding: '0.75rem',
-                  borderRadius: '0.75rem',
-                  backgroundColor: 'var(--background)'
+                  border: '1px solid rgba(249, 250, 251, 0.1)',
+                  padding: '0.625rem',
+                  borderRadius: '0.5rem',
+                  backgroundColor: 'rgba(249, 250, 251, 0.05)',
                 }}
               />
-              <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+              <p className="text-xs text-[var(--foreground)]/40 mt-2 leading-relaxed">
                 Este es el número al que se redirigirán los clientes para confirmar sus turnos. Asegurate de incluir el código de país (Ej. +549 para Argentina).
               </p>
             </div>
 
-            <div className="flex justify-end pt-6 mt-4 border-t border-gray-200 dark:border-gray-800">
+            <div className="flex justify-end pt-6 mt-4 border-t border-[var(--foreground)]/10">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-6 py-2 rounded-xl font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors mr-2"
+                className="px-6 py-2 rounded-xl font-medium text-[var(--foreground)]/60 hover:bg-[var(--foreground)]/5 transition-colors mr-2 text-sm"
               >
                 Cancelar
               </button>
@@ -111,7 +111,7 @@ export default function WhatsAppSettingsModal({ onClose }: Readonly<Props>) {
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="!bg-[var(--primary)] !text-black px-6 py-2 rounded-xl font-bold shadow-lg shadow-[var(--primary)]/20 hover:shadow-[var(--primary)]/40 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:transform-none"
+                className="!bg-[var(--accent)] !text-[var(--primary)] px-6 py-2 rounded-xl font-bold hover:opacity-90 transition-all duration-200 disabled:opacity-50 text-sm shadow-md"
               >
                 {saving ? "Guardando..." : "Guardar Cambios"}
               </button>

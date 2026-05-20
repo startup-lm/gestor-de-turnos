@@ -55,44 +55,97 @@ export default function EditCardModal({ id, name, description, price, duration, 
 
   return (
     <>
-      <Modal onClose={onClose}>
-        <h2 className="text-xl font-bold mb-4 text-center">Editar {type}</h2>
-        <form onSubmit={handleSave} className="px-6">
-          <div className="text-left rounded-2lg mt-5 shadow-lg">
-            <label className="block text-sm font-medium mb-1" >
-              Nombre
-            </label>
-            <input id="edit-card-name" value={newName} onChange={e => setNewName(e.target.value)} required className="mb-4" />
+      <Modal onClose={onClose} size="md">
+        <h2 className="text-2xl font-bold mb-6 text-center text-[var(--foreground)]">Editar {type}</h2>
+        <form onSubmit={handleSave} className="px-2 text-left space-y-4">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5" >
+                Nombre
+              </label>
+              <input 
+                id="edit-card-name" 
+                value={newName} 
+                onChange={e => setNewName(e.target.value)} 
+                required 
+                className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm" 
+              />
+            </div>
 
-            <label className="block text-sm font-medium mb-1">
-              Descripción
-            </label>
-            <textarea id="edit-card-description" className="border p-2 rounded w-full mb-4" value={newDesc} onChange={e => setNewDesc(e.target.value)} required />
+            <div>
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                Descripción
+              </label>
+              <textarea 
+                id="edit-card-description" 
+                value={newDesc} 
+                onChange={e => setNewDesc(e.target.value)} 
+                required 
+                className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm h-20 resize-none" 
+              />
+            </div>
 
-            <label className="block text-sm font-medium mb-1">
-              Precio
-            </label>
-            <input id="edit-card-price" type="number" inputMode="decimal" value={newPrice} onChange={e => setNewPrice(Number(e.target.value))} required className="mb-4" />
-
-            {type === "Servicio" && (
-              <>
-                <label className="block text-sm font-medium mb-1">
-                  Duración del servicio (en minutos)
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                  Precio ($)
                 </label>
-                <input id="edit-card-duration" type="number" inputMode="decimal" value={newDuration} onChange={e => setNewDuration(Number(e.target.value))} required className="mb-4" />
-              </>
-            )}
+                <input 
+                  id="edit-card-price" 
+                  type="number" 
+                  inputMode="decimal" 
+                  value={newPrice} 
+                  onChange={e => setNewPrice(Number(e.target.value))} 
+                  required 
+                  className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm" 
+                />
+              </div>
 
-            <label className="block text-sm font-medium mb-1">
-              Modificar imagen
-            </label>
-            <input id="edit-card-image" type="file" accept="image/*" onChange={(e) => e.target.files && setSelectedFile(e.target.files[0])} />
+              {type === "Servicio" && (
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                    Duración (minutos)
+                  </label>
+                  <input 
+                    id="edit-card-duration" 
+                    type="number" 
+                    inputMode="decimal" 
+                    value={newDuration} 
+                    onChange={e => setNewDuration(Number(e.target.value))} 
+                    required 
+                    className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm" 
+                  />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                Modificar Imagen
+              </label>
+              <div className="flex items-center justify-center w-full">
+                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-[var(--foreground)]/10 border-dashed rounded-lg cursor-pointer bg-[var(--foreground)]/5 hover:bg-[var(--foreground)]/10 hover:border-[var(--accent)]/30 transition-all">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <p className="text-xs text-[var(--accent)] font-semibold uppercase tracking-wider">
+                      {selectedFile ? selectedFile.name : "Seleccionar Nueva Imagen"}
+                    </p>
+                    <p className="text-[10px] text-[var(--foreground)]/40 mt-1">Dejar vacío para mantener la imagen actual</p>
+                  </div>
+                  <input 
+                    id="edit-card-image" 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={(e) => e.target.files && setSelectedFile(e.target.files[0])} 
+                    className="hidden" 
+                  />
+                </label>
+              </div>
+            </div>
           </div>
 
-          <div className="flex justify-center mt-10">
+          <div className="flex justify-center pt-6">
             <SaveButton id="btn-edit-card-save" type="submit" disabled={isDisabled} loading={loading} />
           </div>
-
         </form>
       </Modal>
 

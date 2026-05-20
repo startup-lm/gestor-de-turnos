@@ -8,9 +8,23 @@ export default function PopupModal({ message, success, onClose, showWhatsappButt
   Readonly<{ message: string; success: boolean; onClose: () => void; showWhatsappButton?: boolean; handleWhatsappButton?: () => void;}>) {
 
   return (
-    <Modal onClose={onClose}>
-      <div className="px-2">
-        <h2 className="text-xl font-semibold mb-4">
+    <Modal onClose={onClose} size="sm">
+      <div className="px-2 text-center">
+        <div className="flex flex-col items-center mb-5">
+          <div className={`p-4 rounded-full border-2 ${
+            success 
+              ? "border-green-500/25 bg-green-500/5 text-green-500 shadow-lg shadow-green-500/5" 
+              : "border-red-500/25 bg-red-500/5 text-red-500 shadow-lg shadow-red-500/5"
+          }`}>
+            {success ? (
+              <CheckCircle size={30} />
+            ) : (
+              <XCircle size={30} />
+            )}
+          </div>
+        </div>
+
+        <h2 className="text-base font-semibold mb-6 text-[var(--foreground)] leading-relaxed">
           {message.includes('\n')
             ? message.split('\n').map((row, i) => (
                 <div key={i} className="mb-2">
@@ -27,15 +41,7 @@ export default function PopupModal({ message, success, onClose, showWhatsappButt
                 ))}
         </h2>
 
-        <div className="flex justify-center mb-4">
-          {success ? (
-            <CheckCircle className="text-green-500" size={48} />
-          ) : (
-            <XCircle className="text-red-500" size={48} />
-          )}
-        </div>
-
-        <div className={showWhatsappButton ? "flex justify-center" : ""}>
+        <div className={showWhatsappButton ? "flex justify-center mt-4" : ""}>
           {showWhatsappButton && handleWhatsappButton && (
             <WhatsappButton onClick={handleWhatsappButton} name={message.includes("cancelado") ? "Confirmar cancelación turno" : "Confirmar turno"}/>
           )}

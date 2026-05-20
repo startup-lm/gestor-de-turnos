@@ -78,20 +78,20 @@ export default function PaymentSettingsModal({ onClose }: Readonly<Props>) {
 
   return (
     <>
-      <Modal onClose={onClose}>
+      <Modal onClose={onClose} size="lg">
         <div className="text-center mb-8">
-          <div className="bg-[var(--primary)]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[var(--primary)]/20 shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--primary)]"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+          <div className="bg-[var(--accent)]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[var(--accent)]/20 shadow-[0_0_15px_rgba(212,181,138,0.2)]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)]"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
           </div>
           <h2 className="text-2xl font-extrabold tracking-tight text-[var(--foreground)]">Métodos de Pago</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-sm text-[var(--foreground)]/50 mt-2">
             Gestioná los medios de cobro que aceptás en el local.
           </p>
         </div>
 
-        <div className="space-y-6 px-1">
-            <div className="bg-black/5 dark:bg-white/5 rounded-2xl p-5 border border-[var(--border)]">
-              <label className="block text-sm font-bold mb-3 text-[var(--foreground)]">
+        <div className="space-y-6 px-1 text-left">
+            <div className="bg-[var(--foreground)]/5 rounded-2xl p-5 border border-[var(--foreground)]/10">
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-3">
                 Agregar nuevo método
               </label>
               <div className="flex gap-2">
@@ -101,35 +101,35 @@ export default function PaymentSettingsModal({ onClose }: Readonly<Props>) {
                   onChange={(e) => setNewMethod(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddMethod()}
                   placeholder="Ej. Transferencia, Débito..."
-                  className="flex-1 border-2 border-transparent bg-white dark:bg-[#111111] p-3.5 rounded-xl text-[var(--foreground)] focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/10 transition-all outline-none shadow-sm"
+                  className="flex-1 !border !border-[var(--foreground)]/10 !bg-[var(--foreground)]/5 !p-3.5 !rounded-xl !text-[var(--foreground)] focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all outline-none text-sm h-[48px]"
                 />
                 <button
                   type="button"
                   onClick={handleAddMethod}
-                  className="!bg-[var(--primary)] !text-black px-6 py-3.5 rounded-xl font-bold shadow-lg hover:shadow-[var(--primary)]/40 hover:-translate-y-0.5 transition-all active:scale-95 flex items-center gap-2"
+                  className="!bg-[var(--accent)] !text-[var(--primary)] px-6 rounded-xl font-bold transition-all hover:opacity-90 flex items-center gap-2 h-[48px] justify-center text-sm shadow-md"
                 >
                   Agregar
                 </button>
               </div>
 
               <div className="mt-6">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--accent)] mb-3">
                   Métodos Habilitados ({paymentMethods.length})
                 </label>
                 <div className="flex flex-wrap gap-2.5">
                   {paymentMethods.length === 0 ? (
-                    <span className="text-sm text-gray-400 italic">No hay métodos agregados.</span>
+                    <span className="text-sm text-[var(--foreground)]/40 italic">No hay métodos agregados.</span>
                   ) : (
                     paymentMethods.map((method) => (
                       <div
                         key={method}
-                        className="group flex items-center gap-2 bg-white dark:bg-[#1C1C1C] text-[var(--foreground)] px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 dark:border-gray-800 shadow-sm hover:border-[var(--primary)] transition-colors"
+                        className="group flex items-center gap-2 bg-[var(--foreground)]/5 text-[var(--foreground)] px-4 py-2 rounded-xl text-sm font-semibold border border-[var(--foreground)]/10 shadow-sm hover:border-[var(--accent)]/50 transition-colors"
                       >
                         <span className="truncate max-w-[150px]">{method}</span>
                         <button
                           type="button"
                           onClick={() => handleRemoveMethod(method)}
-                          className="text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded-full transition-colors ml-1"
+                          className="text-[var(--foreground)]/40 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded-full transition-colors ml-1"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -140,11 +140,11 @@ export default function PaymentSettingsModal({ onClose }: Readonly<Props>) {
               </div>
             </div>
 
-            <div className="flex justify-between items-center pt-6 mt-6 border-t border-gray-200 dark:border-gray-800">
+            <div className="flex justify-between items-center pt-6 mt-6 border-t border-[var(--foreground)]/10">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-3 rounded-xl font-bold text-gray-500 hover:text-[var(--foreground)] hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+                className="px-6 py-2.5 rounded-xl font-medium text-[var(--foreground)]/60 hover:bg-[var(--foreground)]/5 transition-colors text-sm"
               >
                 Cancelar
               </button>
@@ -152,11 +152,11 @@ export default function PaymentSettingsModal({ onClose }: Readonly<Props>) {
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="!bg-[var(--primary)] !text-black px-8 py-3 rounded-xl font-bold shadow-lg shadow-[var(--primary)]/20 hover:shadow-[var(--primary)]/40 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center gap-2"
+                className="!bg-[var(--accent)] !text-[var(--primary)] px-8 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all duration-200 disabled:opacity-50 text-sm shadow-md flex items-center gap-2"
               >
                 {saving ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-[var(--primary)]/30 border-t-[var(--primary)] rounded-full animate-spin"></div>
                     Guardando...
                   </>
                 ) : (

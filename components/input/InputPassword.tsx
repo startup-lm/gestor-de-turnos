@@ -12,12 +12,14 @@ interface InputPasswordProps {
   id?: string;
 }
 
-export default function InputPassword({ label,value,onChange, placeholder = "", error, requiered=false, "data-testid": dataTestId, id }: Readonly<InputPasswordProps>) {
+export default function InputPassword({ label, value, onChange, placeholder = "", error, requiered=false, "data-testid": dataTestId, id }: Readonly<InputPasswordProps>) {
   const [isVisible, setIsVisible] = useState(false);
 
   return (
     <div>
-      <label className="block text-sm font-medium mb-1 mt-4">{label}</label>
+      <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5 mt-4">
+        {label}
+      </label>
       <div className="relative">
         <input
           id={id}
@@ -26,14 +28,17 @@ export default function InputPassword({ label,value,onChange, placeholder = "", 
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className={`border p-2 pr-10 rounded w-full ${error ? "border-red-500" : ""}`}
+          className={`!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 pr-10 w-full block text-sm ${error ? "!border-red-500" : ""}`}
           required={requiered}
         />
-        <div className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" onClick={() => setIsVisible((v) => !v)} >
-          {isVisible ? <EyeOff size={20} /> : <Eye size={20} />}
+        <div 
+          className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-[var(--foreground)]/40 hover:text-[var(--accent)] transition-colors" 
+          onClick={() => setIsVisible((v) => !v)} 
+        >
+          {isVisible ? <EyeOff size={18} /> : <Eye size={18} />}
         </div>
       </div>
-      {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
+      {error && <p className="text-xs text-red-500 mt-1.5 font-medium">{error}</p>}
     </div>
   );
 }

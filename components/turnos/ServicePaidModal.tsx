@@ -40,38 +40,77 @@ export default function ServicePaidModal({ appointment, onClose, setIsPaid, }: R
 
   return (
     <>
-      <Modal onClose={onClose}>
-        <h2 className="text-xl font-bold mb-4 text-center">Registrar pago</h2>
-        <form onSubmit={handlePay} className="space-y-4 px-8">
-          <div className="my-5 text-left rounded-2lg">
-            <label className="block text-sm font-medium mb-1 mt-4">
-              Servicio
-            </label>
-            <select id="paid-service" required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={selectedServiceId} onChange={e => setSelectedServiceId(Number(e.target.value))} >
-              <option value={-1} disabled style={{ color: "grey" }}>
-                Selecciona un servicio
-              </option>
-              {services.map(s => (
-                <option key={s.id} value={s.id} style={{ color: "black" }}>
-                  {s.name}
+      <Modal onClose={onClose} size="md">
+        <h2 className="text-2xl font-bold mb-6 text-center text-[var(--foreground)]">Registrar pago</h2>
+        <form onSubmit={handlePay} className="px-2 text-left space-y-4">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                Servicio
+              </label>
+              <select 
+                id="paid-service" 
+                required 
+                className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm h-[42px]" 
+                value={selectedServiceId} 
+                onChange={e => setSelectedServiceId(Number(e.target.value))} 
+              >
+                <option value={-1} disabled style={{ color: "grey" }}>
+                  Selecciona un servicio
                 </option>
-              ))}
-            </select>
+                {services.map(s => (
+                  <option key={s.id} value={s.id} style={{ color: "black" }}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <label className="block text-sm font-medium mb-1 mt-4">
-              Precio
-            </label>
-            <input id="paid-price" type="number" value={price} onChange={e => setPrice(Number(e.target.value))} required className="mb-4 w-full border p-2 rounded bg-[var(--background)] text-[var(--foreground)]" min={0}/>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                  Precio Cobrado ($)
+                </label>
+                <input 
+                  id="paid-price" 
+                  type="number" 
+                  value={price} 
+                  onChange={e => setPrice(Number(e.target.value))} 
+                  required 
+                  className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm" 
+                  min={0}
+                />
+              </div>
 
-            <label className="block text-sm font-medium mb-1 mt-4">
-              Método de Pago
-            </label>
-            <select id="paid-payment-method" required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
-              <option value="Efectivo">Efectivo</option>
-              <option value="MercadoPago">Mercado Pago</option>
-            </select>
+              <div>
+                <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                  Método de Pago
+                </label>
+                <select 
+                  id="paid-payment-method" 
+                  required 
+                  className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm h-[42px]" 
+                  value={paymentMethod} 
+                  onChange={e => setPaymentMethod(e.target.value)}
+                >
+                  <option value="Efectivo" style={{ color: "black" }}>Efectivo</option>
+                  <option value="MercadoPago" style={{ color: "black" }}>Mercado Pago</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="bg-[var(--foreground)]/5 border border-[var(--accent)]/20 rounded-xl p-4 flex justify-between items-center mt-2 shadow-inner">
+              <div>
+                <span className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider">Total Cobrado</span>
+                <span className="text-[10px] text-[var(--foreground)]/40 uppercase tracking-widest">Monto registrado</span>
+              </div>
+              <span className="text-3xl font-extrabold text-[var(--accent)]">
+                ${price}
+              </span>
+            </div>
           </div>
-          <div className="flex justify-center mt-10">
+
+          <div className="flex justify-center pt-4">
             <PayButton id="btn-paid-submit" type="submit" disabled={isDisabled} loading={loading} />
           </div>
         </form>

@@ -2,12 +2,39 @@
 
 import CloseButton from "../buttons/CloseButton";
 
-export default function Modal({onClose,children,className=""}: Readonly<{onClose: () => void;children: React.ReactNode;className?:string;}>) {
+type ModalSize = "sm" | "md" | "lg" | "xl";
+
+export default function Modal({
+  onClose,
+  children,
+  className = "",
+  size = "sm"
+}: Readonly<{
+  onClose: () => void;
+  children: React.ReactNode;
+  className?: string;
+  size?: ModalSize;
+}>) {
+  const sizeClasses = {
+    sm: "max-w-sm w-full",
+    md: "max-w-md w-full",
+    lg: "max-w-lg md:max-w-2xl w-full",
+    xl: "max-w-xl md:max-w-4xl w-full",
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50 px-4" onClick={onClose} >
-      <div className={`relative bg-[var(--background)] rounded-2xl shadow-xl px-6 py-8 md:px-10 md:py-12 max-w-sm w-full text-center ${className}`} onClick={(e) => e.stopPropagation()} >
+    <div 
+      className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-50 px-4 py-6" 
+      onClick={onClose} 
+    >
+      <div 
+        className={`relative bg-[var(--background)] border border-[var(--foreground)]/10 rounded-2xl shadow-2xl shadow-black/40 p-6 md:p-8 ${sizeClasses[size]} max-h-[90vh] flex flex-col ${className}`} 
+        onClick={(e) => e.stopPropagation()} 
+      >
         <CloseButton onClose={onClose} />
-        {children}
+        <div className="overflow-y-auto pr-1 flex-1 custom-scrollbar">
+          {children}
+        </div>
       </div>
     </div>
   );

@@ -104,50 +104,57 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
 
   return (
     <>
-      <Modal onClose={onClose}>
-        <h2 className="text-xl font-bold mb-4 text-center">
+      <Modal onClose={onClose} size="lg">
+        <h2 className="text-2xl font-bold mb-6 text-center text-[var(--foreground)]">
           Bloquear día y horario
         </h2>
-        <form onSubmit={handleBlockDate} className="px-4">
-          <div className="text-left rounded-2lg mt-5 shadow-lg">
-            <label className="block text-sm font-medium mb-1">
-              Barbero
-            </label>
-            <BarberSelector
-              id="block-barber"
-              barbers={barbers ?? []}
-              selectedBarberId={selectedBarberId}
-              onChange={setSelectedBarberId}
-              className="w-full"
-            />
-
-            <label className="block text-sm font-medium mb-1 mt-4">
-              {useRange ? "Desde" : "Fecha"}
-            </label>
-            <DatePickerField
-              date={selectedDate}
-              onChange={(d) => {
-                setSelectedDate(d);
-                if (d && selectedEndDate && selectedEndDate < d) {
-                  setSelectedEndDate(d);
-                }
-              }}
-            />
-
-            <label className="flex items-center gap-2 text-sm font-medium mb-1 mt-4 cursor-pointer select-none">
-              <input
-                id="block-use-range"
-                type="checkbox"
-                checked={useRange}
-                onChange={(e) => setUseRange(e.target.checked)}
-                className="w-4 h-4 cursor-pointer accent-[var(--primary)]"
+        <form onSubmit={handleBlockDate} className="px-2 text-left space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                Barbero
+              </label>
+              <BarberSelector
+                id="block-barber"
+                barbers={barbers ?? []}
+                selectedBarberId={selectedBarberId}
+                onChange={setSelectedBarberId}
+                className="w-full"
               />
-              Bloquear rango de días
-            </label>
+            </div>
 
-            {useRange && (
-              <>
-                <label className="block text-sm font-medium mb-1 mt-4">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 h-[42px] mt-6">
+              <span className="text-xs font-semibold text-[var(--accent)] uppercase tracking-wider">Bloquear rango de días</span>
+              <button
+                id="block-use-range"
+                type="button"
+                onClick={() => setUseRange(!useRange)}
+                className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${useRange ? 'bg-[var(--accent)]' : 'bg-gray-600'}`}
+              >
+                <div
+                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${useRange ? 'translate-x-5' : 'translate-x-0'}`}
+                />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                {useRange ? "Desde" : "Fecha"}
+              </label>
+              <DatePickerField
+                date={selectedDate}
+                onChange={(d) => {
+                  setSelectedDate(d);
+                  if (d && selectedEndDate && selectedEndDate < d) {
+                    setSelectedEndDate(d);
+                  }
+                }}
+              />
+            </div>
+
+            {useRange ? (
+              <div>
+                <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
                   Hasta
                 </label>
                 <DatePickerField
@@ -155,21 +162,22 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
                   onChange={setSelectedEndDate}
                 />
                 {hasDateRangeError && (
-                  <p className="text-sm mt-1">
+                  <p className="text-xs text-red-500 mt-1">
                     La fecha Hasta debe ser igual o posterior a la fecha de inicio.
                   </p>
                 )}
-              </>
+              </div>
+            ) : (
+              <div className="hidden md:block"></div>
             )}
 
-            <div className="flex space-x-6 my-4">
+            <div className="md:col-span-2 grid grid-cols-2 gap-4">
               <TimeSelect
                 id="block-start-time"
                 label="Inicio"
                 value={startTime}
                 options={allAppointments}
                 onChange={setStartTime}
-                className="flex-1"
               />
               <TimeSelect
                 id="block-end-time"
@@ -177,17 +185,25 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
                 value={endTime}
                 options={endTimeOptions.filter((t) => t > startTime)}
                 onChange={setEndTime}
-                className="flex-1"
               />
             </div>
 
-            <label className="block text-sm font-medium mb-1 mt-4">
-              Motivo
-            </label>
-            <input id="block-reason" value={reason} onChange={(e) => setReason(e.target.value)} required />
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                Motivo
+              </label>
+              <input 
+                id="block-reason" 
+                value={reason} 
+                onChange={(e) => setReason(e.target.value)} 
+                required 
+                className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm"
+                placeholder="Ej. Vacaciones, Trámite personal, etc."
+              />
+            </div>
           </div>
 
-          <div className="flex justify-center mt-10">
+          <div className="flex justify-center pt-4">
             <BlockButton id="btn-block-submit" type="submit" disabled={isDisabled} loading={loading} />
           </div>
         </form>

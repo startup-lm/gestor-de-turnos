@@ -85,26 +85,28 @@ export default function SocialMediaSettingsModal({ onClose }: Readonly<Props>) {
 
   return (
     <>
-      <Modal onClose={onClose}>
+      <Modal onClose={onClose} size="md">
         <h2 className="text-2xl font-bold mb-6 text-center text-[var(--foreground)]">Redes Sociales</h2>
 
-        <div className="space-y-4 px-2 max-h-[60vh] overflow-y-auto">
+        <div className="space-y-4 px-2 max-h-[60vh] overflow-y-auto text-left">
           {socials.map((social, index) => (
-            <div key={social.name} className="bg-[var(--accent)] p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex flex-col gap-3">
+            <div key={social.name} className="bg-[var(--foreground)]/5 p-4 rounded-xl border border-[var(--foreground)]/10 flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 capitalize font-semibold">
-                  {ICON_MAP[social.name] || <FaLink size={20} />}
+                <div className="flex items-center gap-2.5 capitalize font-semibold text-[var(--foreground)]">
+                  <span className="text-[var(--accent)]">
+                    {ICON_MAP[social.name] || <FaLink size={20} />}
+                  </span>
                   <span>{social.name}</span>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={social.active}
-                    onChange={(e) => updateSocial(index, { active: e.target.checked })}
+                <button
+                  type="button"
+                  onClick={() => updateSocial(index, { active: !social.active })}
+                  className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${social.active ? 'bg-[var(--accent)]' : 'bg-gray-600'}`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${social.active ? 'translate-x-5' : 'translate-x-0'}`}
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[var(--primary)]"></div>
-                </label>
+                </button>
               </div>
               {social.active && (
                 <input
@@ -112,18 +114,18 @@ export default function SocialMediaSettingsModal({ onClose }: Readonly<Props>) {
                   placeholder={`Link a tu ${social.name}`}
                   value={social.url}
                   onChange={(e) => updateSocial(index, { url: e.target.value })}
-                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg p-2 text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
+                  className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/10 rounded-lg p-2.5 text-sm focus:outline-none focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-colors"
                 />
               )}
             </div>
           ))}
         </div>
 
-        <div className="flex justify-end pt-6 mt-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="flex justify-end pt-6 mt-4 border-t border-[var(--foreground)]/10">
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-2 rounded-xl font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors mr-2"
+            className="px-6 py-2 rounded-xl font-medium text-[var(--foreground)]/60 hover:bg-[var(--foreground)]/5 transition-colors mr-2 text-sm"
           >
             Cancelar
           </button>
@@ -131,7 +133,7 @@ export default function SocialMediaSettingsModal({ onClose }: Readonly<Props>) {
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="!bg-[var(--primary)] !text-black px-6 py-2 rounded-xl font-bold shadow-lg shadow-[var(--primary)]/20 hover:shadow-[var(--primary)]/40 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:transform-none"
+            className="!bg-[var(--accent)] !text-[var(--primary)] px-6 py-2 rounded-xl font-bold hover:opacity-90 transition-all duration-200 disabled:opacity-50 text-sm shadow-md"
           >
             {saving ? "Guardando..." : "Guardar Cambios"}
           </button>
