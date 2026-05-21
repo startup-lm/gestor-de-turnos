@@ -30,8 +30,8 @@ export default async function NosotrosPage() {
   const storefrontPhoto = settings.local_photo || local;
 
   return (
-    <div className="p-5 flex flex-col items-center text-center max-w-6xl mx-auto pt-8 md:pt-12 pb-16">
-      <h1 className="text-3xl font-bold mb-8">Sobre Nosotros</h1>
+    <div className="p-5 flex flex-col items-center text-center max-w-6xl mx-auto pb-16">
+      <h1 className="text-3xl font-bold mb-5">Sobre Nosotros</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
         {/* Nuestros Barberos */}

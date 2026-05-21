@@ -13,10 +13,13 @@ interface Props {
 }
 
 export default function BarberCheckbox({ barbers, selectedBarberId, onChange }: Readonly<Props>) {
+  const allBarbers = [...barbers, { id: 0, name: "No tengo preferencia", image: "" }];
+
   return (
     <div className="flex flex-wrap justify-center gap-6 py-2">
-      {barbers.map((b) => {
+      {allBarbers.map((b) => {
         const isSelected = b.id === selectedBarberId;
+        const isNoPreference = b.id === 0;
         return (
           <button
             key={b.id}
@@ -36,13 +39,19 @@ export default function BarberCheckbox({ barbers, selectedBarberId, onChange }: 
                     : "ring-2 ring-[var(--accent)]/20 hover:ring-[var(--accent)]/50"
                 }`}
               >
-                <Image
-                  src={b.image || logo}
-                  alt={b.name}
-                  width={80}
-                  height={80}
-                  className="w-full h-full rounded-full object-cover bg-[var(--background)] border border-[var(--foreground)]/10"
-                />
+                {isNoPreference ? (
+                  <div className="w-full h-full rounded-full bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/30 backdrop-blur-md">
+                    <span className="text-3xl filter drop-shadow-[0_0_8px_rgba(223,186,115,0.4)]">💈</span>
+                  </div>
+                ) : (
+                  <Image
+                    src={b.image || logo}
+                    alt={b.name}
+                    width={80}
+                    height={80}
+                    className="w-full h-full rounded-full object-cover bg-[var(--background)] border border-[var(--foreground)]/10"
+                  />
+                )}
               </div>
 
               {/* Badge de Selección (Check) */}

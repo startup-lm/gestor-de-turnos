@@ -7,6 +7,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import '@/styles/calendar.css';
 import { Appointment } from '@/lib/types/Appointment';
 import { CalendarEvent } from '@/lib/types/CalendarEvent';
+import { Barber } from '@/lib/types/Barbers';
 import Spinner from '@/components/loading/Spinner';
 import { formats } from '@/components/calendar/CalendarFormats';
 import { useCalendarData } from '@/lib/hooks/useCalendarData';
@@ -19,6 +20,7 @@ const localizer = momentLocalizer(moment);
 
 interface CustomCalendarProps {
   selectedBarberId: number;
+  barbers: Barber[];
   role: string;
   isMobile: boolean;
   onSlotClick: (appointment: Appointment, events: CalendarEvent[]) => void;
@@ -26,7 +28,7 @@ interface CustomCalendarProps {
   refreshSignal?: number;
 }
 
-export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlotClick, onEventClick, refreshSignal, }: Readonly<CustomCalendarProps>) {
+export default function CustomCalendar({ selectedBarberId, barbers, role, isMobile, onSlotClick, onEventClick, refreshSignal, }: Readonly<CustomCalendarProps>) {
   const { businessHours, businessSettings } = useBusinessContext();
   const { currentDate, currentRange, onNavigate, onRangeChange } = useCalendarNavigation();
   const { events, allAppointments } = useCalendarData(selectedBarberId, role, currentRange, refreshSignal);
@@ -71,7 +73,7 @@ export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlo
       <div className="custom-calendar p-6 rounded-lg">
         <Calendar
           localizer={localizer}
-          events={events}
+          events={selectedBarberId === 0 ? [] : events}
           view={currentView}
           views={availableViews}
           selectable
@@ -89,11 +91,28 @@ export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlo
             if (slotInfo.start < now && role === "guest") return;
             if (isClosedDay(slotInfo.start) || isLunchBreak(slotInfo.start)) return;
             const eventPaddingMs = 60 * 1000;
-            const overlapsEvent = events.some(ev => {
-              const originalStart = new Date(ev.start.getTime() - eventPaddingMs);
-              const originalEnd = new Date(ev.end.getTime() + eventPaddingMs);
-              return slotInfo.start < originalEnd && slotInfo.end > originalStart;
-            });
+            
+            let overlapsEvent = false;
+            if (selectedBarberId === 0) {
+              const busyBarberIds = new Set<number>();
+              events.forEach(ev => {
+                const originalStart = new Date(ev.start.getTime() - eventPaddingMs);
+                const originalEnd = new Date(ev.end.getTime() + eventPaddingMs);
+                if (slotInfo.start < originalEnd && slotInfo.end > originalStart) {
+                  if (ev.barber_id) {
+                    busyBarberIds.add(ev.barber_id);
+                  }
+                }
+              });
+              const activeBarbers = barbers.filter(b => b.id && b.id !== 0);
+              overlapsEvent = busyBarberIds.size >= activeBarbers.length;
+            } else {
+              overlapsEvent = events.some(ev => {
+                const originalStart = new Date(ev.start.getTime() - eventPaddingMs);
+                const originalEnd = new Date(ev.end.getTime() + eventPaddingMs);
+                return slotInfo.start < originalEnd && slotInfo.end > originalStart;
+              });
+            }
             if (overlapsEvent) return;
 
             const appt: Appointment = {
@@ -144,11 +163,29 @@ export default function CustomCalendar({ selectedBarberId, role, isMobile, onSlo
             const now = new Date();
             const slotEnd = new Date(date.getTime() + step * 60 * 1000);
             const eventPaddingMs = 60 * 1000;
-            const overlapsEvent = events.some(ev => {
-              const originalStart = new Date(ev.start.getTime() - eventPaddingMs);
-              const originalEnd = new Date(ev.end.getTime() + eventPaddingMs);
-              return date < originalEnd && slotEnd > originalStart;
-            });
+
+            let overlapsEvent = false;
+            if (selectedBarberId === 0) {
+              const busyBarberIds = new Set<number>();
+              events.forEach(ev => {
+                const originalStart = new Date(ev.start.getTime() - eventPaddingMs);
+                const originalEnd = new Date(ev.end.getTime() + eventPaddingMs);
+                if (date < originalEnd && slotEnd > originalStart) {
+                  if (ev.barber_id) {
+                    busyBarberIds.add(ev.barber_id);
+                  }
+                }
+              });
+              const activeBarbers = barbers.filter(b => b.id && b.id !== 0);
+              overlapsEvent = busyBarberIds.size >= activeBarbers.length;
+            } else {
+              overlapsEvent = events.some(ev => {
+                const originalStart = new Date(ev.start.getTime() - eventPaddingMs);
+                const originalEnd = new Date(ev.end.getTime() + eventPaddingMs);
+                return date < originalEnd && slotEnd > originalStart;
+              });
+            }
+
             const isPastForGuest = role === 'guest' && date < now;
             if (!isPastForGuest && !overlapsEvent) {
               return { className: 'calendar-slot--clickable active:scale-[0.98] transition-transform duration-100' };

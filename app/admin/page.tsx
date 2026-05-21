@@ -17,7 +17,8 @@ import {
   BookOpen,
   PlusCircle,
   MapPin,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Shuffle
 } from "lucide-react";
 import WhatsAppSettingsModal from "@/components/admin/WhatsAppSettingsModal";
 import PaymentSettingsModal from "@/components/admin/PaymentSettingsModal";
@@ -26,9 +27,10 @@ import OurStorySettingsModal from "@/components/admin/OurStorySettingsModal";
 import RegisterSaleModal from "@/components/sales/RegisterSaleModal";
 import LocationSettingsModal from "@/components/admin/LocationSettingsModal";
 import LocalPhotoSettingsModal from "@/components/admin/LocalPhotoSettingsModal";
+import AssignmentSettingsModal from "@/components/admin/AssignmentSettingsModal";
 
 export default function AdminPage() {
-  const [activeModal, setActiveModal] = useState<"whatsapp" | "payments" | "hours" | "block" | "social" | "story" | "sale" | "location" | "local_photo" | null>(null);
+  const [activeModal, setActiveModal] = useState<"whatsapp" | "payments" | "hours" | "block" | "social" | "story" | "sale" | "location" | "local_photo" | "assignment" | null>(null);
   const router = useRouter();
 
   const adminCards = [
@@ -41,6 +43,7 @@ export default function AdminPage() {
     { label: "Barberos", description: "Gestión de personal", icon: Users, category: "administracion_local", onClick: () => router.push("/admin/barberos") },
     { label: "Facturación", description: "ARCA / AFIP", icon: FileText, category: "administracion_local", onClick: () => router.push("/admin/facturacion"), show: process.env.NEXT_PUBLIC_ENABLE_ARCA === "true" },
     { label: "Horarios", description: "Días de atención", icon: Clock, category: "administracion_local", onClick: () => setActiveModal("hours") },
+    { label: "Asignación", description: "Criterio de asignación", icon: Shuffle, category: "administracion_local", onClick: () => setActiveModal("assignment") },
     { label: "Ubicación", description: "Dirección en mapa", icon: MapPin, category: "administracion_local", onClick: () => setActiveModal("location") },
     { label: "Foto Local", description: "Fachada del local", icon: ImageIcon, category: "administracion_local", onClick: () => setActiveModal("local_photo") },
     { label: "WhatsApp", description: "Teléfono del local", icon: MessageCircle, category: "administracion_local", onClick: () => setActiveModal("whatsapp") },
@@ -150,6 +153,7 @@ export default function AdminPage() {
       {activeModal === "sale" && <RegisterSaleModal onClose={() => setActiveModal(null)} />}
       {activeModal === "location" && <LocationSettingsModal onClose={() => setActiveModal(null)} />}
       {activeModal === "local_photo" && <LocalPhotoSettingsModal onClose={() => setActiveModal(null)} />}
+      {activeModal === "assignment" && <AssignmentSettingsModal onClose={() => setActiveModal(null)} />}
     </div>
   );
 }

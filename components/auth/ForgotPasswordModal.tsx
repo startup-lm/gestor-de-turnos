@@ -23,7 +23,7 @@ export default function ForgotPasswordModal({ onClose }: Readonly<{ onClose: () 
       return;
     }
     const error = await resetPassword(email);
-    popup.open( error ? "Hubo un error al enviar el mail. Intentá de nuevo." : "Te enviamos un mail para restablecer tu contraseña.", !error );
+    popup.open(error ? "Hubo un error al enviar el mail. Intentá de nuevo." : "Te enviamos un mail para restablecer tu contraseña.", !error);
     setLoading(false);
     setEmail("");
   };
@@ -55,7 +55,9 @@ export default function ForgotPasswordModal({ onClose }: Readonly<{ onClose: () 
             </div>
           </div>
           <div className="flex justify-center mt-8">
-            <SendButton id="btn-forgot-submit" type="submit" loading={loading} disabled={isDisabled} />
+            <div className="w-[200px]">
+              <SendButton id="btn-forgot-submit" type="submit" loading={loading} disabled={isDisabled} />
+            </div>
           </div>
         </form>
       </Modal>

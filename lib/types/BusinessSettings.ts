@@ -5,4 +5,5 @@ export type BusinessSettings = {
   our_story?: string[];
   location_address?: string;
   local_photo?: string;
+  assignment_criteria?: "random" | "balanced" | "prioritize_admin" | "prioritize_barber";
 };

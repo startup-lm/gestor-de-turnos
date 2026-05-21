@@ -6,6 +6,7 @@ import { Calendar, User, Clock, ArrowLeft } from "lucide-react";
 import { sendConfirmAppointment } from "../../utils/whatsapp";
 import ReserveButton from "../buttons/ReserveButton";
 import { CalendarEvent } from "@/lib/types/CalendarEvent";
+import { Barber } from "@/lib/types/Barbers";
 import ClientAutocompleteFields from "./ClientAutocompleteFields";
 import { useReservarLogic } from "@/lib/hooks/useReservarLogic";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
@@ -20,6 +21,7 @@ interface Props {
   selectedBarberId: number;
   events: CalendarEvent[];
   onAppointmentCreated?: () => void;
+  barbers?: Barber[];
 }
 
 export default function ReservarInlineCard({
@@ -28,7 +30,8 @@ export default function ReservarInlineCard({
   selectedBarber,
   selectedBarberId,
   events,
-  onAppointmentCreated
+  onAppointmentCreated,
+  barbers
 }: Readonly<Props>) {
   const {
     isGuest,
@@ -46,7 +49,8 @@ export default function ReservarInlineCard({
     isDisabled,
     popup,
     handleReservar,
-  } = useReservarLogic(selectedDate, selectedBarber, selectedBarberId, events, onAppointmentCreated);
+    assignedBarber,
+  } = useReservarLogic(selectedDate, selectedBarber, selectedBarberId, events, onAppointmentCreated, barbers);
 
   const { businessSettings } = useBusinessContext();
 
@@ -101,7 +105,7 @@ export default function ReservarInlineCard({
                     Profesional
                   </span>
                   <span className="font-bold text-base text-[var(--foreground)]">
-                    {selectedBarber}
+                    {assignedBarber.name}
                   </span>
                 </div>
               </div>

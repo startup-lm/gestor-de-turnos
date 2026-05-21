@@ -5,4 +5,5 @@ export type CalendarEvent = {
     end: Date;
     paid: boolean;
     isAppt: boolean;
+    barber_id?: number;
 };

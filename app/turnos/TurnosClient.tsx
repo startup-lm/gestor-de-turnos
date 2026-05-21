@@ -178,6 +178,7 @@ export default function TurnosClient({ initialBarbers }: Readonly<Props>) {
               <CustomCalendar
                 key={`cal-${selectedBarberId}`}
                 selectedBarberId={selectedBarberId}
+                barbers={initialBarbers}
                 role={role}
                 isMobile={isMobile}
                 onSlotClick={handleSlotClick}
@@ -197,6 +198,7 @@ export default function TurnosClient({ initialBarbers }: Readonly<Props>) {
               selectedBarber={selectedBarber?.name || ""}
               selectedBarberId={selectedBarberId}
               events={events}
+              barbers={initialBarbers}
               onAppointmentCreated={handleAppointmentCreated}
             />
           </div>
