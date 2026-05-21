@@ -121,10 +121,12 @@ export default function LocalPhotoSettingsModal({ onClose }: Readonly<Props>) {
             <div className="relative h-56 w-full rounded-2xl overflow-hidden border border-[var(--foreground)]/10 shadow-lg bg-black/10 flex items-center justify-center">
               {previewUrl ? (
                 // Selected file preview
-                <img
+                <Image
                   src={previewUrl}
                   alt="Vista previa"
-                  className="h-full w-full object-cover"
+                  fill
+                  className="object-cover"
+                  unoptimized
                 />
               ) : currentPhoto ? (
                 // Loaded dynamic photo from database

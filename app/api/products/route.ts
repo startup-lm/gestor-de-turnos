@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { successResponse, errorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
+import { requireAdmin } from "@/lib/api/auth";
 import { deleteImage } from "@/lib/repository/storage";
 import { revalidateTag } from "next/cache";
 
@@ -16,6 +17,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const admin = await requireAdmin();
+  if (!admin) return errorResponse("No autorizado", 401);
+
   const { name, description, price, image } = await request.json();
   const { error } = await supabaseAdmin
     .from("products")
@@ -27,6 +31,9 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const admin = await requireAdmin();
+  if (!admin) return errorResponse("No autorizado", 401);
+
   const { id, name, description, price, image } = await request.json();
   const { error } = await supabaseAdmin
     .from("products")
@@ -39,6 +46,9 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const admin = await requireAdmin();
+  if (!admin) return errorResponse("No autorizado", 401);
+
   const { id } = await request.json();
   const { data: product, error: fetchError } = await supabaseAdmin
     .from("products")

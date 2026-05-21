@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { successResponse, errorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { createSupabaseServerClient } from "@/lib/supabase/supabaseServer";
+import { requireBarberOrAdmin } from "@/lib/api/auth";
+import { rateLimit } from "@/lib/api/rateLimit";
 import { revalidateTag } from "next/cache";
 import {
   AppointmentInsertSchema,
@@ -12,6 +14,10 @@ import {
 } from "@/lib/schemas";
 
 export async function GET(request: Request) {
+  // Verificar si es barbero o admin para devolver datos reales o enmascarados
+  const staff = await requireBarberOrAdmin();
+  const isAuthorized = staff !== null;
+
   const { searchParams } = new URL(request.url);
   let query = supabaseAdmin
     .from("appointments")
@@ -36,11 +42,39 @@ export async function GET(request: Request) {
     ...item,
     start_time: item.start_time?.slice(0, 5) ?? item.start_time,
     end_time: item.end_time?.slice(0, 5) ?? item.end_time,
+    // Enmascarar información sensible para usuarios no autenticados
+    client: isAuthorized ? item.client : "Ocupado",
+    phone: isAuthorized ? item.phone : null,
+    price: isAuthorized ? item.price : null,
+    payment_method: isAuthorized ? item.payment_method : null,
+    created_by: isAuthorized ? item.created_by : null,
+    deleted_by: isAuthorized ? item.deleted_by : null,
   }));
   return NextResponse.json(formatted);
 }
 
 export async function POST(request: Request) {
+  // 1. Verificar si es personal de la barbería para exceptuarlo del control de tasa
+  const staff = await requireBarberOrAdmin();
+  const isStaff = staff !== null;
+
+  if (!isStaff) {
+    // 2. Obtener IP del cliente
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || 
+               request.headers.get("x-real-ip") || 
+               "127.0.0.1";
+
+    // 3. Aplicar límite de 10 turnos por minuto (60000 ms) para usuarios anónimos
+    const limitResult = rateLimit(ip, 10, 60000);
+
+    if (!limitResult.success) {
+      return errorResponse(
+        "Has superado el límite de reservas permitido por minuto. Por favor, aguarda un instante e intenta nuevamente.",
+        429
+      );
+    }
+  }
+
   const body = await request.json();
   const parsed = AppointmentInsertSchema.safeParse(body);
 
@@ -75,6 +109,9 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const staff = await requireBarberOrAdmin();
+  if (!staff) return errorResponse("No autorizado", 401);
+
   const body = await request.json();
   const parsed = AppointmentPutSchema.safeParse(body);
 
@@ -104,6 +141,9 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const staff = await requireBarberOrAdmin();
+  if (!staff) return errorResponse("No autorizado", 401);
+
   const body = await request.json();
   const parsed = AppointmentDeleteSchema.safeParse(body);
 
@@ -134,6 +174,9 @@ export async function DELETE(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const staff = await requireBarberOrAdmin();
+  if (!staff) return errorResponse("No autorizado", 401);
+
   const body = await request.json();
   const parsed = AppointmentPatchSchema.safeParse(body);
 
