@@ -201,10 +201,10 @@ export default function BrandingSettingsModal({ onClose }: Readonly<Props>) {
             <button
               type="button"
               onClick={triggerFileInput}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-dashed border-slate-700 hover:border-[var(--accent)]/40 rounded-xl bg-slate-950/40 hover:bg-[#131c33] text-sm font-semibold transition-all group text-slate-200 cursor-pointer"
+              className="w-[200] flex items-center justify-center gap-2 py-3 px-4 border border-dashed border-slate-700 hover:border-[var(--accent)]/40 rounded-xl bg-slate-950/40 hover:bg-[#131c33] text-sm font-semibold transition-all group text-slate-200 cursor-pointer"
             >
               <Upload size={18} className="text-slate-400 group-hover:text-[var(--accent)] transition-colors" />
-              <span>{selectedFile ? "Cambiar logo seleccionado" : "Subir nuevo logo"}</span>
+              <span>{selectedFile ? "Cambiar logo" : "Subir logo"}</span>
             </button>
             
             {selectedFile && (
