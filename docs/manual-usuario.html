@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manual de Uso | Sistema de Gestión y Reservas</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts (Outfit & Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #030712;
+      color: #f3f4f6;
+    }
+    h1, h2, h3, .font-title {
+      font-family: 'Outfit', sans-serif;
+    }
+    .accent-gold {
+      color: #e2b873;
+    }
+    .bg-gold-gradient {
+      background: linear-gradient(135deg, #e2b873 0%, #fcebb6 100%);
+    }
+    .border-gold {
+      border-color: rgba(226, 184, 115, 0.2);
+    }
+    .border-gold-hover:hover {
+      border-color: rgba(226, 184, 115, 0.6);
+      box-shadow: 0 0 20px rgba(226, 184, 115, 0.08);
+    }
+    .glass-card {
+      background: rgba(10, 15, 30, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(226, 184, 115, 0.2);
+      border-radius: 3px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(226, 184, 115, 0.5);
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.4s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-[#e2b873]/30 selection:text-[#fcebb6]">
+
+  <!-- Background decorative glows -->
+  <div class="fixed -top-40 -left-40 w-[500px] h-[500px] bg-[#e2b873]/5 rounded-full blur-[140px] pointer-events-none z-0"></div>
+  <div class="fixed top-1/2 -right-60 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[160px] pointer-events-none z-0"></div>
+  <div class="fixed -bottom-40 left-1/3 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[140px] pointer-events-none z-0"></div>
+
+  <!-- HEADER -->
+  <header class="relative z-10 w-full max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-center border-b border-white/5 gap-4">
+    <div class="flex items-center gap-3">
+      <div class="bg-gold-gradient p-2.5 rounded-2xl text-slate-950 flex items-center justify-center shadow-lg shadow-[#e2b873]/10">
+        <i data-lucide="book-open" class="w-6 h-6 animate-pulse"></i>
+      </div>
+      <div>
+        <h2 class="text-xl font-bold tracking-tight text-white">MANUAL<span class="accent-gold font-light">DEUSO</span></h2>
+        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Guía Completa para tu Negocio y Personal</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="px-3 py-1 bg-white/5 border border-white/10 text-slate-300 rounded-full text-xs font-semibold flex items-center gap-1.5">
+        <i data-lucide="check" class="w-3.5 h-3.5 text-[#e2b873]"></i>
+        Instrucciones Oficiales
+      </span>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="relative z-10 w-full max-w-7xl mx-auto px-4 py-10 flex-grow">
+    
+    <!-- Hero / Title -->
+    <div class="text-center max-w-3xl mx-auto mb-12">
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-white leading-tight">
+        Manual de Instrucciones del Gestor
+      </h1>
+      <p class="text-base text-slate-400 leading-relaxed">
+        Bienvenido a la guía completa de funcionamiento de tu nuevo sistema de turnos. En este manual interactivo encontrarás, paso a paso, cómo funciona cada parte de la plataforma para configurarla y sacarle el máximo provecho.
+      </p>
+    </div>
+
+    <!-- Interface Matrix -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      
+      <!-- NAVIGATION SIDEBAR -->
+      <div class="lg:col-span-1 flex flex-col gap-2">
+        <p class="text-xs uppercase font-bold text-slate-500 tracking-wider px-3 mb-2">Instrucciones por Módulo</p>
+        
+        <button onclick="switchTab('pwa-inst')" id="btn-pwa-inst" class="tab-btn w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left font-semibold transition-all duration-200 glass-card border border-white/5 text-slate-300 hover:text-white hover:border-gold">
+          <i data-lucide="smartphone" class="w-5 h-5 accent-gold"></i>
+          <span>1. Guardar en el Celular</span>
+        </button>
+
+        <button onclick="switchTab('client-portal')" id="btn-client-portal" class="tab-btn w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left font-semibold transition-all duration-200 glass-card border border-white/5 text-slate-300 hover:text-white hover:border-gold">
+          <i data-lucide="calendar" class="w-5 h-5 accent-gold"></i>
+          <span>2. Reservas de Clientes</span>
+        </button>
+
+        <button onclick="switchTab('barber-portal')" id="btn-barber-portal" class="tab-btn w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left font-semibold transition-all duration-200 glass-card border border-white/5 text-slate-300 hover:text-white hover:border-gold">
+          <i data-lucide="users" class="w-5 h-5 accent-gold"></i>
+          <span>3. Panel del Personal</span>
+        </button>
+
+        <button onclick="switchTab('admin-panel')" id="btn-admin-panel" class="tab-btn w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left font-semibold transition-all duration-200 glass-card border border-white/5 text-slate-300 hover:text-white hover:border-gold">
+          <i data-lucide="layout-dashboard" class="w-5 h-5 accent-gold"></i>
+          <span>4. Panel de Administración</span>
+        </button>
+      </div>
+
+      <!-- MAIN TAB VIEWPORT -->
+      <div class="lg:col-span-3">
+        <div class="glass-card rounded-3xl p-6 md:p-8 border border-white/5 shadow-2xl relative overflow-hidden min-h-[500px]">
+          
+          <!-- TAB 1: INSTALAR EN CELULAR -->
+          <div id="pwa-inst" class="tab-content">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="p-3 bg-[#e2b873]/10 text-[#e2b873] border border-[#e2b873]/20 rounded-2xl">
+                <i data-lucide="smartphone" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <h3 class="text-2xl font-bold text-white">¿Cómo guardar el sistema en el celular?</h3>
+                <p class="text-xs text-slate-400">Guía para clientes y profesionales para usar el sistema como una App</p>
+              </div>
+            </div>
+            
+            <p class="text-sm text-slate-300 leading-relaxed mb-6">
+              Para mayor comodidad, el sistema puede ser guardado en la pantalla de inicio de tu teléfono celular **sin necesidad de descargar nada desde Google Play o Apple App Store**. Se comportará como una aplicación móvil normal, a pantalla completa, facilitando el acceso rápido.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div class="p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-[#e2b873]/20 transition-all duration-300">
+                <div class="flex items-center gap-2 mb-3">
+                  <i data-lucide="apple" class="w-5 h-5 text-slate-200"></i>
+                  <h4 class="font-bold text-white text-sm">En iPhone / iPad (Safari)</h4>
+                </div>
+                <ol class="list-decimal list-inside text-xs text-slate-300 space-y-3">
+                  <li>Abrí el navegador **Safari** e ingresá a la página web del sistema de turnos.</li>
+                  <li>Presioná el botón de **Compartir** <span class="bg-white/10 px-1.5 py-0.5 rounded text-[10px]"><i data-lucide="share" class="w-3.5 h-3.5 inline"></i></span> (el ícono de la flecha hacia arriba en la barra inferior).</li>
+                  <li>Deslizá las opciones hacia abajo y seleccioná **"Agregar a inicio"** (o "Add to Home Screen").</li>
+                  <li>Confirmá presionando **"Agregar"** arriba a la derecha. ¡El ícono aparecerá en tu celular!</li>
+                </ol>
+              </div>
+
+              <div class="p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-[#e2b873]/20 transition-all duration-300">
+                <div class="flex items-center gap-2 mb-3">
+                  <i data-lucide="chrome" class="w-5 h-5 text-slate-200"></i>
+                  <h4 class="font-bold text-white text-sm">En Android (Google Chrome)</h4>
+                </div>
+                <ol class="list-decimal list-inside text-xs text-slate-300 space-y-3">
+                  <li>Abrí **Google Chrome** e ingresá a la web de turnos.</li>
+                  <li>Buscá y tocá el cartel flotante que dice **"Instalar aplicación"** o **"Agregar a pantalla principal"** que aparece en la parte inferior.</li>
+                  <li>Si no ves el cartel, tocá los **tres puntos** verticales arriba a la derecha.</li>
+                  <li>Seleccioná **"Instalar aplicación"** o **"Agregar a la pantalla principal"** y confirmá.</li>
+                </ol>
+              </div>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-gradient-to-r from-[#e2b873]/10 to-[#fcebb6]/5 border border-[#e2b873]/20 flex gap-4 items-start">
+              <i data-lucide="sparkles" class="w-6 h-6 text-[#e2b873] shrink-0 mt-0.5 animate-bounce"></i>
+              <div>
+                <h4 class="font-bold text-[#e2b873] text-sm mb-1">Ventajas de tener la App instalada</h4>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                  Al abrir la app desde tu pantalla de inicio, se ejecutará en **pantalla completa** (sin barras del navegador arriba ni abajo). Esto ahorra espacio en pantalla, reduce el consumo de datos y permite a los clientes reservar turnos, y al personal consultar su agenda, en cuestión de segundos.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: PORTAL DE RESERVA (CLIENTES) -->
+          <div id="client-portal" class="tab-content">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="p-3 bg-[#e2b873]/10 text-[#e2b873] border border-[#e2b873]/20 rounded-2xl">
+                <i data-lucide="calendar" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <h3 class="text-2xl font-bold text-white">¿Cómo reservan los clientes?</h3>
+                <p class="text-xs text-slate-400">Flujo ágil e intuitivo diseñado para celulares</p>
+              </div>
+            </div>
+
+            <p class="text-sm text-slate-300 leading-relaxed mb-6">
+              La pantalla para los clientes es sumamente sencilla para evitar confusiones y asegurar que concreten la reserva de forma rápida en 3 pasos interactivos:
+            </p>
+
+            <div class="space-y-4 mb-6">
+              <div class="flex gap-4 items-start p-4 rounded-xl bg-white/5 border border-white/5">
+                <div class="bg-gold-gradient text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs">1</div>
+                <div>
+                  <h4 class="font-bold text-white text-sm">Selección del Profesional</h4>
+                  <p class="text-xs text-slate-400 mt-1">El cliente elige con qué barbero o especialista atenderse. Puede ver la foto del personal, su especialidad y un botón directo a sus redes sociales (como Instagram) si lo configuraste.</p>
+                </div>
+              </div>
+
+              <div class="flex gap-4 items-start p-4 rounded-xl bg-white/5 border border-white/5">
+                <div class="bg-gold-gradient text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs">2</div>
+                <div>
+                  <h4 class="font-bold text-white text-sm">Selección de Día y Horario</h4>
+                  <p class="text-xs text-slate-400 mt-1">El cliente selecciona un día y horario disponibles. La agenda calcula en tiempo real qué horas están libres, bloqueando automáticamente los feriados, horarios fuera de servicio y los turnos ya ocupados por otros clientes.</p>
+                </div>
+              </div>
+
+              <div class="flex gap-4 items-start p-4 rounded-xl bg-white/5 border border-white/5">
+                <div class="bg-gold-gradient text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs">3</div>
+                <div>
+                  <h4 class="font-bold text-white text-sm">Selección del Servicio y Datos Rápidos</h4>
+                  <p class="text-xs text-slate-400 mt-1">Selecciona el corte, servicio o producto de interés. Para confirmar el turno, solo ingresa su Nombre y Teléfono. **No necesita crear usuarios ni recordar contraseñas**, garantizando una reserva en segundos.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-white/5 border border-white/5">
+              <h4 class="font-bold text-white text-sm mb-3 flex items-center gap-2">
+                <i data-lucide="bell-off" class="w-4 h-4 accent-gold"></i>
+                ¿Cómo funciona la cancelación de turnos?
+              </h4>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Cuando un cliente reserva un turno, el sistema le provee de una **página con un enlace único**. Si el cliente no puede asistir, puede ingresar a dicho enlace y presionar un solo botón para cancelar su turno. El horario se liberará instantáneamente en el sistema para que otro cliente pueda reservarlo, reduciendo horas muertas en tu local.
+              </p>
+            </div>
+          </div>
+
+          <!-- TAB 3: PORTAL DEL BARBERO / PERSONAL -->
+          <div id="barber-portal" class="tab-content">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="p-3 bg-[#e2b873]/10 text-[#e2b873] border border-[#e2b873]/20 rounded-2xl">
+                <i data-lucide="users" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <h3 class="text-2xl font-bold text-white">Manual del Profesional (Panel `/dashboard`)</h3>
+                <p class="text-xs text-slate-400">Control de agenda, estadísticas y comisiones diarias</p>
+              </div>
+            </div>
+
+            <p class="text-sm text-slate-300 leading-relaxed mb-6">
+              Cada barbero o especialista del local tiene acceso a un panel de control privado e individual (`/dashboard`). Para ingresar, debe usar el correo y contraseña que le asigne el administrador.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div class="p-4 rounded-xl bg-white/5 border border-white/5">
+                <h4 class="font-bold text-white text-sm mb-2 flex items-center gap-2">
+                  <i data-lucide="calendar-range" class="w-4 h-4 accent-gold"></i>
+                  Calendario e Historial de Turnos
+                </h4>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                  Permite visualizar todos sus turnos agendados en una vista de calendario interactiva. Puede cambiar entre vista diaria, semanal o mensual y dar de baja turnos cancelados en vivo.
+                </p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-white/5 border border-white/5">
+                <h4 class="font-bold text-white text-sm mb-2 flex items-center gap-2">
+                  <i data-lucide="line-chart" class="w-4 h-4 accent-gold"></i>
+                  Estadísticas y Rendimiento
+                </h4>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                  Gráficos visuales dinámicos que muestran el volumen de cortes realizados y la facturación generada de forma personal a lo largo de los días y semanas.
+                </p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-white/5 border border-white/5">
+                <h4 class="font-bold text-white text-sm mb-2 flex items-center gap-2">
+                  <i data-lucide="wallet" class="w-4 h-4 accent-gold"></i>
+                  Cálculo de Comisiones en Vivo
+                </h4>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                  El sistema calcula de forma exacta la comisión acumulada correspondiente al barbero tanto por servicios realizados como por los productos de venta complementaria que registre en el local.
+                </p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-white/5 border border-white/5">
+                <h4 class="font-bold text-white text-sm mb-2 flex items-center gap-2">
+                  <i data-lucide="shopping-bag" class="w-4 h-4 accent-gold"></i>
+                  Registro Rápido de Ventas
+                </h4>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                  Al finalizar un corte, el profesional puede registrar la venta de productos físicos (ceras, pomadas, aceites) desde su propio panel de forma instantánea para descontar stock e impactar en su facturación.
+                </p>
+              </div>
+            </div>
+            
+            <div class="p-5 rounded-2xl bg-white/5 border border-white/5 flex gap-4 items-start">
+              <i data-lucide="shield-alert" class="w-6 h-6 text-[#e2b873] shrink-0 mt-0.5"></i>
+              <div>
+                <h4 class="font-bold text-white text-sm mb-1">Acceso Seguro y Privado</h4>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                  Los profesionales **solo tienen visibilidad sobre su propio calendario y estadísticas**. No tienen acceso a las estadísticas generales de facturación del local, configuraciones globales ni información de otros compañeros de trabajo, protegiendo la privacidad del negocio.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 4: PANEL DE ADMINISTRACION (DUEÑO) -->
+          <div id="admin-panel" class="tab-content">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="p-3 bg-[#e2b873]/10 text-[#e2b873] border border-[#e2b873]/20 rounded-2xl">
+                <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <h3 class="text-2xl font-bold text-white">Manual del Administrador (Panel `/admin`)</h3>
+                <p class="text-xs text-slate-400">Control operativo y configuraciones generales del negocio</p>
+              </div>
+            </div>
+
+            <p class="text-sm text-slate-300 leading-relaxed mb-6">
+              El Panel de Administración es la cabina de control del dueño del negocio. Desde aquí se personaliza el comportamiento completo de la aplicación:
+            </p>
+
+            <div class="space-y-6">
+              
+              <!-- Subsección 1 -->
+              <div class="p-5 rounded-2xl bg-white/5 border border-white/5">
+                <h4 class="font-bold text-white text-sm mb-2 flex items-center gap-2">
+                  <i data-lucide="tag" class="w-4 h-4 text-[#e2b873]"></i>
+                  1. Configuración de Marca y Logo
+                </h4>
+                <p class="text-xs text-slate-400 leading-relaxed mb-3">
+                  Permite cambiar el nombre que ven los clientes en toda la aplicación y cargar el logotipo oficial del local.
+                </p>
+                <div class="bg-black/40 p-3 rounded-lg border border-white/5">
+                  <span class="text-[10px] uppercase font-bold text-[#e2b873] block mb-1">Instrucciones paso a paso:</span>
+                  <p class="text-[11px] text-slate-300">
+                    Ingresá a **Marca** ➔ Editá el **Nombre Comercial** ➔ Presioná **Subir logo** para seleccionar tu logotipo en imagen ➔ Hacé clic en **Guardar**. Toda la web se actualizará al instante con tu nueva identidad visual.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Subsección 2 -->
+              <div class="p-5 rounded-2xl bg-white/5 border border-white/5">
+                <h4 class="font-bold text-white text-sm mb-2 flex items-center gap-2">
+                  <i data-lucide="clock" class="w-4 h-4 text-[#e2b873]"></i>
+                  2. Horarios de Apertura y Cierre
+                </h4>
+                <p class="text-xs text-slate-400 leading-relaxed mb-3">
+                  Configuración general de las jornadas del negocio. Define a qué hora abre y cierra el local, los tiempos de almuerzo y qué días permanece cerrado (por ejemplo, los domingos).
+                </p>
+                <div class="bg-black/40 p-3 rounded-lg border border-white/5">
+                  <span class="text-[10px] uppercase font-bold text-[#e2b873] block mb-1">Instrucciones paso a paso:</span>
+                  <p class="text-[11px] text-slate-300">
+                    Ingresá a **Horarios de Atención** ➔ Seleccioná la hora de apertura, cierre y la pausa de descanso del personal ➔ Desmarcá los días que tu local esté cerrado (el sistema impedirá automáticamente que los clientes elijan horas en esos días).
+                  </p>
+                </div>
+              </div>
+
+              <!-- Subsección 3 -->
+              <div class="p-5 rounded-2xl bg-white/5 border border-white/5">
+                <h4 class="font-bold text-white text-sm mb-2 flex items-center gap-2">
+                  <i data-lucide="calendar-days" class="w-4 h-4 text-[#e2b873]"></i>
+                  3. Bloquear Horarios y Feriados
+                </h4>
+                <p class="text-xs text-slate-400 leading-relaxed mb-3">
+                  Útil para marcar feriados nacionales, días de mudanza o vacaciones de algún empleado. Esto bloquea temporalmente el calendario general de cara al público.
+                </p>
+                <div class="bg-black/40 p-3 rounded-lg border border-white/5">
+                  <span class="text-[10px] uppercase font-bold text-[#e2b873] block mb-1">Instrucciones paso a paso:</span>
+                  <p class="text-[11px] text-slate-300">
+                    Ve a **Bloquear Fechas** ➔ Seleccioná el barbero o "Todo el Local" ➔ Seteá el rango de fecha y hora a bloquear (ej: del 24 de diciembre al 25 de diciembre) ➔ Confirmá. Ningún cliente podrá agendar turnos en ese lapso.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Subsección 4 -->
+              <div class="p-5 rounded-2xl bg-white/5 border border-white/5">
+                <h4 class="font-bold text-white text-sm mb-2 flex items-center gap-2">
+                  <i data-lucide="user-plus" class="w-4 h-4 text-[#e2b873]"></i>
+                  4. Gestión del Personal (Barberos)
+                </h4>
+                <p class="text-xs text-slate-400 leading-relaxed mb-3">
+                  Aquí registrás a las personas que trabajan en el local, cargas sus fotos, indicás su enlace de Instagram y definís su rol.
+                </p>
+                <div class="bg-black/40 p-3 rounded-lg border border-white/5">
+                  <span class="text-[10px] uppercase font-bold text-[#e2b873] block mb-1">Instrucciones paso a paso:</span>
+                  <p class="text-[11px] text-slate-300">
+                    Ingresá a **Profesionales** ➔ Hacé clic en **Agregar Nuevo** ➔ Completá sus datos (Nombre, Mail de acceso, Instagram y Foto) ➔ Asigná si tiene rol de Barbero o Administrador.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Subsección 5 -->
+              <div class="p-5 rounded-2xl bg-white/5 border border-white/5">
+                <h4 class="font-bold text-white text-sm mb-2 flex items-center gap-2">
+                  <i data-lucide="scissors" class="w-4 h-4 text-[#e2b873]"></i>
+                  5. Servicios y Precios
+                </h4>
+                <p class="text-xs text-slate-400 leading-relaxed mb-3">
+                  Configurá el catálogo de servicios (corte clásico, afeitado de barba, tratamientos faciales) con sus respectivos precios y duraciones de tiempo estimadas para que la agenda sea exacta.
+                </p>
+                <div class="bg-black/40 p-3 rounded-lg border border-white/5">
+                  <span class="text-[10px] uppercase font-bold text-[#e2b873] block mb-1">Instrucciones paso a paso:</span>
+                  <p class="text-[11px] text-slate-300">
+                    Ingresá a **Servicios** ➔ Hacé clic en **Nuevo Servicio** ➔ Escribí el nombre del servicio ➔ Seteá el valor monetario y la duración en minutos (ej: 40 minutos) ➔ Hacé clic en guardar para habilitar su reserva inmediata.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Subsección 6 -->
+              <div class="p-5 rounded-2xl bg-white/5 border border-white/5">
+                <h4 class="font-bold text-white text-sm mb-2 flex items-center gap-2">
+                  <i data-lucide="message-square" class="w-4 h-4 text-[#e2b873]"></i>
+                  6. Plantilla de WhatsApp y Contacto
+                </h4>
+                <p class="text-xs text-slate-400 leading-relaxed mb-3">
+                  El sistema permite redactar plantillas de recordatorio para que los barberos puedan enviárselas directamente a los clientes a través de WhatsApp con un solo clic.
+                </p>
+                <div class="bg-black/40 p-3 rounded-lg border border-white/5">
+                  <span class="text-[10px] uppercase font-bold text-[#e2b873] block mb-1">Instrucciones paso a paso:</span>
+                  <p class="text-[11px] text-slate-300">
+                    Ingresá a **Configuraciones de WhatsApp** ➔ Editá el texto predefinido. Podés usar etiquetas para que el sistema rellene automáticamente el Nombre del cliente, el Día, la Hora y el Barbero asignado.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="relative z-10 w-full max-w-7xl mx-auto px-4 py-8 border-t border-white/5 text-center mt-12 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+    <p>© 2026 Plataforma Gestor de Turnos Inteligente. Todos los derechos reservados.</p>
+    <p>Manual de Instrucciones oficial de uso y operación del sistema.</p>
+  </footer>
+
+  <script>
+    // Initialize icons
+    lucide.createIcons();
+
+    // Tab Switcher logic
+    function switchTab(tabId) {
+      // Hide all contents
+      const contents = document.querySelectorAll('.tab-content');
+      contents.forEach(content => content.classList.remove('active'));
+      
+      // Remove active states from all buttons
+      const buttons = document.querySelectorAll('.tab-btn');
+      buttons.forEach(button => {
+        button.classList.remove('text-[#e2b873]', 'border-[#e2b873]', 'bg-white/5');
+        button.classList.add('text-slate-300', 'border-white/5');
+      });
+
+      // Show selected content
+      const activeContent = document.getElementById(tabId);
+      if (activeContent) {
+        activeContent.classList.add('active');
+      }
+
+      // Add active state to clicked button
+      const activeBtn = document.getElementById('btn-' + tabId);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-300', 'border-white/5');
+        activeBtn.classList.add('text-[#e2b873]', 'border-[#e2b873]', 'bg-white/5');
+      }
+    }
+
+    // Default tab select on page load
+    document.addEventListener("DOMContentLoaded", () => {
+      switchTab('pwa-inst');
+    });
+  </script>
+</body>
+</html>
