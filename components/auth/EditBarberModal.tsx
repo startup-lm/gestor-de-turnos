@@ -9,7 +9,7 @@ import Modal from "@/components/ui/Modal";
 import PopupModal from "@/components/ui/PopupModal";
 import Spinner from "@/components/loading/Spinner";
 import { usePopup } from "@/lib/hooks/usePopup";
-import { Check } from "lucide-react";
+
 import SaveButton from "../buttons/SaveButton";
 import { deleteAuthUser } from "@/lib/repository/auth";
 
@@ -30,10 +30,6 @@ export default function EditBarberModal({ barberId, onClose }: Readonly<Props>) 
   const [loading, setLoading] = useState(false);
   const popup = usePopup();
   const formDisabled = selectedBarberId < 0;
-  const checklistOptions = [
-    { label: "Habilitado", value: true },
-    { label: "Deshabilitado", value: false },
-  ];
 
   const handleBarberChange = (id: number) => {
     setSelectedBarberId(id);

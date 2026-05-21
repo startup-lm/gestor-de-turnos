@@ -108,30 +108,6 @@ export default function LocationSettingsModal({ onClose }: Readonly<Props>) {
     }
   };
 
-  const handleReset = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch("/api/business-settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ location_address: "" }),
-      });
-
-      if (res.ok) {
-        popup.open("Ubicación restablecida con éxito", true);
-        setAddress("");
-        setValidatedAddress(null);
-        setErrorMsg(null);
-        setTimeout(() => onClose(), 1500);
-      } else {
-        popup.open("Error al restablecer la ubicación", false);
-      }
-    } catch {
-      popup.open("Error al conectar con el servidor", false);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (loading) {
     return (

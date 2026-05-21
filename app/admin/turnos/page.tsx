@@ -5,9 +5,18 @@ export const revalidate = 0; // Don't cache admin page
 
 export default async function AdminTurnosPage() {
   const BASE = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  // We fetch all appointments (non-deleted). For a huge DB, we'd add pagination or date filters.
-  const res = await fetch(`${BASE}/api/appointments`, { cache: "no-store" });
-  const appointments = res.ok ? await res.json() : [];
+  let appointments = [];
+  try {
+    const res = await fetch(`${BASE}/api/appointments`, { cache: "no-store" });
+    if (res.ok) {
+      const text = await res.text();
+      if (text.trim().startsWith("[")) {
+        appointments = JSON.parse(text);
+      }
+    }
+  } catch (err) {
+    console.error("AdminTurnosPage fetch error:", err);
+  }
 
   return (
     <div className="p-2 sm:p-5 flex flex-col items-center w-full">

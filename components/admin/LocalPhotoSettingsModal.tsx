@@ -6,7 +6,7 @@ import { usePopup } from "@/lib/hooks/usePopup";
 import PopupModal from "@/components/ui/PopupModal";
 import Spinner from "@/components/loading/Spinner";
 import { uploadImage, deleteImage } from "@/lib/repository/storage";
-import { Upload, Image as ImageIcon, Trash2 } from "lucide-react";
+import { Upload } from "lucide-react";
 import Image from "next/image";
 import local from "@/public/images/local.png";
 import SaveButton from "@/components/buttons/SaveButton";
@@ -92,40 +92,6 @@ export default function LocalPhotoSettingsModal({ onClose }: Readonly<Props>) {
     }
   };
 
-  const handleReset = async () => {
-    setSaving(true);
-    try {
-      // Delete previous image from storage
-      if (currentPhoto) {
-        try {
-          await deleteImage("barbers", currentPhoto);
-        } catch (e) {
-          console.error("Error deleting storefront image during reset", e);
-        }
-      }
-
-      // Reset in DB
-      const res = await fetch("/api/business-settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ local_photo: null }),
-      });
-
-      if (res.ok) {
-        popup.open("Imagen restablecida por defecto", true);
-        setCurrentPhoto(null);
-        setSelectedFile(null);
-        setPreviewUrl(null);
-        setTimeout(() => onClose(), 1500);
-      } else {
-        popup.open("Error al restablecer la foto", false);
-      }
-    } catch {
-      popup.open("Error de conexión al restablecer", false);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -144,7 +110,7 @@ export default function LocalPhotoSettingsModal({ onClose }: Readonly<Props>) {
 
         <div className="space-y-5 px-2 text-left">
           <p className="text-sm text-[var(--foreground)]/50 mb-2 leading-relaxed">
-            Subí una foto de la fachada o del interior de tu barbería. Se mostrará en la sección "¿Dónde Estamos?" junto al mapa.
+            Subí una foto de la fachada o del interior de tu barbería. Se mostrará en la sección &quot;¿Dónde Estamos?&quot; junto al mapa.
           </p>
 
           {/* Current / Preview Image Display */}

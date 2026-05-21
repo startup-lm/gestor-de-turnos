@@ -105,7 +105,7 @@ export default function AssignmentSettingsModal({ onClose }: Readonly<Props>) {
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-white">Criterio de Asignación Automática</h2>
           <p className="text-xs text-slate-400 mt-1 max-w-lg mx-auto">
-            Configurá cómo querés que el sistema asigne un barbero cuando el cliente elija la opción <strong>"No tengo preferencia"</strong>.
+            Configurá cómo querés que el sistema asigne un barbero cuando el cliente elija la opción <strong>&quot;No tengo preferencia&quot;</strong>.
           </p>
         </div>
 

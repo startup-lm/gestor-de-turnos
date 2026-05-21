@@ -33,7 +33,16 @@ export default function AdminPage() {
   const [activeModal, setActiveModal] = useState<"whatsapp" | "payments" | "hours" | "block" | "social" | "story" | "sale" | "location" | "local_photo" | "assignment" | null>(null);
   const router = useRouter();
 
-  const adminCards = [
+  interface AdminCard {
+    label: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string }>;
+    category: string;
+    onClick: () => void;
+    show?: boolean;
+  }
+
+  const adminCards: AdminCard[] = [
     { label: "Nueva Venta", description: "Registrar venta", icon: PlusCircle, category: "rapidas", onClick: () => setActiveModal("sale") },
     { label: "Bloquear Horarios", description: "Bloquear horarios", icon: CalendarDays, category: "rapidas", onClick: () => setActiveModal("block") },
 
@@ -52,7 +61,7 @@ export default function AdminPage() {
     { label: "Historia", description: "Texto Nosotros", icon: BookOpen, category: "administracion_local", onClick: () => setActiveModal("story") },
   ];
 
-  const renderCard = (item: any) => {
+  const renderCard = (item: AdminCard) => {
     let cardStyle = "";
     let iconContainerStyle = "";
     let iconStyle = "";
