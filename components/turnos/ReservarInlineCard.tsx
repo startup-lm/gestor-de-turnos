@@ -45,7 +45,6 @@ export default function ReservarInlineCard({
     loading,
     appointmentId,
     showWhatsapp,
-    bienvenidaName,
     isDisabled,
     popup,
     handleReservar,

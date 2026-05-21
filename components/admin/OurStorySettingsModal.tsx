@@ -75,7 +75,7 @@ export default function OurStorySettingsModal({ onClose }: Readonly<Props>) {
 
         <div className="space-y-4 px-2 text-left">
           <p className="text-sm text-[var(--foreground)]/50 mb-2 leading-relaxed">
-            Escribí la historia del local. Separala por párrafos usando doble "Enter" (dejando una línea en blanco entre cada uno).
+            Escribí la historia del local. Separala por párrafos usando doble &quot;Enter&quot; (dejando una línea en blanco entre cada uno).
           </p>
           <textarea
             value={story}

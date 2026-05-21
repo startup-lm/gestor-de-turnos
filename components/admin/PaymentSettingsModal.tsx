@@ -15,7 +15,7 @@ interface Props {
 type PresetMethod = {
   name: string;
   description: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string; size?: number | string }>;
   activeClass: string;
   inactiveClass: string;
   iconColor: string;

@@ -1,6 +1,5 @@
 import React from "react";
 import { ViewMode } from "@/lib/hooks/useDashboardData";
-import { Check } from "lucide-react";
 
 interface Props {
   viewMode: ViewMode;

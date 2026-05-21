@@ -7,11 +7,18 @@ export async function getAppointmentsForBarberAndTime(barber_id: number,date: Da
   const params = new URLSearchParams({ date: dateParam });
   if (barber_id !== 0) params.set("barber_id", barber_id.toString());
 
-  const res = await fetch(`${BASE}/api/appointments?${params}`, {
-    next: { tags: ["appointments", `appointments-${barber_id}-${dateParam}`] },
-  });
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const res = await fetch(`${BASE}/api/appointments?${params}`, {
+      next: { tags: ["appointments", `appointments-${barber_id}-${dateParam}`] },
+    });
+    if (!res.ok) return [];
+    const text = await res.text();
+    if (!text.trim().startsWith("[")) return [];
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("getAppointmentsForBarberAndTime error:", err);
+    return [];
+  }
 }
 
 export async function createAppointment(input: {client: string;barber_id: number;date: Date;start_time: string;end_time: string;phone: string;service_id: number;created_by?: string;client_id?: number;}): Promise<{ success: boolean; id?: number }> {
@@ -63,11 +70,18 @@ export async function getBarbersAppointmentsFromDates(barber_id: number,start_da
     start_date: start_date.toISOString().split("T")[0],
     end_date: end_date.toISOString().split("T")[0],
   });
-  const res = await fetch(`${BASE}/api/appointments?${params}`, {
-    next: { tags: ["appointments"] },
-  });
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const res = await fetch(`${BASE}/api/appointments?${params}`, {
+      next: { tags: ["appointments"] },
+    });
+    if (!res.ok) return [];
+    const text = await res.text();
+    if (!text.trim().startsWith("[")) return [];
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("getBarbersAppointmentsFromDates error:", err);
+    return [];
+  }
 }
 
 export async function deleteAppointmentsByDate(input: {barber_id: number;date: Date;start_time: string;end_time: string;}): Promise<{ success: boolean }> {
@@ -93,20 +107,33 @@ export async function getTotalAndRevenueForAllBarbers(start_date: Date,end_date:
     start_date: start_date.toISOString().split("T")[0],
     end_date: end_date.toISOString().split("T")[0],
   });
-  const res = await fetch(`${BASE}/api/appointments/all?${params}`, {
-    next: { tags: ["appointments"]},
-  });
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const res = await fetch(`${BASE}/api/appointments/all?${params}`, {
+      next: { tags: ["appointments"]},
+    });
+    if (!res.ok) return [];
+    const text = await res.text();
+    if (!text.trim().startsWith("[")) return [];
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("getTotalAndRevenueForAllBarbers error:", err);
+    return [];
+  }
 }
 
 export async function getAppointmentById(id: number): Promise<Appointment | null> {
   const params = new URLSearchParams({ id: id.toString() });
-  const res = await fetch(`${BASE}/api/appointments?${params}`, {
-    next: {tags: ["appointments"]},
-  });
-  if (!res.ok) return null;
-
-  const data: Appointment[] = await res.json();
-  return data.length > 0 ? data[0] : null;
+  try {
+    const res = await fetch(`${BASE}/api/appointments?${params}`, {
+      next: {tags: ["appointments"]},
+    });
+    if (!res.ok) return null;
+    const text = await res.text();
+    if (!text.trim().startsWith("[")) return null;
+    const data: Appointment[] = JSON.parse(text);
+    return data.length > 0 ? data[0] : null;
+  } catch (err) {
+    console.error("getAppointmentById error:", err);
+    return null;
+  }
 }
