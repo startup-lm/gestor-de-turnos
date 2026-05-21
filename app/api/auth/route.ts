@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { successResponse, errorResponse } from "@/lib/api/response";
+import { requireAdmin } from "@/lib/api/auth";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -16,6 +17,9 @@ export async function GET(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const admin = await requireAdmin();
+  if (!admin) return errorResponse("No autorizado", 401);
+
   const body: { email?: string } = await request.json();
   const email = body.email;
   if (!email) return errorResponse("Falta el email");

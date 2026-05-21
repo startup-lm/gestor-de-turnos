@@ -1,6 +1,7 @@
 import { Sale, SaleWithRelations } from "../types/Sale";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL!;
+import { getBaseUrl } from "@/utils/getBaseUrl";
+const BASE = getBaseUrl();
 
 export async function createSale(sale: Sale): Promise<boolean> {
   const res = await fetch(`${BASE}/api/sales`, {

@@ -1,0 +1,319 @@
+/* ==========================================================================
+   DASHBOARD PREMIUM STYLES (GLASSMORPHISM, LUXURY DARK & GOLD THEME)
+   ========================================================================== */
+
+/* 📊 Contenedores Glassmorphism */
+.dashboard-card {
+  background: rgba(249, 250, 251, 0.03) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(249, 250, 251, 0.07) !important;
+  border-radius: 1.5rem !important; /* rounded-3xl */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.dashboard-card:hover {
+  border-color: rgba(223, 186, 115, 0.15) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* 🌟 Tarjetas KPI (Key Performance Indicators) */
+.kpi-card {
+  position: relative;
+  background: rgba(249, 250, 251, 0.02) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(249, 250, 251, 0.05) !important;
+  border-radius: 1.25rem !important; /* rounded-2xl */
+  padding: 1.25rem !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  transition: all 300ms cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: transparent;
+  transition: all 300ms ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-4px) !important;
+  border-color: rgba(223, 186, 115, 0.2) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3) !important;
+  background: rgba(249, 250, 251, 0.05) !important;
+}
+
+/* Bordes coloridos superiores según el tipo de KPI */
+.kpi-card--revenue::before {
+  background: linear-gradient(90deg, var(--accent), #fef08a) !important;
+}
+
+.kpi-card--sales::before {
+  background: linear-gradient(90deg, #38bdf8, #60a5fa) !important;
+}
+
+.kpi-card--cuts::before {
+  background: linear-gradient(90deg, #a78bfa, #c084fc) !important;
+}
+
+.kpi-card--net::before {
+  background: linear-gradient(90deg, #22c55e, #4ade80) !important;
+}
+.kpi-card--negative::before {
+  background: linear-gradient(90deg, var(--accent-red), #ef4444) !important;
+}
+
+/* 💊 Control Segmentado (Pill Selector) */
+.segmented-control {
+  display: flex;
+  background: rgba(249, 250, 251, 0.05) !important;
+  border: 1px solid rgba(249, 250, 251, 0.08) !important;
+  border-radius: 9999px !important;
+  padding: 3px !important;
+  gap: 2px;
+}
+
+.segmented-control__item {
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  color: rgba(249, 250, 251, 0.5) !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 9999px !important;
+  cursor: pointer !important;
+  transition: all 250ms ease !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none !important;
+  background: transparent !important;
+}
+
+.segmented-control__item:hover {
+  color: var(--foreground) !important;
+  background: rgba(249, 250, 251, 0.04) !important;
+}
+
+.segmented-control__item--active {
+  background: var(--accent) !important;
+  color: var(--primary) !important;
+  box-shadow: 0 2px 10px rgba(223, 186, 115, 0.3) !important;
+}
+
+.segmented-control__item--active:hover {
+  background: var(--accent) !important;
+  color: var(--primary) !important;
+}
+
+/* 📅 Overrides Oscuros para react-date-range */
+.rdrCalendarWrapper {
+  background: transparent !important;
+  color: var(--foreground) !important;
+  font-family: inherit !important;
+  border: none !important;
+  width: 100% !important;
+}
+
+.rdrMonth {
+  background: transparent !important;
+  width: 100% !important;
+  padding: 0 0.5rem 0.5rem 0.5rem !important;
+}
+
+.rdrMonthName {
+  color: var(--accent) !important;
+  font-weight: 700 !important;
+  font-size: 0.9rem !important;
+  text-transform: capitalize !important;
+  text-align: center !important;
+  padding: 0.5rem 0 !important;
+}
+
+.rdrWeekDays {
+  padding: 0.5rem 0 !important;
+}
+
+.rdrWeekDay {
+  color: rgba(249, 250, 251, 0.4) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.05em;
+}
+
+.rdrDays {
+  gap: 2px !important;
+}
+
+.rdrDay {
+  background: transparent !important;
+  height: 2.2rem !important;
+  line-height: 2.2rem !important;
+}
+
+.rdrDayNumber {
+  font-weight: 600 !important;
+  font-size: 0.8rem !important;
+}
+
+.rdrDayNumber span {
+  color: var(--foreground) !important;
+}
+
+.rdrDayPassive .rdrDayNumber span {
+  color: rgba(249, 250, 251, 0.15) !important;
+}
+
+.rdrDayDisabled {
+  background: transparent !important;
+}
+
+.rdrDayDisabled .rdrDayNumber span {
+  color: rgba(249, 250, 251, 0.1) !important;
+  text-decoration: line-through;
+}
+
+/* Selección de rango y resaltado en oro champagne */
+.rdrSelected,
+.rdrStartEdge,
+.rdrEndEdge {
+  background: var(--accent) !important;
+  border-radius: 9999px !important;
+}
+
+.rdrSelected ~ .rdrDayNumber span,
+.rdrStartEdge ~ .rdrDayNumber span,
+.rdrEndEdge ~ .rdrDayNumber span {
+  color: var(--primary) !important;
+  font-weight: 800 !important;
+}
+
+.rdrInRange {
+  background: rgba(223, 186, 115, 0.15) !important;
+  border-radius: 0 !important;
+}
+
+.rdrDayStartOfMonth .rdrInRange,
+.rdrDayStartOfWeek .rdrInRange {
+  border-top-left-radius: 9999px !important;
+  border-bottom-left-radius: 9999px !important;
+}
+
+.rdrDayEndOfMonth .rdrInRange,
+.rdrDayEndOfWeek .rdrInRange {
+  border-top-right-radius: 9999px !important;
+  border-bottom-right-radius: 9999px !important;
+}
+
+.rdrInRange ~ .rdrDayNumber span {
+  color: var(--accent) !important;
+  font-weight: 700 !important;
+}
+
+.rdrDayToday .rdrDayNumber span::after {
+  background: var(--accent) !important;
+  bottom: 2px !important;
+}
+
+/* Flechas y navegación de meses */
+.rdrMonthAndYearWrapper {
+  background: transparent !important;
+  padding-top: 0.25rem !important;
+  height: auto !important;
+  border-bottom: 1px solid rgba(249, 250, 251, 0.05) !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.rdrMonthAndYearPickers select {
+  color: var(--foreground) !important;
+  background: rgba(17, 24, 39, 0.8) !important;
+  border: 1px solid rgba(249, 250, 251, 0.1) !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+}
+
+.rdrNextPrevButton {
+  background: rgba(249, 250, 251, 0.05) !important;
+  border: 1px solid rgba(249, 250, 251, 0.08) !important;
+  border-radius: 8px !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 200ms ease !important;
+}
+
+.rdrNextPrevButton:hover {
+  background: rgba(223, 186, 115, 0.1) !important;
+  border-color: rgba(223, 186, 115, 0.3) !important;
+}
+
+.rdrNextPrevButton i {
+  border-color: var(--foreground) !important;
+}
+
+.rdrNextPrevButton:hover i {
+  border-color: var(--accent) !important;
+}
+
+/* 🏷️ Select Premium (Sidebar) */
+.premium-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.premium-select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 100% !important;
+  background: rgba(17, 24, 39, 0.8) !important;
+  border: 1px solid rgba(249, 250, 251, 0.1) !important;
+  color: var(--foreground) !important;
+  padding: 0.75rem 2.5rem 0.75rem 1rem !important;
+  border-radius: 0.75rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  outline: none !important;
+  cursor: pointer !important;
+  transition: all 250ms ease !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.06) !important;
+}
+
+.premium-select:hover {
+  border-color: rgba(223, 186, 115, 0.4) !important;
+  background: rgba(17, 24, 39, 0.9) !important;
+}
+
+.premium-select:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 10px rgba(223, 186, 115, 0.15) !important;
+}
+
+/* 💸 Sub-tarjetas de Métodos de Pago */
+.payment-mini-card {
+  background: rgba(249, 250, 251, 0.02) !important;
+  border: 1px solid rgba(249, 250, 251, 0.05) !important;
+  border-radius: 1rem !important;
+  padding: 1rem !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 250ms ease !important;
+  width: 45%;
+  min-width: 120px;
+}
+
+.payment-mini-card:hover {
+  transform: translateY(-2px) !important;
+  border-color: rgba(249, 250, 251, 0.1) !important;
+  background: rgba(249, 250, 251, 0.04) !important;
+}

@@ -1,6 +1,5 @@
 import React from "react";
 import { ViewMode } from "@/lib/hooks/useDashboardData";
-import { Check } from "lucide-react";
 
 interface Props {
   viewMode: ViewMode;
@@ -15,24 +14,21 @@ const options: { value: ViewMode; label: string }[] = [
 
 export default function ViewModeChecklist({ viewMode, onChange }: Readonly<Props>) {
   return (
-    <ul className="flex flex-col space-y-1 text-xs md:text-sm">
-      {options.map(({ value, label }) => (
-        <li
-          key={value}
-          className="flex items-center gap-1 cursor-pointer"
-          onClick={() => onChange(value)}
-        >
-          <span
-            className={`w-4 h-4 flex-shrink-0 border rounded flex items-center justify-center
-              ${viewMode === value
-                ? "bg-[var(--primary)] border-[var(--primary)]"
-                : "bg-transparent border-gray-500"}`}
+    <div className="segmented-control flex items-center">
+      {options.map(({ value, label }) => {
+        const isActive = viewMode === value;
+        return (
+          <button
+            key={value}
+            type="button"
+            className={`segmented-control__item ${isActive ? "segmented-control__item--active" : ""}`}
+            onClick={() => onChange(value)}
           >
-            {viewMode === value && <Check size={10} className="text-white" />}
-          </span>
-          <span className="select-none">{label}</span>
-        </li>
-      ))}
-    </ul>
+            {label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
+

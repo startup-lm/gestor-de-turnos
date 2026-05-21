@@ -1,6 +1,7 @@
 import { Client } from "../types/Client";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL!;
+import { getBaseUrl } from "@/utils/getBaseUrl";
+const BASE = getBaseUrl();
 
 /**
  * Busca clientes por nombre (texto) o teléfono (numérico).

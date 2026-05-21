@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Barber } from "@/lib/types/Barbers";
 import DateRangeCalendar from "./DateRangeCalendar";
-
+import { ChevronDown, Calendar, User } from "lucide-react";
 
 interface SidebarProps {
   barbers: Barber[];
@@ -15,45 +15,71 @@ interface SidebarProps {
   showAll?: boolean;
 }
 
-export default function Sidebar({barbers,selectedBarberId,onBarberChange,startDate,endDate,onDateChange,showAll=false}: Readonly<SidebarProps>) {
+export default function Sidebar({
+  barbers,
+  selectedBarberId,
+  onBarberChange,
+  startDate,
+  endDate,
+  onDateChange,
+  showAll = false
+}: Readonly<SidebarProps>) {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
     <div className="relative">
-
-      <button onClick={() => setIsOpen(!isOpen)} className="absolute top-2 right-2 text-xl px-2 py-1 rounded !bg-[var(--primary)] hover:bg-[var(--secondary)] hover:text-black !text-black transition z-10 hidden md:block" >
-        {isOpen ? "←" : "☰"}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="absolute top-4 right-4 text-sm px-3 py-2 rounded-xl !bg-[var(--accent)] hover:scale-105 active:scale-95 !text-[var(--primary)] font-bold transition-all z-10 hidden md:block shadow-lg"
+      >
+        {isOpen ? "Ocultar Filtros ←" : "Filtros ☰"}
       </button>
 
       {isOpen && (
-        <div className="bg-[var(--bg-carousel)] p-4 rounded-md shadow-sm text-sm space-y-10">
+        <div className="dashboard-card p-6 text-sm space-y-8 w-full md:w-[300px]">
+          {/* Selector de Barbero */}
           <div>
-            <label className="font-medium mb-2 block mt-4">Barbero:</label>
-            <div className="mb-6 flex justify-left">
+            <label className="font-bold mb-2 block uppercase text-[10px] text-slate-400 tracking-wider flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-[var(--accent)]" />
+              Barbero:
+            </label>
+            <div className="relative premium-select-wrapper mt-1">
               <select
                 id="dashboard-barber"
-                className="px-4 py-2 border rounded shadow-sm w-full"
+                className="premium-select w-full"
                 value={selectedBarberId}
                 onChange={(e) => onBarberChange(parseInt(e.target.value, 10))}
               >
                 {showAll && (
-                  <option value={0}>Todos los Barberos</option>
+                  <option value={0} style={{ color: "black" }}>
+                    Todos los Barberos
+                  </option>
                 )}
                 {barbers.map((barber) => (
-                  <option key={barber.id} value={barber.id} style={{ color: 'black' }}>
+                  <option key={barber.id} value={barber.id} style={{ color: "black" }}>
                     {barber.name}
                   </option>
                 ))}
               </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <ChevronDown className="w-4 h-4" />
+              </div>
             </div>
           </div>
+
+          {/* Rango de Fechas */}
           <div>
-            <label className="font-medium mb-2 block">Fechas:</label>
-            <DateRangeCalendar
-              startDate={startDate}
-              endDate={endDate}
-              onChange={onDateChange}
-            />
+            <label className="font-bold mb-3 block uppercase text-[10px] text-slate-400 tracking-wider flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-[var(--accent)]" />
+              Fechas:
+            </label>
+            <div className="rounded-2xl overflow-hidden border border-slate-800/80 bg-slate-950/20 p-2 shadow-inner">
+              <DateRangeCalendar
+                startDate={startDate}
+                endDate={endDate}
+                onChange={onDateChange}
+              />
+            </div>
           </div>
         </div>
       )}

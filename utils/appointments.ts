@@ -71,7 +71,8 @@ export const transformAppointmentsToEvents = (appointments: Appointment[],role: 
       start,
       end,
       paid: appt.paid,
-      isAppt: appt.phone !== "0000000000"
+      isAppt: appt.phone !== "0000000000",
+      barber_id: appt.barber_id
     };
   });
 };

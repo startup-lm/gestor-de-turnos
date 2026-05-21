@@ -1,6 +1,7 @@
 import { Product } from "../types/Product";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL!
+import { getBaseUrl } from "@/utils/getBaseUrl";
+const BASE = getBaseUrl();
 
 export interface ProductParams {
   id?: number;
@@ -11,10 +12,18 @@ export interface ProductParams {
 }
 
 export const getProducts = async (): Promise<Product[]> => {
-  const res = await fetch(`${BASE}/api/products`, {
-    next: { tags: ["products"] },
-  });
-  return res.ok ? res.json() : [];
+  try {
+    const res = await fetch(`${BASE}/api/products`, {
+      next: { tags: ["products"] },
+    });
+    if (!res.ok) return [];
+    const text = await res.text();
+    if (!text.trim().startsWith("[")) return [];
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("getProducts error:", err);
+    return [];
+  }
 };
 
 export async function createProduct({name,description,price,image,}: ProductParams): Promise<boolean> {

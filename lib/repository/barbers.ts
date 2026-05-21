@@ -1,19 +1,34 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Barber } from "../types/Barbers";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL!
+import { getBaseUrl } from "@/utils/getBaseUrl";
+const BASE = getBaseUrl();
 
 export const getBarbers = async (): Promise<Barber[]> => {
-  const res = await fetch(`${BASE}/api/barbers`);
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const res = await fetch(`${BASE}/api/barbers`);
+    if (!res.ok) return [];
+    const text = await res.text();
+    if (!text.trim().startsWith("[")) return [];
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("getBarbers error:", err);
+    return [];
+  }
 };
 
 export const getIdAndRole = async (email: string): Promise<{ id: number; role: string } | null> => {
-  const res = await fetch(`${BASE}/api/barbers?email=${encodeURIComponent(email)}`);
-  if (!res.ok) return null;
-  const barber = await res.json();
-  return barber ? { id: barber.id, role: barber.role } : null;
+  try {
+    const res = await fetch(`${BASE}/api/barbers?email=${encodeURIComponent(email)}`);
+    if (!res.ok) return null;
+    const text = await res.text();
+    if (!text.trim().startsWith("{")) return null;
+    const barber = JSON.parse(text);
+    return barber ? { id: barber.id, role: barber.role } : null;
+  } catch (err) {
+    console.error("getIdAndRole error:", err);
+    return null;
+  }
 };
 
 export const addBarber = async (values: Barber): Promise<Barber | null> => {
@@ -38,9 +53,16 @@ export const deleteBarber = async (id: number): Promise<boolean> => {
 };
 
 export const getBarberByEmail = async (email: string): Promise<Barber | null> => {
-  const res = await fetch(`${BASE}/api/barbers?email=${encodeURIComponent(email)}`);
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const res = await fetch(`${BASE}/api/barbers?email=${encodeURIComponent(email)}`);
+    if (!res.ok) return null;
+    const text = await res.text();
+    if (!text.trim().startsWith("{")) return null;
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("getBarberByEmail error:", err);
+    return null;
+  }
 };
 
 export const updateBarber = async (id: number, values: Record<string, any>): Promise<boolean> => {
@@ -55,10 +77,15 @@ export const updateBarber = async (id: number, values: Record<string, any>): Pro
 };
 
 export async function getBarberById(id: number): Promise<Barber> {
-  const res = await fetch(`${BASE}/api/barbers?id=${id}`, { next: { tags: ["barbers"], revalidate: 60 }, });
-  if (!res.ok) {
-    const emptyBarber = { id: id, name: "", role: "barber", image: "", email: "", instagram: "" } as Barber;
-    return emptyBarber
+  const emptyBarber = { id: id, name: "", role: "barber", image: "", email: "", instagram: "" } as Barber;
+  try {
+    const res = await fetch(`${BASE}/api/barbers?id=${id}`, { next: { tags: ["barbers"], revalidate: 60 }, });
+    if (!res.ok) return emptyBarber;
+    const text = await res.text();
+    if (!text.trim().startsWith("{")) return emptyBarber;
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("getBarberById error:", err);
+    return emptyBarber;
   }
-  return res.json();
 }

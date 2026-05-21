@@ -14,13 +14,13 @@ export default function TimeSelect({ label, value, options, onChange, className 
   return (
     <div className={className}>
       {label && (
-        <label className="block text-sm font-medium mb-1">
+        <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
           {label}
         </label>
       )}
       <select
         id={id}
-        className={`w-full border rounded px-3 py-2 text-sm ${selectClassName}`}
+        className={`!w-full !border !border-[var(--foreground)]/10 !rounded-lg !px-3 !py-2.5 !text-sm !bg-[var(--foreground)]/5 !text-[var(--foreground)] focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 !transition-all h-[42px] ${selectClassName}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required

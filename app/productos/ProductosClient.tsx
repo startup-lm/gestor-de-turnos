@@ -51,12 +51,12 @@ export default function ProductosClient({ products }: Readonly<Props>) {
         {role !== "guest" && (
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex flex-col items-center justify-center border-2 border-dashed border-[var(--primary)]/50 rounded-2xl p-6 h-full min-h-[300px] hover:bg-[var(--primary)]/5 transition-all group hover:border-[var(--primary)]"
+            className="flex flex-col items-center justify-center w-[320px] h-[326px] !bg-[var(--foreground)]/5 backdrop-blur-md !border-2 !border-dashed !border-[var(--accent)]/30 hover:!border-[var(--accent)]/80 rounded-2xl p-6 hover:shadow-lg hover:shadow-[var(--accent)]/5 hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
           >
-            <div className="bg-[var(--primary)]/10 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--primary)]"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+            <div className="bg-[var(--accent)]/10 p-4 rounded-full mb-4 border border-[var(--accent)]/20 group-hover:scale-110 transition-transform duration-300 text-[var(--accent)]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
             </div>
-            <span className="text-lg font-bold text-[var(--primary)]">Agregar Producto</span>
+            <span className="text-lg font-bold text-[var(--accent)] tracking-wide">Agregar Producto</span>
           </button>
         )}
         {products.map((p) => (

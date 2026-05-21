@@ -64,56 +64,99 @@ export default function RegisterSaleModal({ onClose }: Readonly<{ onClose: () =>
 
   return (
     <>
-      <Modal onClose={onClose}>
-        <h2 className="text-xl font-bold mb-4 text-center">Registrar venta</h2>
-        <form onSubmit={handleRegisterSale} className="space-y-4 px-8">
-          <div className="my-5 text-left rounded-2lg">
-            <label className="block text-sm font-medium mb-1 mt-4">
-              Barbero
-            </label>
-            <BarberSelector
-              id="sale-barber"
-              barbers={barbers ?? []}
-              selectedBarberId={selectedBarberId}
-              onChange={setSelectedBarberId}
-              className="w-full"
-            />
+      <Modal onClose={onClose} size="lg">
+        <h2 className="text-2xl font-bold mb-6 text-center text-[var(--foreground)]">Registrar venta</h2>
+        <form onSubmit={handleRegisterSale} className="space-y-6 px-2 text-left">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                Barbero
+              </label>
+              <BarberSelector
+                id="sale-barber"
+                barbers={barbers ?? []}
+                selectedBarberId={selectedBarberId}
+                onChange={setSelectedBarberId}
+                className="w-full"
+              />
+            </div>
 
-            <label className="block text-sm font-medium mb-1 mt-4">
-              Producto
-            </label>
-            <select id="sale-product" required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={selectedProductId} onChange={e => setSelectedProductId(Number(e.target.value))} >
-              <option value={-1} disabled style={{ color: "grey" }}>
-                Selecciona un producto
-              </option>
-              {products.map(p => (
-                <option key={p.id} value={p.id} style={{ color: "black" }}>
-                  {p.name}
+            <div>
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                Producto
+              </label>
+              <select 
+                id="sale-product" 
+                required 
+                className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm h-[42px]" 
+                value={selectedProductId} 
+                onChange={e => setSelectedProductId(Number(e.target.value))} 
+              >
+                <option value={-1} disabled style={{ color: "grey" }}>
+                  Selecciona un producto
                 </option>
-              ))}
-            </select>
+                {products.map(p => (
+                  <option key={p.id} value={p.id} style={{ color: "black" }}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <label className="block text-sm font-medium mb-1 mt-4">
-              Precio
-            </label>
-            <input id="sale-price" type="number" value={price} onChange={e => setPrice(Number(e.target.value))} required min={0} />
+            <div>
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                Precio
+              </label>
+              <input 
+                id="sale-price" 
+                type="number" 
+                value={price} 
+                onChange={e => setPrice(Number(e.target.value))} 
+                required 
+                min={0}
+                className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm" 
+              />
+            </div>
 
-            <label className="block text-sm font-medium mb-1 mt-4">
-              Cantidad
-            </label>
-            <input id="sale-quantity" type="number" value={quantity} onChange={e => setQuantity(Number(e.target.value))} required min={0} />
+            <div>
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                Cantidad
+              </label>
+              <input 
+                id="sale-quantity" 
+                type="number" 
+                value={quantity} 
+                onChange={e => setQuantity(Number(e.target.value))} 
+                required 
+                min={0}
+                className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm" 
+              />
+            </div>
 
-            <label className="block text-sm font-medium mb-1 mt-4">
-              Observaciones
-            </label>
-            <input id="sale-details" value={details} onChange={(e) => setDetailes(e.target.value)} />
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                Observaciones
+              </label>
+              <input 
+                id="sale-details" 
+                value={details} 
+                onChange={(e) => setDetailes(e.target.value)} 
+                className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm" 
+                placeholder="Detalles adicionales de la venta..."
+              />
+            </div>
 
-            <label className="block text-sm font-medium mb-1 mt-4">
-              Total a cobrar
-            </label>
-            <input id="sale-total" type="number" value={price * quantity} readOnly />
+            <div className="md:col-span-2 bg-[var(--foreground)]/5 border border-[var(--accent)]/20 rounded-xl p-4 flex justify-between items-center mt-2 shadow-inner">
+              <div>
+                <span className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider">Total a Cobrar</span>
+                <span className="text-[10px] text-[var(--foreground)]/40 uppercase tracking-widest">Suma total calculada</span>
+              </div>
+              <span className="text-3xl font-extrabold text-[var(--accent)]">
+                ${price * quantity}
+              </span>
+            </div>
           </div>
-          <div className="flex justify-center mt-10">
+          <div className="flex justify-center pt-4">
             <PayButton id="btn-sale-submit" type="submit" disabled={isDisabled} loading={loading} />
           </div>
         </form>

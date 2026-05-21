@@ -1,6 +1,7 @@
 import { Service } from "../types/Services";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL!
+import { getBaseUrl } from "@/utils/getBaseUrl";
+const BASE = getBaseUrl();
 
 export interface ServiceParams {
   id?: number;
@@ -11,10 +12,18 @@ export interface ServiceParams {
 }
 
 export const getServices = async (): Promise<Service[]> => {
-  const res = await fetch(`${BASE}/api/services`, {
-    next: { tags: ["services"] },
-  });
-  return res.ok ? res.json() : [];
+  try {
+    const res = await fetch(`${BASE}/api/services`, {
+      next: { tags: ["services"] },
+    });
+    if (!res.ok) return [];
+    const text = await res.text();
+    if (!text.trim().startsWith("[")) return [];
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("getServices error:", err);
+    return [];
+  }
 };
 
 export async function createService({name,description,price,image,}: ServiceParams): Promise<boolean> {

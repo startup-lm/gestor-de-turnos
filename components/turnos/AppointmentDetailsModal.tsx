@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { format } from "date-fns";
 import { Appointment } from "@/lib/types/Appointment";
 import Modal from "@/components/ui/Modal";
@@ -31,6 +32,7 @@ export default function AppointmentDetailsModal({
   barbers: Barber[];
 }>) {
   const { businessHours, businessSettings } = useBusinessContext();
+  const hasPaidRef = useRef(false);
   const allAppointments = generateAllAppointments({
     openTime: businessHours.open_time,
     closeTime: businessHours.close_time,
@@ -57,51 +59,92 @@ export default function AppointmentDetailsModal({
 
   return (
     <>
-      <Modal onClose={onClose}>
-        <h2 className="text-xl font-bold mb-4 text-center">Detalles del turno</h2>
+      <Modal onClose={onClose} size="lg">
+        <h2 className="text-2xl font-extrabold mb-2 text-center bg-gradient-to-r from-[var(--foreground)] via-[var(--foreground)] to-[var(--accent)] bg-clip-text text-transparent tracking-tight">
+          Detalles del turno
+        </h2>
         {appointment.updated_at && (
-          <p className="text-xs text-center -mt-3 mb-4 text-[var(--button-home-disabled-text)]">
+          <p className="text-xs text-center mb-6 text-[var(--button-home-disabled-text)]">
             Última actualización: {format(new Date(appointment.updated_at), "dd/MM/yyyy HH:mm")}
           </p>
         )}
-        <form onSubmit={handleUpdate} className="space-y-4 px-4">
-          <div className="my-5 text-left rounded-2lg">
-            <label className="block text-sm font-medium mb-1 mt-4">
-              Barbero
-            </label>
-            <BarberSelector id="appt-barber" barbers={barbers ?? []} selectedBarberId={selectedBarberId} onChange={setSelectedBarberId} className="w-full" />
-
-            {isBlockedRange ? (
-              <>
-                <label className="block text-sm font-medium mb-1">
-                  Día
-                </label>
+        <form onSubmit={handleUpdate} className="space-y-6 px-2 text-left">
+          {isBlockedRange ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">Barbero</label>
+                <BarberSelector id="appt-barber" barbers={barbers ?? []} selectedBarberId={selectedBarberId} onChange={setSelectedBarberId} className="w-full" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">Día</label>
                 <DatePickerField date={date} onChange={setDate} />
-
-                <div className="flex space-x-6 my-4">
-                  <TimeSelect id="appt-blocked-start-time" label="Inicio" value={startTime} options={allAppointments} onChange={setStartTime} className="flex-1" />
-                  <TimeSelect id="appt-blocked-end-time" label="Fin" value={endTime} options={allAppointments.filter((t) => t > startTime)} onChange={setEndTime} className="flex-1" />
+              </div>
+              <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                <TimeSelect id="appt-blocked-start-time" label="Inicio" value={startTime} options={allAppointments} onChange={setStartTime} />
+                <TimeSelect id="appt-blocked-end-time" label="Fin" value={endTime} options={allAppointments.filter((t) => t > startTime)} onChange={setEndTime} />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">Motivo</label>
+                <input 
+                  id="appt-blocked-reason" 
+                  type="text" 
+                  value={client} 
+                  onChange={(e) => setClient(e.target.value)} 
+                  className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">Barbero</label>
+                  <BarberSelector id="appt-barber" barbers={barbers ?? []} selectedBarberId={selectedBarberId} onChange={setSelectedBarberId} className="w-full" />
                 </div>
-
-                <label className="block text-sm font-medium mb-1 mt-4">
-                  Motivo
-                </label>
-                <input id="appt-blocked-reason" type="text" value={client} onChange={(e) => setClient(e.target.value)} />
-              </>
-            ) : (
-              <>
-                <label className="block text-sm font-medium mb-1">
-                  Día y horario
-                </label>
-                <div className="flex space-x-1">
-                  <div className="w-[70%]">
-                    <DatePickerField date={date} onChange={setDate} />
-                  </div>
-                  <div className="w-[30%]">
-                    <TimeSelect id="appt-start-time" label="" value={startTime} options={allAppointments} onChange={setStartTime} className="h-full" selectClassName="h-full" />
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">Día y horario</label>
+                  <div className="flex space-x-2">
+                    <div className="flex-1">
+                      <DatePickerField date={date} onChange={setDate} />
+                    </div>
+                    <div className="w-[110px]">
+                      <TimeSelect id="appt-start-time" label="" value={startTime} options={allAppointments} onChange={setStartTime} className="h-full" selectClassName="!h-[42px]" />
+                    </div>
                   </div>
                 </div>
-
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">Servicio</label>
+                  <select 
+                    id="appt-service" 
+                    required 
+                    className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm h-[42px]" 
+                    value={selectedServiceId} 
+                    onChange={e => setSelectedServiceId(Number(e.target.value))} 
+                  >
+                    <option value={-1} disabled style={{ color: "grey" }}>
+                      Selecciona un servicio
+                    </option>
+                    {services.map(s => (
+                      <option key={s.id} value={s.id} style={{ color: "black" }}>
+                        {s.name} ({s.duration} min)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {appointment.paid && (
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">Precio cobrado</label>
+                    <input 
+                      id="appt-price" 
+                      type="text" 
+                      value={price} 
+                      onChange={e => setPrice(Number(e.target.value))} 
+                      className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+              <div>
                 <ClientAutocompleteFields
                   name={client}
                   phone={phone}
@@ -110,41 +153,23 @@ export default function AppointmentDetailsModal({
                   onClientResolved={() => {}}
                   showWhatsapp
                 />
+              </div>
+            </div>
+          )}
 
-                <label className="block text-sm font-medium mb-1 mt-4">
-                  Servicio
-                </label>
-                <select id="appt-service" required className="border p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]" value={selectedServiceId} onChange={e => setSelectedServiceId(Number(e.target.value))} >
-                  <option value={-1} disabled style={{ color: "grey" }}>
-                    Selecciona un servicio
-                  </option>
-                  {services.map(s => (
-                    <option key={s.id} value={s.id} style={{ color: "black" }}>
-                      {s.name} ({s.duration} min)
-                    </option>
-                  ))}
-                </select>
-
-                {appointment.paid && (
-                  <>
-                    <label className="block text-sm font-medium mb-1 mt-4">
-                      Precio cobrado
-                    </label>
-                    <input id="appt-price" type="text" value={price} onChange={e => setPrice(Number(e.target.value))} />
-                  </>
-                )}
-              </>
-            )}
-
+          <div className="flex justify-center pt-4">
+            <div className="w-[220px]">
+              <ChargeButton id="btn-appt-charge" onClick={() => setShowService(true)} disabled={appointment.paid || isBlockedRange} loading={loading} isPaid={appointment.paid} />
+            </div>
           </div>
 
-          <div className="flex justify-center mt-10">
-            <SaveButton id="btn-appt-save" type="submit" disabled={!hasChanges} loading={loadingUpdate} />
-          </div>
-
-          <div className="flex justify-center gap-5 mt-5">
-            <DeleteButton id="btn-appt-delete" disabled={appointment.paid} loading={loading} onClick={() => setConfirmModal(true)} />
-            <ChargeButton id="btn-appt-charge" onClick={() => setShowService(true)} disabled={appointment.paid || isBlockedRange} loading={loading} isPaid={appointment.paid} />
+          <div className="flex justify-center gap-5 pt-2">
+            <div className="w-[180px]">
+              <DeleteButton id="btn-appt-delete" disabled={appointment.paid} loading={loading} onClick={() => setConfirmModal(true)} />
+            </div>
+            <div className="w-[180px]">
+              <SaveButton id="btn-appt-save" type="submit" disabled={!hasChanges} loading={loadingUpdate} />
+            </div>
           </div>
         </form>
       </Modal>
@@ -163,10 +188,16 @@ export default function AppointmentDetailsModal({
       {showService && (
         <ServicePaidModal
           appointment={appointment}
-          setIsPaid={() => { }}
+          setIsPaid={(paid) => {
+            if (paid) {
+              hasPaidRef.current = true;
+            }
+          }}
           onClose={() => {
             setShowService(false);
-            onClose();
+            if (hasPaidRef.current) {
+              onClose();
+            }
           }}
         />
       )}

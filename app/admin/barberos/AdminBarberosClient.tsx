@@ -50,42 +50,45 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 justify-center">
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="flex flex-col items-center justify-center border-2 border-dashed border-[var(--primary)]/50 rounded-2xl p-6 h-full min-h-[300px] hover:bg-[var(--primary)]/5 transition-all group hover:border-[var(--primary)]"
+          className="flex flex-col items-center justify-center w-[320px] h-[326px] !bg-[var(--foreground)]/5 backdrop-blur-md !border-2 !border-dashed !border-[var(--accent)]/30 hover:!border-[var(--accent)]/80 rounded-2xl p-6 hover:shadow-lg hover:shadow-[var(--accent)]/5 hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
         >
-          <div className="bg-[var(--primary)]/10 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--primary)]"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+          <div className="bg-[var(--accent)]/10 p-4 rounded-full mb-4 border border-[var(--accent)]/20 group-hover:scale-110 transition-transform duration-300 text-[var(--accent)]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
           </div>
-          <span className="text-lg font-bold text-[var(--primary)]">Agregar Barbero</span>
+          <span className="text-lg font-bold text-[var(--accent)] tracking-wide">Agregar Barbero</span>
         </button>
         {barbers.map((barber) => (
-          <div key={barber.id} className="relative bg-[var(--accent)] border border-[var(--primary)] rounded-xl p-4 shadow flex flex-col items-center justify-center text-center">
+          <div
+            key={barber.id}
+            className="relative w-[320px] h-[326px] border border-[var(--foreground)]/10 rounded-2xl p-4 flex flex-col items-center text-center bg-gradient-to-b from-[var(--foreground)]/8 to-[var(--foreground)]/4 backdrop-blur-md max-w-xs shadow-lg hover:border-[var(--accent)]/40 hover:shadow-xl hover:shadow-[var(--accent)]/5 hover:-translate-y-1 transition-all duration-300"
+          >
             
-            <div className="absolute top-2 left-2 flex space-x-2">
+            <div className="absolute top-3 left-3 z-10">
               <DeleteCardButton onDelete={() => { setSelectedId(barber.id!); setConfirmModal(true); }} />
             </div>
-            <div className="absolute top-2 right-2 flex space-x-2">
+            <div className="absolute top-3 right-3 z-10">
               <EditCardButton onEdit={() => handleEdit(barber.id!)} />
             </div>
 
-            <div className="w-24 h-24 mt-4 rounded-full overflow-hidden bg-[var(--background)] mb-4 border-2 border-[var(--primary)] flex items-center justify-center">
+            <div className="w-40 h-40 relative mb-4 rounded-full overflow-hidden border border-[var(--foreground)]/5 shadow-md flex items-center justify-center bg-[var(--background)]">
               <Image
                 alt={barber.name}
                 src={(barber.image && barber.image !== "null" && barber.image !== "") ? barber.image : logo}
-                width={96}
-                height={96}
-                className="object-cover w-full h-full"
+                fill
+                className="object-cover transition-transform duration-500 hover:scale-105"
+                sizes="160px"
               />
             </div>
-            <h3 className="text-xl font-bold !text-black">{barber.name}</h3>
+            <h3 className="text-[var(--foreground)] mb-1.5 font-bold text-lg tracking-wide line-clamp-1 w-full">{barber.name}</h3>
             
-            <div className="mt-4 flex flex-col gap-2 items-center w-full px-4">
-              <span className={`px-4 py-1.5 text-xs w-fit text-center rounded-full font-semibold ${barber.active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
+            <div className="mt-auto mb-2 flex gap-1.5 items-center justify-center w-full px-2 flex-wrap">
+              <span className={`px-2.5 py-1 text-[10px] rounded-full font-bold uppercase tracking-wider ${barber.active ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
                 {barber.active ? "Activo" : "Inactivo"}
               </span>
-              <span className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-4 py-1.5 text-xs w-fit text-center rounded-full font-semibold">
+              <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 text-[10px] rounded-full font-bold uppercase tracking-wider">
                 Corte: {((barber.commission ?? 0) * 100).toFixed(0)}%
               </span>
-              <span className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 px-4 py-1.5 text-xs w-fit text-center rounded-full font-semibold">
+              <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 text-[10px] rounded-full font-bold uppercase tracking-wider">
                 Venta: {((barber.sale_commission ?? 0) * 100).toFixed(0)}%
               </span>
             </div>

@@ -37,6 +37,12 @@ export function BusinessProvider({ children }: Readonly<{ children: React.ReactN
     fetchConfig();
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined" && businessSettings?.business_name) {
+      document.title = businessSettings.business_name;
+    }
+  }, [businessSettings?.business_name]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
