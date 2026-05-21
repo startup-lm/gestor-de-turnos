@@ -9,6 +9,7 @@ import { Appointment } from "@/lib/types/Appointment";
 import CancelAppointmentModal from "@/components/turnos/CancelAppointmentModal";
 import { sendCancelAppointment } from "@/utils/whatsapp";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { Hash, Phone } from "lucide-react";
 
 const PopupModal = dynamic(() => import("@/components/ui/PopupModal"), { ssr: false, loading: () => null });
 
@@ -56,30 +57,67 @@ export default function CancelarTurnoPage() {
 
   return (
     <div className="p-5 flex flex-col items-center text-center">
-      <h1 className="text-3xl font-bold mb-10">¿Querés cancelar tu turno?</h1>
-      <div className="bg-[var(--bg-carousel)] px-15 py-5 md:px-20 md:py-10 rounded-xl shadow-md w-full max-w-md">
-        <form onSubmit={handleDelete} className="px-4 md:px-6">
-          <div className="text-left rounded-2lg shadow-lg">
-            <label htmlFor="appointment-id" className="block text-sm font-medium mb-2" >
-              Ingresa tu número de turno
+      <h1 className="text-3xl font-bold mb-5">Querés cancelar tu turno?</h1>
+
+      {/* Container Principal en Glassmorphic */}
+      <div className="bg-[var(--foreground)]/5 backdrop-blur-md border border-[var(--foreground)]/10 p-8 md:p-10 rounded-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] w-full max-w-lg hover:border-[var(--accent)]/30 transition-all duration-300">
+        {/* Formulario */}
+        <form onSubmit={handleDelete} className="space-y-6 text-left">
+          {/* Campo Número de Turno */}
+          <div>
+            <label htmlFor="appointment-id" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2 ml-1">
+              Número de Turno
             </label>
-            <input id="appointment-id" type="number" inputMode="numeric" value={appointmentId} className="border p-2 w-full mb-4 rounded" placeholder="123"
-              onChange={(e) => {
-                const onlyNumbers = e.target.value.replace(/\D/g, "");
-                setAppointmentId(onlyNumbers);
-              }}
-              onPaste={(e) => {
-                const pasted = e.clipboardData.getData("text");
-                if (!/^\d+$/.test(pasted)) e.preventDefault();
-              }} />
-            <label className="block text-sm font-medium mb-2">
-              Ingresa tu número de celular
-            </label>
-            <input id="cancel-phone" type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} required placeholder="1123456789" />
+            <div className="relative flex items-center">
+              <span className="absolute left-4 text-[var(--foreground)]/40 pointer-events-none z-10 flex items-center justify-center">
+                <Hash size={18} />
+              </span>
+              <input
+                id="appointment-id"
+                type="number"
+                inputMode="numeric"
+                value={appointmentId}
+                placeholder="Ej. 123"
+                className="w-full !bg-[var(--foreground)]/5 !text-[var(--foreground)] !border !border-[var(--foreground)]/10 rounded-xl py-3 !pl-12 pr-4 text-sm focus:outline-none focus:!border-red-500/50 focus:!ring-1 focus:!ring-red-500/50 transition-all duration-200 shadow-inner h-[48px]"
+                onChange={(e) => {
+                  const onlyNumbers = e.target.value.replace(/\D/g, "");
+                  setAppointmentId(onlyNumbers);
+                }}
+                onPaste={(e) => {
+                  const pasted = e.clipboardData.getData("text");
+                  if (!/^\d+$/.test(pasted)) e.preventDefault();
+                }}
+                required
+              />
+            </div>
           </div>
 
-          <div className="flex justify-center mt-10">
-            <CancelButton id="btn-cancel-search" type="submit" disabled={isDisabled} loading={loading} />
+          {/* Campo Número de Celular */}
+          <div>
+            <label htmlFor="cancel-phone" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2 ml-1">
+              Número de Celular
+            </label>
+            <div className="relative flex items-center">
+              <span className="absolute left-4 text-[var(--foreground)]/40 pointer-events-none z-10 flex items-center justify-center">
+                <Phone size={18} />
+              </span>
+              <input
+                id="cancel-phone"
+                type="tel"
+                value={phone}
+                placeholder="Ej. 1123456789"
+                className="w-full !bg-[var(--foreground)]/5 !text-[var(--foreground)] !border !border-[var(--foreground)]/10 rounded-xl py-3 !pl-12 pr-4 text-sm focus:outline-none focus:!border-red-500/50 focus:!ring-1 focus:!ring-red-500/50 transition-all duration-200 shadow-inner h-[48px]"
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                required
+              />
+            </div>
+          </div>
+
+          {/* Botón de Envío */}
+          <div className="flex justify-center pt-4">
+            <div className="w-[200px]">
+              <CancelButton id="btn-cancel-search" type="submit" disabled={isDisabled} loading={loading} />
+            </div>
           </div>
         </form>
 
@@ -88,13 +126,16 @@ export default function CancelarTurnoPage() {
         )}
 
         {popup.show && (
-          <PopupModal message={popup.message} success={popup.success}
+          <PopupModal
+            message={popup.message}
+            success={popup.success}
             showWhatsappButton={showWhatsapp}
             handleWhatsappButton={handleWhatsapp}
             onClose={() => {
               popup.close();
               setShowConfirm(false);
-            }} />
+            }}
+          />
         )}
       </div>
     </div>

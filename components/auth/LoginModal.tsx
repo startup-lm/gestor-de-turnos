@@ -39,45 +39,67 @@ export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void;
 
   return (
     <>
-      <Modal onClose={onClose}>
-        <Image
-          src={logo}                  // import estático
-          alt="Login Icon"
-          width={120}
-          height={120}
-          className="rounded-full mx-auto mb-4"
-          unoptimized                 // opcional si <10 KB
-        />
+      <Modal onClose={onClose} size="md">
+        <div className="flex flex-col items-center">
+          <div className="relative p-1 rounded-full border-2 border-[var(--accent)]/20 bg-gradient-to-b from-[var(--accent)]/10 to-transparent shadow-lg shadow-[var(--accent)]/5 mb-4">
+            <Image
+              src={logo}                  // import estático
+              alt="Login Icon"
+              width={100}
+              height={100}
+              className="rounded-full mx-auto"
+              unoptimized                 // opcional si <10 KB
+            />
+          </div>
+        </div>
 
-        <h2 className="text-2xl font-bold mb-6 text-center text-[var(--primary)]">
+        <h2 className="text-2xl font-bold mb-6 text-center text-[var(--foreground)]">
           Iniciar Sesión
         </h2>
-        <form onSubmit={handleLogin} className="px-4 md:px-6">
-          <div className="text-left rounded-2lg mt-5 shadow-lg">
-            <label className="block text-sm font-medium mb-1 mt-3">
-              Email
-            </label>
-            <input id="login-email" data-testid="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="tumail@gmail.com" />
+        <form onSubmit={handleLogin} className="px-2">
+          <div className="text-left mt-2 space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5 mt-3">
+                Email
+              </label>
+              <input 
+                id="login-email" 
+                data-testid="login-email" 
+                type="email" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                required 
+                placeholder="tumail@gmail.com" 
+                className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm"
+              />
+            </div>
 
-            <InputPassword
-              id="login-password"
-              data-testid="login-password"
-              label="Contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="******"
-              requiered
-            />
+            <div>
+              <InputPassword
+                id="login-password"
+                data-testid="login-password"
+                label="Contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="******"
+                requiered
+              />
+            </div>
 
-            <div className="text-right text-xs mb-3 mt-1">
-              <button id="btn-forgot-password" type="button" className="forgot-password-button" onClick={() => setForgotOpen(true)} >
+            <div className="text-right">
+              <span 
+                id="btn-forgot-password" 
+                role="button" 
+                className="text-[var(--accent)]/70 hover:text-[var(--accent)] font-semibold transition-all text-xs inline-block mt-1 cursor-pointer hover:underline" 
+                onClick={() => setForgotOpen(true)} 
+              >
                 ¿Olvidaste tu contraseña?
-              </button>
+              </span>
             </div>
           </div>
 
-          <div className="flex justify-center mt-10">
-            <div data-testid="login-submit-wrapper">
+          <div className="flex justify-center mt-8">
+            <div data-testid="login-submit-wrapper" className="w-[200px]">
               <LoginButton id="btn-login-submit" type="submit" loading={loading} disabled={isDisabled} onMouseEnter={() => router.prefetch("/turnos")} />
             </div>
           </div>

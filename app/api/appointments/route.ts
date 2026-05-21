@@ -24,6 +24,8 @@ export async function GET(request: Request) {
       query = query.lte("date", value);
     } else if (key === "date") {
       query = query.eq("date", value);
+    } else if (key === "barber_id" && value === "0") {
+      // Omitir filtro para traer todos los turnos si no hay preferencia (Cualquier Barbero)
     } else {
       query = query.eq(key, value);
     }

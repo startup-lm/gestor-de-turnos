@@ -64,6 +64,11 @@ export function useSelectedBarber(
 
     // 1) Prioriza slug (?barber=martin-acuna)
     const slug = searchParams.get("barber");
+    if (slug === "no-preferencia") {
+      setSelectedBarberId(0);
+      didInit.current = true;
+      return;
+    }
     if (slug && slugToId.has(slug)) {
       setSelectedBarberId(slugToId.get(slug)!);
       didInit.current = true;
@@ -91,14 +96,16 @@ export function useSelectedBarber(
   // Cambiar selección y reflejar slug en la URL
   const setBarberId = useCallback(
     (id: number) => {
-      const next = isValidBarber(id) ? id : -1;
+      const next = (isValidBarber(id) || id === 0) ? id : -1;
       setSelectedBarberId(next);
 
       const params = new URLSearchParams(Array.from(searchParams.entries()));
       // limpiar params antiguos
       params.delete("barberId");
 
-      if (next >= 0) {
+      if (next === 0) {
+        params.set("barber", "no-preferencia");
+      } else if (next > 0) {
         const slug = idToSlug.get(next) ?? `barber-${next}`;
         params.set("barber", slug);
       } else {
@@ -115,7 +122,12 @@ export function useSelectedBarber(
 
   // selectedBarber (puede haber barberos sin id, por eso buscamos en initialBarbers)
   const selectedBarber = useMemo(
-    () => initialBarbers.find((b) => b.id === selectedBarberId) ?? null,
+    () => {
+      if (selectedBarberId === 0) {
+        return { id: 0, name: "No tengo preferencia", image: "" } as unknown as Barber;
+      }
+      return initialBarbers.find((b) => b.id === selectedBarberId) ?? null;
+    },
     [initialBarbers, selectedBarberId]
   );
 

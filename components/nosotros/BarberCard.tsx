@@ -6,22 +6,24 @@ export default function BarberCard({ name, photo, instagram }: Readonly<{ name: 
     const isValidImage = photo && photo !== "null" && photo !== "";
 
     return (
-        <div className="border rounded-lg p-4 text-center bg-[var(--accent)] border border-[var(--primary)] shadow" >
-            <div className="w-48 h-48 overflow-hidden rounded-lg mb-4">
+        <div className="group relative border border-[var(--foreground)]/10 rounded-2xl p-5 text-center bg-gradient-to-b from-[var(--foreground)]/8 to-[var(--foreground)]/4 backdrop-blur-sm w-48 shadow-lg hover:border-[var(--accent)]/40 hover:shadow-xl hover:shadow-[var(--accent)]/5 hover:-translate-y-1 transition-all duration-300 flex flex-col items-center justify-between" >
+            <div className="w-32 h-32 rounded-full border-2 border-[var(--accent)]/30 group-hover:border-[var(--accent)]/80 overflow-hidden mb-4 shadow-md transition-colors duration-300 relative">
                 <Image
                     alt={name}
                     src={isValidImage ? photo : logo}
-                    width={200}
-                    height={200}
-                    className="object-cover bg-[var(--background)] w-full h-full"
+                    fill
+                    className="object-cover bg-[var(--background)] group-hover:scale-110 transition-transform duration-500"
+                    sizes="128px"
                 />
             </div>
-            <h3 className="heading-black font-bold mb-2">{name}</h3>
-            {instagram && instagram !== "@" && instagram !== "" && (
-                <p className="mt-2 flex items-center justify-center font-semibold gap-2">
-                    <BarberInstagram username={instagram} />
-                </p>
-            )}
+            <div>
+                <h3 className="text-lg font-bold text-[var(--foreground)] tracking-wide mb-1 group-hover:text-[var(--accent)] transition-colors">{name}</h3>
+                {instagram && instagram !== "@" && instagram !== "" && (
+                    <div className="mt-2 flex items-center justify-center font-semibold">
+                        <BarberInstagram username={instagram} />
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

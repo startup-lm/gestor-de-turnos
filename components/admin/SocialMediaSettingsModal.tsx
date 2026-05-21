@@ -5,7 +5,9 @@ import Modal from "@/components/ui/Modal";
 import { usePopup } from "@/lib/hooks/usePopup";
 import PopupModal from "@/components/ui/PopupModal";
 import Spinner from "@/components/loading/Spinner";
-import { FaInstagram, FaFacebook, FaTiktok, FaWhatsapp, FaLink } from "react-icons/fa";
+import { FaInstagram, FaFacebook, FaTiktok, FaLink } from "react-icons/fa";
+import { Share2 } from "lucide-react";
+import SaveButton from "@/components/buttons/SaveButton";
 
 interface Props {
   onClose: () => void;
@@ -14,16 +16,22 @@ interface Props {
 type SocialItem = { name: string; url: string; active: boolean };
 
 const ICON_MAP: Record<string, React.ReactNode> = {
-  instagram: <FaInstagram size={20} />,
-  facebook: <FaFacebook size={20} />,
-  tiktok: <FaTiktok size={20} />,
-  whatsapp: <FaWhatsapp size={20} />,
+  instagram: <FaInstagram size={22} className="text-pink-500" />,
+  facebook: <FaFacebook size={22} className="text-blue-500" />,
+  tiktok: <FaTiktok size={22} className="text-cyan-400" />,
+};
+
+const PREFIX_MAP: Record<string, string> = {
+  instagram: "instagram.com/",
+  facebook: "facebook.com/",
+  tiktok: "tiktok.com/",
 };
 
 export default function SocialMediaSettingsModal({ onClose }: Readonly<Props>) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [socials, setSocials] = useState<SocialItem[]>([]);
+  const [originalSocials, setOriginalSocials] = useState<SocialItem[]>([]);
   const popup = usePopup();
 
   useEffect(() => {
@@ -32,11 +40,13 @@ export default function SocialMediaSettingsModal({ onClose }: Readonly<Props>) {
         const res = await fetch("/api/business-settings");
         if (res.ok) {
           const data = await res.json();
-          setSocials(data.social_media || [
+          const val = data.social_media || [
             { name: "instagram", url: "", active: true },
             { name: "facebook", url: "", active: false },
             { name: "tiktok", url: "", active: false }
-          ]);
+          ];
+          setSocials(val);
+          setOriginalSocials(val);
         }
       } catch {
         console.error("Failed to fetch");
@@ -83,58 +93,85 @@ export default function SocialMediaSettingsModal({ onClose }: Readonly<Props>) {
     );
   }
 
+  const isSaveDisabled = saving || JSON.stringify(socials) === JSON.stringify(originalSocials);
+
   return (
     <>
-      <Modal onClose={onClose}>
-        <h2 className="text-2xl font-bold mb-6 text-center text-[var(--foreground)]">Redes Sociales</h2>
+      <Modal onClose={onClose} size="md">
+        {/* Encabezado Premium */}
+        <div className="text-center mb-8">
+          <div className="bg-[var(--accent)]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[var(--accent)]/20 shadow-[0_0_15px_rgba(212,181,138,0.2)]">
+            <Share2 className="w-7 h-7 text-[var(--accent)]" />
+          </div>
+          <h2 className="text-2xl font-extrabold tracking-tight text-[var(--foreground)]">Redes Sociales</h2>
+          <p className="text-sm text-[var(--foreground)]/50 mt-2">
+            Conectá con tus clientes en sus plataformas favoritas.
+          </p>
+        </div>
 
-        <div className="space-y-4 px-2 max-h-[60vh] overflow-y-auto">
+        {/* Tarjetas de Redes Sociales */}
+        <div className="space-y-4 px-1 max-h-[50vh] overflow-y-auto text-left">
           {socials.map((social, index) => (
-            <div key={social.name} className="bg-[var(--accent)] p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex flex-col gap-3">
+            <div
+              key={social.name}
+              className={`bg-[#131c33] p-4 rounded-2xl border transition-all duration-300 ${
+                social.active ? "border-[var(--accent)]/30 shadow-[0_4px_20px_rgba(0,0,0,0.15)]" : "border-slate-800"
+              }`}
+            >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 capitalize font-semibold">
-                  {ICON_MAP[social.name] || <FaLink size={20} />}
-                  <span>{social.name}</span>
+                <div className="flex items-center gap-3 capitalize font-bold text-slate-100">
+                  <span className="p-2 rounded-xl bg-slate-950/40 border border-slate-800 flex items-center justify-center">
+                    {ICON_MAP[social.name] || <FaLink size={22} className="text-[var(--accent)]" />}
+                  </span>
+                  <span className="text-sm tracking-wide">{social.name}</span>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={social.active}
-                    onChange={(e) => updateSocial(index, { active: e.target.checked })}
+                <div
+                  role="button"
+                  onClick={() => updateSocial(index, { active: !social.active })}
+                  className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${
+                    social.active ? "bg-green-500" : "bg-neutral-600"
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
+                      social.active ? "translate-x-5" : "translate-x-0"
+                    }`}
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[var(--primary)]"></div>
-                </label>
+                </div>
               </div>
+
               {social.active && (
-                <input
-                  type="url"
-                  placeholder={`Link a tu ${social.name}`}
-                  value={social.url}
-                  onChange={(e) => updateSocial(index, { url: e.target.value })}
-                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg p-2 text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
-                />
+                <div className="mt-4 transition-all duration-300 ease-in-out animate-fadeIn">
+                  <label className="block text-[10px] font-semibold text-[var(--accent)] uppercase tracking-widest mb-1.5 ml-1">
+                    Enlace de Perfil
+                  </label>
+                  <div className="relative flex items-center w-full !bg-slate-950/50 !text-slate-200 border border-slate-800 rounded-xl overflow-hidden focus-within:!border-[var(--accent)]/50 focus-within:!ring-1 focus-within:!ring-[var(--accent)]/50 transition-all h-[44px]">
+                    <span className="bg-slate-900/60 text-slate-400 px-3 text-xs h-full flex items-center border-r border-slate-800 font-bold select-none">
+                      {PREFIX_MAP[social.name] || ""}
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="usuario"
+                      value={social.url}
+                      onChange={(e) => updateSocial(index, { url: e.target.value })}
+                      className="flex-1 bg-transparent text-slate-200 px-3 text-sm h-full focus:outline-none"
+                    />
+                  </div>
+                </div>
               )}
             </div>
           ))}
         </div>
 
-        <div className="flex justify-end pt-6 mt-4 border-t border-gray-200 dark:border-gray-800">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2 rounded-xl font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors mr-2"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="!bg-[var(--primary)] !text-black px-6 py-2 rounded-xl font-bold shadow-lg shadow-[var(--primary)]/20 hover:shadow-[var(--primary)]/40 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:transform-none"
-          >
-            {saving ? "Guardando..." : "Guardar Cambios"}
-          </button>
+        {/* Footer actions */}
+        <div className="flex justify-center pt-6 mt-6 border-t border-[var(--foreground)]/10">
+          <div className="w-[200px]">
+            <SaveButton
+              onClick={handleSave}
+              disabled={isSaveDisabled}
+              loading={saving}
+            />
+          </div>
         </div>
       </Modal>
 

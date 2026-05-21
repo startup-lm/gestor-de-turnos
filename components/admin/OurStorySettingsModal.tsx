@@ -5,6 +5,7 @@ import Modal from "@/components/ui/Modal";
 import { usePopup } from "@/lib/hooks/usePopup";
 import PopupModal from "@/components/ui/PopupModal";
 import Spinner from "@/components/loading/Spinner";
+import SaveButton from "@/components/buttons/SaveButton";
 
 interface Props {
   onClose: () => void;
@@ -14,6 +15,7 @@ export default function OurStorySettingsModal({ onClose }: Readonly<Props>) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [story, setStory] = useState("");
+  const [originalStory, setOriginalStory] = useState("");
   const popup = usePopup();
 
   useEffect(() => {
@@ -22,7 +24,9 @@ export default function OurStorySettingsModal({ onClose }: Readonly<Props>) {
         const res = await fetch("/api/business-settings");
         if (res.ok) {
           const data = await res.json();
-          setStory((data.our_story || []).join("\n\n"));
+          const val = (data.our_story || []).join("\n\n");
+          setStory(val);
+          setOriginalStory(val);
         }
       } catch {
         console.error("Failed to fetch");
@@ -66,37 +70,29 @@ export default function OurStorySettingsModal({ onClose }: Readonly<Props>) {
 
   return (
     <>
-      <Modal onClose={onClose}>
+      <Modal onClose={onClose} size="lg">
         <h2 className="text-2xl font-bold mb-6 text-center text-[var(--foreground)]">Nuestra Historia</h2>
 
-        <div className="space-y-4 px-2">
-          <p className="text-sm text-gray-500 mb-2">
+        <div className="space-y-4 px-2 text-left">
+          <p className="text-sm text-[var(--foreground)]/50 mb-2 leading-relaxed">
             Escribí la historia del local. Separala por párrafos usando doble "Enter" (dejando una línea en blanco entre cada uno).
           </p>
           <textarea
             value={story}
             onChange={(e) => setStory(e.target.value)}
-            className="w-full h-64 bg-[var(--background)] border border-[var(--border)] rounded-lg p-3 text-sm focus:outline-none focus:border-[var(--primary)] transition-colors resize-none"
+            className="w-full h-64 !bg-slate-950/50 !text-slate-200 !border !border-slate-800 rounded-lg p-3 text-sm focus:outline-none focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-colors resize-none"
             placeholder="Todo empezó en..."
           />
         </div>
 
-        <div className="flex justify-end pt-6 mt-4 border-t border-gray-200 dark:border-gray-800">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2 rounded-xl font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors mr-2"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="!bg-[var(--primary)] !text-black px-6 py-2 rounded-xl font-bold shadow-lg shadow-[var(--primary)]/20 hover:shadow-[var(--primary)]/40 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:transform-none"
-          >
-            {saving ? "Guardando..." : "Guardar Cambios"}
-          </button>
+        <div className="flex justify-center pt-6 mt-4 border-t border-[var(--foreground)]/10">
+          <div className="w-[200px]">
+            <SaveButton
+              onClick={handleSave}
+              disabled={saving || story === originalStory}
+              loading={saving}
+            />
+          </div>
         </div>
       </Modal>
 

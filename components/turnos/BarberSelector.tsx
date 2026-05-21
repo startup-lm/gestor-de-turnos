@@ -12,10 +12,10 @@ type Props = {
 
 export default function BarberSelector({ barbers, selectedBarberId, onChange, className = "", id }: Readonly<Props>) {
   return (
-    <div className="mb-6 flex justify-left">
+    <div className="flex justify-left w-full">
       <select
         id={id}
-        className={`px-4 py-2 border rounded shadow-sm ${className}`}
+        className={`!px-4 !py-2.5 !border !border-[var(--foreground)]/10 !rounded-lg !shadow-sm !bg-[var(--foreground)]/5 !text-[var(--foreground)] focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all text-sm w-full h-[42px] ${className}`}
         value={selectedBarberId}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
         required

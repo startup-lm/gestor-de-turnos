@@ -3,4 +3,7 @@ export type BusinessSettings = {
   phone?: string;
   social_media?: { name: string; url: string; active: boolean }[];
   our_story?: string[];
+  location_address?: string;
+  local_photo?: string;
+  assignment_criteria?: "random" | "balanced" | "prioritize_admin" | "prioritize_barber";
 };

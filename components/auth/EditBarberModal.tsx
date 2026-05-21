@@ -91,12 +91,14 @@ export default function EditBarberModal({ barberId, onClose }: Readonly<Props>) 
 
   return (
     <>
-      <Modal onClose={onClose}>
-        <h2 className="text-xl font-bold mb-4 text-center">Editar Barbero</h2>
-        <form onSubmit={handleSave} className="px-4">
-          <div className="text-left rounded-2lg mt-5 shadow-lg space-y-6">
+      <Modal onClose={onClose} size="md">
+        <h2 className="text-2xl font-bold mb-6 text-center text-[var(--foreground)]">Editar Barbero</h2>
+        <form onSubmit={handleSave} className="px-2 text-left">
+          <div className="mt-2 space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-1">Barbero</label>
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                Barbero
+              </label>
               <BarberSelector
                 id="edit-barber-selector"
                 barbers={barbers ?? []}
@@ -106,63 +108,90 @@ export default function EditBarberModal({ barberId, onClose }: Readonly<Props>) 
               />
             </div>
 
-            <div className={formDisabled ? "opacity-50 pointer-events-none" : ""}>
-              <label className="block text-sm font-medium mb-1">Ganancia por corte</label>
-              <div className="relative w-30">
-                <input id="edit-barber-commission" type="number" min="0" max="100" step="0.1" value={Number(commission)}
-                  onChange={(e) => setCommission(e.target.value)} disabled={formDisabled} className="border rounded p-2 pr-8" />
-                <span className="font-medium absolute right-2 top-1/2 -translate-y-1/2">%</span>
+            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${formDisabled ? "opacity-50 pointer-events-none" : ""}`}>
+              <div>
+                <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                  Ganancia por corte
+                </label>
+                <div className="relative w-full">
+                  <input 
+                    id="edit-barber-commission" 
+                    type="number" 
+                    min="0" 
+                    max="100" 
+                    step="0.1" 
+                    value={commission}
+                    onChange={(e) => setCommission(e.target.value)} 
+                    disabled={formDisabled} 
+                    className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 pr-10 w-full block text-sm" 
+                  />
+                  <span className="font-semibold absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--accent)] text-sm">%</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                  Ganancia por venta
+                </label>
+                <div className="relative w-full">
+                  <input 
+                    id="edit-barber-sale-commission" 
+                    type="number" 
+                    min="0" 
+                    max="100" 
+                    step="0.1" 
+                    value={saleCommission}
+                    onChange={(e) => setSaleCommission(e.target.value)} 
+                    disabled={formDisabled} 
+                    className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 pr-10 w-full block text-sm" 
+                  />
+                  <span className="font-semibold absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--accent)] text-sm">%</span>
+                </div>
               </div>
             </div>
 
             <div className={formDisabled ? "opacity-50 pointer-events-none" : ""}>
-              <label className="block text-sm font-medium mb-1">Ganancia por venta</label>
-              <div className="relative w-30">
-                <input id="edit-barber-sale-commission" type="number" min="0" max="100" step="0.1" value={Number(saleCommission)}
-                  onChange={(e) => setSaleCommission(e.target.value)} disabled={formDisabled} className="border rounded p-2 pr-8" />
-                <span className="font-medium absolute right-2 top-1/2 -translate-y-1/2">%</span>
-              </div>
-            </div>
-
-            <div className={formDisabled ? "opacity-50 pointer-events-none" : ""}>
-              <label className="block text-sm font-medium mb-1">Estado</label>
-              <div className="flex items-center space-x-6">
-                {checklistOptions.map(({ label, value }) => (
-                  <label
-                    key={label}
-                    className="flex items-center gap-2 cursor-pointer select-none"
-                  >
-                    <input
-                      id={`edit-barber-status-${label.toLowerCase()}`}
-                      type="radio"
-                      name="status"
-                      checked={statusEnabled === value}
-                      onChange={() => setStatusEnabled(value)}
-                      disabled={formDisabled}
-                      className="hidden"
-                    />
-                    <span
-                      className={`w-5 h-5 flex items-center justify-center border rounded-full transition-colors duration-200 ${statusEnabled === value
-                        ? "bg-blue-600 border-blue-600"
-                        : "bg-white dark:bg-gray-700 border-gray-400"
-                        }`}
-                    >
-                      {statusEnabled === value && <Check className="w-4 h-4 text-white" />}
-                    </span>
-                    <span>{label}</span>
-                  </label>
-                ))}
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
+                Estado del Barbero
+              </label>
+              <div className="flex bg-[var(--foreground)]/5 p-1 rounded-xl border border-[var(--foreground)]/10">
+                <button
+                  type="button"
+                  onClick={() => setStatusEnabled(true)}
+                  disabled={formDisabled}
+                  className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
+                    statusEnabled 
+                      ? "bg-[var(--accent)] text-black shadow-md" 
+                      : "text-[var(--foreground)]/40 hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  Habilitado
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusEnabled(false)}
+                  disabled={formDisabled}
+                  className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
+                    !statusEnabled 
+                      ? "bg-red-500/20 border border-red-500/40 text-red-400 shadow-md" 
+                      : "text-[var(--foreground)]/40 hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  Deshabilitado
+                </button>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-center mt-10">
-            <SaveButton
-              id="btn-edit-barber-save"
-              type="submit"
-              disabled={!canSave}
-              loading={loading}
-            />
+          <div className="flex justify-center mt-8">
+            <div className="w-[200px]">
+              <SaveButton
+                id="btn-edit-barber-save"
+                type="submit"
+                disabled={!canSave}
+                loading={loading}
+              />
+            </div>
           </div>
         </form>
       </Modal>
