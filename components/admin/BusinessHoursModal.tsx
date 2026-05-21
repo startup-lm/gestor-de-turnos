@@ -26,6 +26,9 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
   const [hours, setHours] = useState<GlobalHours>({ open_time: "", close_time: "", lunch_start: null, lunch_end: null, closed_days: [], });
   const [settings, setSettings] = useState<BusinessSettings>({ slot_step_minutes: 30 });
   const [lunchEnabled, setLunchEnabled] = useState(false);
+  const [originalHours, setOriginalHours] = useState<GlobalHours | null>(null);
+  const [originalSettings, setOriginalSettings] = useState<BusinessSettings | null>(null);
+  const [originalLunchEnabled, setOriginalLunchEnabled] = useState(false);
   const popup = usePopup();
   useEffect(() => {
     (async () => {
@@ -34,9 +37,14 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
         const [h, s] = await Promise.all([getBusinessHours(), getBusinessSettings()]);
         if (h) {
           setHours(h);
-          setLunchEnabled(Boolean(h.lunch_start && h.lunch_end));
+          const hasLunch = Boolean(h.lunch_start && h.lunch_end);
+          setLunchEnabled(hasLunch);
+          setOriginalHours(h);
+          setOriginalLunchEnabled(hasLunch);
         }
-        setSettings(s ?? { slot_step_minutes: 30 });
+        const initialSettings = s ?? { slot_step_minutes: 30 };
+        setSettings(initialSettings);
+        setOriginalSettings(initialSettings);
       } finally {
         setLoadingFetch(false);
       }
@@ -81,11 +89,42 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
     return false;
   }, [hours, settings, lunchEnabled]);
 
+  const hasChanges = useMemo(() => {
+    if (!originalHours || !originalSettings) return false;
+    
+    // Compare closed_days
+    const closedDaysChanged = JSON.stringify(hours.closed_days) !== JSON.stringify(originalHours.closed_days);
+    
+    // Compare times
+    const openTimeChanged = hours.open_time !== originalHours.open_time;
+    const closeTimeChanged = hours.close_time !== originalHours.close_time;
+    
+    // Compare lunch
+    const lunchEnabledChanged = lunchEnabled !== originalLunchEnabled;
+    const lunchStartChanged = hours.lunch_start !== originalHours.lunch_start;
+    const lunchEndChanged = hours.lunch_end !== originalHours.lunch_end;
+    
+    // Compare slot settings
+    const slotStepChanged = settings.slot_step_minutes !== originalSettings.slot_step_minutes;
+    
+    return (
+      closedDaysChanged ||
+      openTimeChanged ||
+      closeTimeChanged ||
+      lunchEnabledChanged ||
+      lunchStartChanged ||
+      lunchEndChanged ||
+      slotStepChanged
+    );
+  }, [hours, settings, lunchEnabled, originalHours, originalSettings, originalLunchEnabled]);
+
+  const isSaveDisabled = isDisabled || !hasChanges;
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (isDisabled) {
+      if (isSaveDisabled) {
         setLoading(false);
         return;
       }
@@ -151,16 +190,16 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
 
             <div className="sm:col-span-2 flex items-center justify-between p-3 rounded-lg bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 h-[42px] mt-2">
               <span className="text-xs font-semibold text-[var(--accent)] uppercase tracking-wider">Habilitar Almuerzo / Descanso</span>
-              <button
+              <div
                 id="biz-lunch-enabled"
-                type="button"
+                role="button"
                 onClick={() => onToggleLunch(!lunchEnabled)}
-                className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${lunchEnabled ? 'bg-[var(--accent)]' : 'bg-gray-600'}`}
+                className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${lunchEnabled ? 'bg-green-500' : 'bg-neutral-600'}`}
               >
                 <div
                   className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${lunchEnabled ? 'translate-x-5' : 'translate-x-0'}`}
                 />
-              </button>
+              </div>
             </div>
 
             {lunchEnabled && (
@@ -242,7 +281,9 @@ export default function BusinessHoursModal({ onClose }: { onClose: () => void })
           </div>
 
           <div className="flex justify-center pt-4">
-            <SaveButton id="btn-biz-save" type="submit" disabled={isDisabled} loading={loading} />
+            <div className="w-[200px]">
+              <SaveButton id="btn-biz-save" type="submit" disabled={isSaveDisabled} loading={loading} />
+            </div>
           </div>
         </form>
       </Modal>

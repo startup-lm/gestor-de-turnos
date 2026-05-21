@@ -99,7 +99,7 @@ export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void;
           </div>
 
           <div className="flex justify-center mt-8">
-            <div data-testid="login-submit-wrapper" className="w-full">
+            <div data-testid="login-submit-wrapper" className="w-[200px]">
               <LoginButton id="btn-login-submit" type="submit" loading={loading} disabled={isDisabled} onMouseEnter={() => router.prefetch("/turnos")} />
             </div>
           </div>

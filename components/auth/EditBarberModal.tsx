@@ -184,12 +184,14 @@ export default function EditBarberModal({ barberId, onClose }: Readonly<Props>) 
           </div>
 
           <div className="flex justify-center mt-8">
-            <SaveButton
-              id="btn-edit-barber-save"
-              type="submit"
-              disabled={!canSave}
-              loading={loading}
-            />
+            <div className="w-[200px]">
+              <SaveButton
+                id="btn-edit-barber-save"
+                type="submit"
+                disabled={!canSave}
+                loading={loading}
+              />
+            </div>
           </div>
         </form>
       </Modal>

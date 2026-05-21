@@ -144,7 +144,9 @@ export default function EditCardModal({ id, name, description, price, duration, 
           </div>
 
           <div className="flex justify-center pt-6">
-            <SaveButton id="btn-edit-card-save" type="submit" disabled={isDisabled} loading={loading} />
+            <div className="w-[200px]">
+              <SaveButton id="btn-edit-card-save" type="submit" disabled={isDisabled} loading={loading} />
+            </div>
           </div>
         </form>
       </Modal>

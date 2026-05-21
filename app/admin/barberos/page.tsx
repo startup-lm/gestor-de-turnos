@@ -12,7 +12,9 @@ export default async function AdminBarberosPage() {
       <div className="w-full max-w-6xl">
         <BackButton href="/admin" label="Panel Admin" />
       </div>
-      <h1 className="text-3xl font-bold mb-5">Gestión de Barberos</h1>
+      <h1 className="text-3xl font-extrabold mb-8 text-center bg-gradient-to-r from-[var(--foreground)] via-[var(--foreground)] to-[var(--accent)] bg-clip-text text-transparent tracking-tight">
+        Gestión de Barberos
+      </h1>
       <AdminBarberosClient barbers={barbers} />
     </div>
   );

@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import BlockDateModal from "@/components/admin/BlockDateModal";
@@ -16,16 +15,20 @@ import {
   CalendarDays,
   Share2,
   BookOpen,
-  PlusCircle
+  PlusCircle,
+  MapPin,
+  Image as ImageIcon
 } from "lucide-react";
 import WhatsAppSettingsModal from "@/components/admin/WhatsAppSettingsModal";
 import PaymentSettingsModal from "@/components/admin/PaymentSettingsModal";
 import SocialMediaSettingsModal from "@/components/admin/SocialMediaSettingsModal";
 import OurStorySettingsModal from "@/components/admin/OurStorySettingsModal";
 import RegisterSaleModal from "@/components/sales/RegisterSaleModal";
+import LocationSettingsModal from "@/components/admin/LocationSettingsModal";
+import LocalPhotoSettingsModal from "@/components/admin/LocalPhotoSettingsModal";
 
 export default function AdminPage() {
-  const [activeModal, setActiveModal] = useState<"whatsapp" | "payments" | "hours" | "block" | "social" | "story" | "sale" | null>(null);
+  const [activeModal, setActiveModal] = useState<"whatsapp" | "payments" | "hours" | "block" | "social" | "story" | "sale" | "location" | "local_photo" | null>(null);
   const router = useRouter();
 
   const adminCards = [
@@ -38,6 +41,8 @@ export default function AdminPage() {
     { label: "Barberos", description: "Gestión de personal", icon: Users, category: "administracion_local", onClick: () => router.push("/admin/barberos") },
     { label: "Facturación", description: "ARCA / AFIP", icon: FileText, category: "administracion_local", onClick: () => router.push("/admin/facturacion"), show: process.env.NEXT_PUBLIC_ENABLE_ARCA === "true" },
     { label: "Horarios", description: "Días de atención", icon: Clock, category: "administracion_local", onClick: () => setActiveModal("hours") },
+    { label: "Ubicación", description: "Dirección en mapa", icon: MapPin, category: "administracion_local", onClick: () => setActiveModal("location") },
+    { label: "Foto Local", description: "Fachada del local", icon: ImageIcon, category: "administracion_local", onClick: () => setActiveModal("local_photo") },
     { label: "WhatsApp", description: "Teléfono del local", icon: MessageCircle, category: "administracion_local", onClick: () => setActiveModal("whatsapp") },
     { label: "Medios de Pago", description: "Métodos aceptados", icon: CreditCard, category: "administracion_local", onClick: () => setActiveModal("payments") },
     { label: "Redes", description: "Links de RRSS", icon: Share2, category: "administracion_local", onClick: () => setActiveModal("social") },
@@ -92,7 +97,7 @@ export default function AdminPage() {
   return (
     <div className="flex flex-col items-center p-6 min-h-[calc(100vh-64px)] w-full max-w-6xl mx-auto">
       <header className="mb-10 text-center">
-        <h1 className="text-4xl font-extrabold tracking-tight mb-2">Panel de Administración</h1>
+        <h1 className="text-4xl font-extrabold tracking-tight mb-2 bg-gradient-to-r from-[var(--foreground)] via-[var(--foreground)] to-[var(--accent)] bg-clip-text text-transparent">Panel de Administración</h1>
         <p className="text-gray-500 dark:text-gray-400">Gestioná todos los aspectos de tu negocio</p>
       </header>
 
@@ -144,6 +149,8 @@ export default function AdminPage() {
       {activeModal === "social" && <SocialMediaSettingsModal onClose={() => setActiveModal(null)} />}
       {activeModal === "story" && <OurStorySettingsModal onClose={() => setActiveModal(null)} />}
       {activeModal === "sale" && <RegisterSaleModal onClose={() => setActiveModal(null)} />}
+      {activeModal === "location" && <LocationSettingsModal onClose={() => setActiveModal(null)} />}
+      {activeModal === "local_photo" && <LocalPhotoSettingsModal onClose={() => setActiveModal(null)} />}
     </div>
   );
 }

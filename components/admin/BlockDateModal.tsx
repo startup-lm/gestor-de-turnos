@@ -125,16 +125,16 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
 
             <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 h-[42px] mt-6">
               <span className="text-xs font-semibold text-[var(--accent)] uppercase tracking-wider">Bloquear rango de días</span>
-              <button
+              <div
                 id="block-use-range"
-                type="button"
+                role="button"
                 onClick={() => setUseRange(!useRange)}
-                className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${useRange ? 'bg-[var(--accent)]' : 'bg-gray-600'}`}
+                className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${useRange ? 'bg-green-500' : 'bg-neutral-600'}`}
               >
                 <div
                   className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${useRange ? 'translate-x-5' : 'translate-x-0'}`}
                 />
-              </button>
+              </div>
             </div>
 
             <div>
@@ -204,7 +204,9 @@ export default function BlockDateModal({ onClose }: Readonly<{ onClose: () => vo
           </div>
 
           <div className="flex justify-center pt-4">
-            <BlockButton id="btn-block-submit" type="submit" disabled={isDisabled} loading={loading} />
+            <div className="w-[200px]">
+              <BlockButton id="btn-block-submit" type="submit" disabled={isDisabled} loading={loading} />
+            </div>
           </div>
         </form>
       </Modal>

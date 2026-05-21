@@ -7,6 +7,7 @@ import PopupModal from "@/components/ui/PopupModal";
 import Spinner from "@/components/loading/Spinner";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
+import SaveButton from "@/components/buttons/SaveButton";
 
 interface Props {
   onClose: () => void;
@@ -16,6 +17,7 @@ export default function WhatsAppSettingsModal({ onClose }: Readonly<Props>) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [phone, setPhone] = useState("");
+  const [originalPhone, setOriginalPhone] = useState("");
   const popup = usePopup();
 
   useEffect(() => {
@@ -24,7 +26,9 @@ export default function WhatsAppSettingsModal({ onClose }: Readonly<Props>) {
         const res = await fetch("/api/business-settings");
         if (res.ok) {
           const data = await res.json();
-          setPhone(data.phone || "");
+          const val = data.phone || "";
+          setPhone(val);
+          setOriginalPhone(val);
         }
       } catch {
         console.error("Failed to fetch");
@@ -99,22 +103,14 @@ export default function WhatsAppSettingsModal({ onClose }: Readonly<Props>) {
               </p>
             </div>
 
-            <div className="flex justify-end pt-6 mt-4 border-t border-[var(--foreground)]/10">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-2 rounded-xl font-medium text-[var(--foreground)]/60 hover:bg-[var(--foreground)]/5 transition-colors mr-2 text-sm"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className="!bg-[var(--accent)] !text-[var(--primary)] px-6 py-2 rounded-xl font-bold hover:opacity-90 transition-all duration-200 disabled:opacity-50 text-sm shadow-md"
-              >
-                {saving ? "Guardando..." : "Guardar Cambios"}
-              </button>
+            <div className="flex justify-center pt-6 mt-4 border-t border-[var(--foreground)]/10">
+              <div className="w-[200px]">
+                <SaveButton
+                  onClick={handleSave}
+                  disabled={saving || phone === originalPhone}
+                  loading={saving}
+                />
+              </div>
             </div>
           </div>
       </Modal>

@@ -60,7 +60,9 @@ export default function AppointmentDetailsModal({
   return (
     <>
       <Modal onClose={onClose} size="lg">
-        <h2 className="text-2xl font-bold mb-2 text-center text-[var(--foreground)]">Detalles del turno</h2>
+        <h2 className="text-2xl font-extrabold mb-2 text-center bg-gradient-to-r from-[var(--foreground)] via-[var(--foreground)] to-[var(--accent)] bg-clip-text text-transparent tracking-tight">
+          Detalles del turno
+        </h2>
         {appointment.updated_at && (
           <p className="text-xs text-center mb-6 text-[var(--button-home-disabled-text)]">
             Última actualización: {format(new Date(appointment.updated_at), "dd/MM/yyyy HH:mm")}
@@ -156,12 +158,18 @@ export default function AppointmentDetailsModal({
           )}
 
           <div className="flex justify-center pt-4">
-            <SaveButton id="btn-appt-save" type="submit" disabled={!hasChanges} loading={loadingUpdate} />
+            <div className="w-[220px]">
+              <ChargeButton id="btn-appt-charge" onClick={() => setShowService(true)} disabled={appointment.paid || isBlockedRange} loading={loading} isPaid={appointment.paid} />
+            </div>
           </div>
 
           <div className="flex justify-center gap-5 pt-2">
-            <DeleteButton id="btn-appt-delete" disabled={appointment.paid} loading={loading} onClick={() => setConfirmModal(true)} />
-            <ChargeButton id="btn-appt-charge" onClick={() => setShowService(true)} disabled={appointment.paid || isBlockedRange} loading={loading} isPaid={appointment.paid} />
+            <div className="w-[180px]">
+              <DeleteButton id="btn-appt-delete" disabled={appointment.paid} loading={loading} onClick={() => setConfirmModal(true)} />
+            </div>
+            <div className="w-[180px]">
+              <SaveButton id="btn-appt-save" type="submit" disabled={!hasChanges} loading={loadingUpdate} />
+            </div>
           </div>
         </form>
       </Modal>
