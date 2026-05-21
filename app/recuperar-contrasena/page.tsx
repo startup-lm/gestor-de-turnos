@@ -1,16 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { updatePassword } from "@/lib/repository/auth";
+import { supabaseClient } from "@/lib/supabase/supabaseClient";
 import dynamic from "next/dynamic";
 import SaveButton from "@/components/buttons/SaveButton";
 import InputPassword from "@/components/input/InputPassword";
 import Link from "next/link";
 import { Check, KeyRound } from "lucide-react";
+import Spinner from "@/components/loading/Spinner";
 
 const PopupModal = dynamic(() => import("@/components/ui/PopupModal"), { ssr: false, loading: () => null });
 
 export default function ResetPasswordPage() {
+  const router = useRouter();
+  const [loadingSession, setLoadingSession] = useState(true);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPopup, setShowPopup] = useState(false);
@@ -19,6 +24,16 @@ export default function ResetPasswordPage() {
   const [passwordChanged, setPasswordChanged] = useState(false);
   const isDisabled = !newPassword || newPassword.length < 6 || confirmPassword !== newPassword || passwordChanged;
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.replace("/");
+      } else {
+        setLoadingSession(false);
+      }
+    });
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +63,17 @@ export default function ResetPasswordPage() {
     }
     setLoading(false);
   };
+
+  if (loadingSession) {
+    return (
+      <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center bg-[var(--background)]">
+        <Spinner />
+        <p className="text-sm font-medium text-slate-400 mt-4 animate-pulse">
+          Cargando formulario de seguridad...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-5 flex flex-col items-center text-center relative overflow-hidden">

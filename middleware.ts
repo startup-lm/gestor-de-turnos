@@ -27,12 +27,21 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Importante: No uses `getSession` ya que puede ser vulnerable o devolver tokens expirados.
-  // `getUser` es la forma recomendada por Supabase para validar de forma segura en el servidor.
-  const { data: { user } } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    // Importante: No uses `getSession` ya que puede ser vulnerable o devolver tokens expirados.
+    // `getUser` es la forma recomendada por Supabase para validar de forma segura en el servidor.
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch (error) {
+    console.error("Middleware Auth Error:", error);
+  }
 
-  // Si intenta acceder a /admin y no está logueado, redirigir al home
-  if (request.nextUrl.pathname.startsWith("/admin") && !user) {
+  // Si intenta acceder a /admin o /dashboard y no está logueado, redirigir al home
+  const pathname = request.nextUrl.pathname;
+  const isProtectedPath = pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+
+  if (isProtectedPath && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
@@ -43,6 +52,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/admin",
     "/admin/:path*",
+    "/dashboard",
+    "/dashboard/:path*",
   ],
 };

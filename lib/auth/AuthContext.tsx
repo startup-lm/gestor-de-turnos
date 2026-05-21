@@ -37,10 +37,25 @@ export function AuthProvider({
     });
 
     const { data: sub } = supabaseClient.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         const currentUser = session?.user || null;
         setUser(currentUser);
-        if (!currentUser) {
+        if (currentUser) {
+          const storedAuth = loadStoredAuth();
+          if (storedAuth && storedAuth.user?.id === currentUser.id && storedAuth.role !== "guest") {
+            setRole(storedAuth.role);
+            setBarberId(storedAuth.barberId);
+          } else {
+            const result = await getIdAndRole(currentUser.email!);
+            if (result) {
+              setRole(result.role);
+              setBarberId(result.id);
+            } else {
+              setRole("guest");
+              setBarberId(-1);
+            }
+          }
+        } else {
           setRole("guest");
           setBarberId(-1);
         }
