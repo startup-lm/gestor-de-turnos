@@ -18,7 +18,8 @@ import {
   PlusCircle,
   MapPin,
   Image as ImageIcon,
-  Shuffle
+  Shuffle,
+  Store
 } from "lucide-react";
 import WhatsAppSettingsModal from "@/components/admin/WhatsAppSettingsModal";
 import PaymentSettingsModal from "@/components/admin/PaymentSettingsModal";
@@ -28,9 +29,10 @@ import RegisterSaleModal from "@/components/sales/RegisterSaleModal";
 import LocationSettingsModal from "@/components/admin/LocationSettingsModal";
 import LocalPhotoSettingsModal from "@/components/admin/LocalPhotoSettingsModal";
 import AssignmentSettingsModal from "@/components/admin/AssignmentSettingsModal";
+import BrandingSettingsModal from "@/components/admin/BrandingSettingsModal";
 
 export default function AdminPage() {
-  const [activeModal, setActiveModal] = useState<"whatsapp" | "payments" | "hours" | "block" | "social" | "story" | "sale" | "location" | "local_photo" | "assignment" | null>(null);
+  const [activeModal, setActiveModal] = useState<"whatsapp" | "payments" | "hours" | "block" | "social" | "story" | "sale" | "location" | "local_photo" | "assignment" | "branding" | null>(null);
   const router = useRouter();
 
   interface AdminCard {
@@ -51,6 +53,7 @@ export default function AdminPage() {
 
     { label: "Barberos", description: "Gestión de personal", icon: Users, category: "administracion_local", onClick: () => router.push("/admin/barberos") },
     { label: "Facturación", description: "ARCA / AFIP", icon: FileText, category: "administracion_local", onClick: () => router.push("/admin/facturacion"), show: process.env.NEXT_PUBLIC_ENABLE_ARCA === "true" },
+    { label: "Nombre y Logo", description: "Nombre y Logo del local", icon: Store, category: "administracion_local", onClick: () => setActiveModal("branding") },
     { label: "Horarios", description: "Días de atención", icon: Clock, category: "administracion_local", onClick: () => setActiveModal("hours") },
     { label: "Asignación", description: "Criterio de asignación", icon: Shuffle, category: "administracion_local", onClick: () => setActiveModal("assignment") },
     { label: "Ubicación", description: "Dirección en mapa", icon: MapPin, category: "administracion_local", onClick: () => setActiveModal("location") },
@@ -163,6 +166,7 @@ export default function AdminPage() {
       {activeModal === "location" && <LocationSettingsModal onClose={() => setActiveModal(null)} />}
       {activeModal === "local_photo" && <LocalPhotoSettingsModal onClose={() => setActiveModal(null)} />}
       {activeModal === "assignment" && <AssignmentSettingsModal onClose={() => setActiveModal(null)} />}
+      {activeModal === "branding" && <BrandingSettingsModal onClose={() => setActiveModal(null)} />}
     </div>
   );
 }

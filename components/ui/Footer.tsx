@@ -33,7 +33,7 @@ export default function Footer() {
         </div>
       )}
       <div className="text-center text-xs">
-        © {new Date().getFullYear()} Desarrollado por LM². Todos los derechos reservados.
+        © {new Date().getFullYear()} {businessSettings?.business_name || "Barbería"}. Desarrollado por LM². Todos los derechos reservados.
       </div>
     </footer>
   );

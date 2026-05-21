@@ -1,8 +1,25 @@
+"use client";
+
 import Image from "next/image";
 import HeroActions from "./HeroActions";
 import homeBg from "@/public/images/home.jpg";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
 
 export default function Hero() {
+  const { businessSettings } = useBusinessContext();
+  const name = businessSettings?.business_name || "Barbería Premium";
+  const words = name.trim().split(/\s+/);
+  
+  let firstPart = "";
+  let lastWord = "";
+  if (words.length > 1) {
+    lastWord = words.pop() || "";
+    firstPart = words.join(" ");
+  } else {
+    lastWord = words[0] || "";
+    firstPart = "";
+  }
+
   return (
     <section className="relative min-h-[440px] sm:min-h-[480px] flex items-center justify-center text-center overflow-hidden rounded-3xl border border-slate-800/60 shadow-2xl">
       {/* Background Image with dark-gold gradient overlay */}
@@ -27,7 +44,10 @@ export default function Hero() {
       <div className="relative z-10 space-y-6 px-6 max-w-2xl py-12">
         <div className="space-y-3">
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-none">
-            Barbería <span className="bg-gradient-to-r from-[var(--accent)] via-[#fcebb6] to-[var(--accent)] bg-clip-text text-transparent">Premium</span>
+            {firstPart}{firstPart ? " " : ""}
+            <span className="bg-gradient-to-r from-[var(--accent)] via-[#fcebb6] to-[var(--accent)] bg-clip-text text-transparent">
+              {lastWord}
+            </span>
           </h1>
           <div className="w-16 h-[2px] bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent mx-auto my-3" />
           <p className="text-base sm:text-lg text-slate-300 font-medium tracking-wide max-w-md mx-auto leading-relaxed">
