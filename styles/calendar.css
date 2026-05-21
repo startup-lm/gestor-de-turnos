@@ -108,10 +108,12 @@
   height: auto !important;
 }
 
-.rbc-time-header>.rbc-row>.rbc-time-header-cell:nth-child(n+2) {
-  flex: 0 0 80px !important;
-  max-width: 80px !important;
-  padding: 0.25rem !important;
+@media (max-width: 1024px) {
+  .rbc-time-header>.rbc-row>.rbc-time-header-cell:nth-child(n+2) {
+    flex: 0 0 80px !important;
+    max-width: 80px !important;
+    padding: 0.25rem !important;
+  }
 }
 
 .rbc-time-header .rbc-time-header-content .rbc-row.rbc-time-header-cell .rbc-header.rbc-today {

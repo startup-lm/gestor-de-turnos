@@ -19,13 +19,15 @@ interface Props {
 
 export default function ChartSection({ data, salesData, viewMode, onViewChange, turnos, ventas, ingresos, comision, comisionVenta, ingresosVentas }: Readonly<Props>) {
   return (
-    <div className="flex flex-col flex-1 bg-[var(--bg-carousel)] rounded-lg shadow p-4">
-      <div className="flex justify-between items-center mb-4">
+    <div className="flex flex-col flex-1 dashboard-card p-6 justify-between gap-6">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
         <Metrics turnos={turnos} ventas={ventas} ingresos={ingresos} comision={comision} comisionVenta={comisionVenta} ingresosVentas={ingresosVentas}/>
-        <ViewModeChecklist viewMode={viewMode} onChange={onViewChange} />
+        <div className="flex-shrink-0 self-end xl:self-auto">
+          <ViewModeChecklist viewMode={viewMode} onChange={onViewChange} />
+        </div>
       </div>
 
-      <div className="flex-1 flex flex-col justify-end">
+      <div className="flex-1 flex flex-col justify-end mt-4">
         <Chart data={data} salesData={salesData}/>
       </div>
     </div>

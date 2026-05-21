@@ -57,7 +57,7 @@ export default function TurnosClient({ initialBarbers }: Readonly<Props>) {
   const activeStep = isReservarOpen ? 3 : isBarberSelected ? 2 : 1;
 
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto min-h-screen">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto min-h-screen">
       {/* Título de la pantalla estandarizado */}
       <h1 className="text-3xl font-bold mb-5 text-center">Reserva tu turno</h1>
 
@@ -107,33 +107,35 @@ export default function TurnosClient({ initialBarbers }: Readonly<Props>) {
         </div>
       </div>
 
-      <div className="w-full md:w-11/12 lg:w-4/5 mx-auto">
+      <div className="w-full mx-auto">
         
         {/* RUTA DE PASOS EN PANTALLA */}
         {activeStep === 1 && (
           /* PASO 1: Selector de Profesional */
-          <div 
-            className="flex flex-col items-center mb-6 animate-fade-in-up"
-            style={{ animation: "fadeInUp 400ms ease-out forwards" }}
-          >
-            <h2 className="mb-6 text-center text-lg font-medium text-[var(--foreground)]/80 tracking-wide">
-              {role === "guest" ? "¿Con quién te querés cortar?" : "Elegí el barbero para ver sus turnos"}
-            </h2>
-            <BarberCheckbox
-              barbers={initialBarbers}
-              selectedBarberId={selectedBarberId}
-              onChange={setBarberId}
-            />
+          <div className="max-w-6xl mx-auto w-full md:w-11/12 lg:w-4/5">
+            <div 
+              className="flex flex-col items-center mb-6 animate-fade-in-up"
+              style={{ animation: "fadeInUp 400ms ease-out forwards" }}
+            >
+              <h2 className="mb-6 text-center text-lg font-medium text-[var(--foreground)]/80 tracking-wide">
+                {role === "guest" ? "¿Con quién te querés cortar?" : "Elegí el barbero para ver sus turnos"}
+              </h2>
+              <BarberCheckbox
+                barbers={initialBarbers}
+                selectedBarberId={selectedBarberId}
+                onChange={setBarberId}
+              />
 
-            {/* Placeholder de agenda vacía */}
-            <div className="w-full bg-[var(--bg-carousel)] border border-[var(--foreground)]/5 rounded-2xl p-10 flex flex-col items-center text-center shadow-lg mt-8">
-              <div className="w-16 h-16 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mb-4 border border-[var(--accent)]/20 animate-pulse">
-                <span className="text-2xl text-[var(--accent)]">💈</span>
+              {/* Placeholder de agenda vacía */}
+              <div className="w-full bg-[var(--bg-carousel)] border border-[var(--foreground)]/5 rounded-2xl p-10 flex flex-col items-center text-center shadow-lg mt-8">
+                <div className="w-16 h-16 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mb-4 border border-[var(--accent)]/20 animate-pulse">
+                  <span className="text-2xl text-[var(--accent)]">💈</span>
+                </div>
+                <h3 className="text-lg font-bold mb-2 text-[var(--foreground)]">Elegí tu Profesional</h3>
+                <p className="text-sm text-[var(--foreground)]/50 max-w-sm">
+                  Seleccioná uno de nuestros barberos especializados arriba para cargar su agenda interactiva y elegir tu horario de preferencia.
+                </p>
               </div>
-              <h3 className="text-lg font-bold mb-2 text-[var(--foreground)]">Elegí tu Profesional</h3>
-              <p className="text-sm text-[var(--foreground)]/50 max-w-sm">
-                Seleccioná uno de nuestros barberos especializados arriba para cargar su agenda interactiva y elegir tu horario de preferencia.
-              </p>
             </div>
           </div>
         )}
@@ -188,14 +190,16 @@ export default function TurnosClient({ initialBarbers }: Readonly<Props>) {
 
         {activeStep === 3 && (
           /* PASO 3: Formulario de Confirmación Inline */
-          <ReservarInlineCard
-            onClose={closeReservar}
-            selectedDate={selectedDate}
-            selectedBarber={selectedBarber?.name || ""}
-            selectedBarberId={selectedBarberId}
-            events={events}
-            onAppointmentCreated={handleAppointmentCreated}
-          />
+          <div className="max-w-6xl mx-auto w-full md:w-11/12 lg:w-4/5">
+            <ReservarInlineCard
+              onClose={closeReservar}
+              selectedDate={selectedDate}
+              selectedBarber={selectedBarber?.name || ""}
+              selectedBarberId={selectedBarberId}
+              events={events}
+              onAppointmentCreated={handleAppointmentCreated}
+            />
+          </div>
         )}
 
         {/* Modal de Detalles de Turno (Admin/Barbero) */}

@@ -98,7 +98,6 @@ export default function AdminPage() {
     <div className="flex flex-col items-center p-6 min-h-[calc(100vh-64px)] w-full max-w-6xl mx-auto">
       <header className="mb-10 text-center">
         <h1 className="text-4xl font-extrabold tracking-tight mb-2 bg-gradient-to-r from-[var(--foreground)] via-[var(--foreground)] to-[var(--accent)] bg-clip-text text-transparent">Panel de Administración</h1>
-        <p className="text-gray-500 dark:text-gray-400">Gestioná todos los aspectos de tu negocio</p>
       </header>
 
       <div className="w-full space-y-10">

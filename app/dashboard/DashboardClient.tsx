@@ -62,10 +62,16 @@ export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
   }, []);
 
   return (
-    <div className="p-4 max-w-7xl mx-auto space-y-6">
-      <h1 className="text-2xl md:text-3xl font-bold text-center">Dashboard</h1>
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-8 min-h-screen">
+      {/* Cabecera Premium Centrada */}
+      <div className="text-center border-b border-slate-800/40 pb-6 mb-6">
+        <h1 className="text-3xl font-extrabold text-white tracking-tight bg-gradient-to-r from-white via-white to-[var(--accent)] bg-clip-text text-transparent block w-fit mx-auto text-center">
+          Panel de Control
+        </h1>
+      </div>
 
-      <div className="flex flex-col md:flex-row gap-2 items-stretch">
+
+      <div className="flex flex-col md:flex-row gap-6 items-stretch">
         <aside className="flex-none">
           <Sidebar
             barbers={barbers}
@@ -78,7 +84,7 @@ export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
           />
         </aside>
 
-        <main className="flex-1 self-stretch flex flex-col relative">
+        <main className="flex-1 self-stretch flex flex-col relative min-w-0">
           <ChartSection
             data={chartData}
             salesData={salesChartData}
@@ -95,16 +101,16 @@ export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
       </div>
 
       {role === "admin" && (
-        <div className="flex flex-col md:flex-row gap-4 mt-10">
-          <section className="w-full md:w-1/2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-2">
+          <section className="w-full">
             <Summary data={summary} salesData={{totalSales, totalSalesRevenue, totalSalesCommission}} totalCommissions={totalCommissions} paymentTotals={paymentTotals} />
           </section>
 
-          <section className="w-full md:w-1/2">
+          <section className="w-full">
             <PieChartSection data={pieData} />
           </section>
         </div>
       )}
     </div>
-  )
+  );
 }
