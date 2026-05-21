@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
 
-const host = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const host = supabaseUrl ? new URL(supabaseUrl).hostname : "localhost";
 
 const nextConfig: NextConfig = {
   images: {
