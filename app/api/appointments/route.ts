@@ -4,6 +4,7 @@ import { successResponse, errorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { createSupabaseServerClient } from "@/lib/supabase/supabaseServer";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
+import { rateLimit } from "@/lib/api/rateLimit";
 import { revalidateTag } from "next/cache";
 import {
   AppointmentInsertSchema,
@@ -53,6 +54,27 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  // 1. Verificar si es personal de la barbería para exceptuarlo del control de tasa
+  const staff = await requireBarberOrAdmin();
+  const isStaff = staff !== null;
+
+  if (!isStaff) {
+    // 2. Obtener IP del cliente
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || 
+               request.headers.get("x-real-ip") || 
+               "127.0.0.1";
+
+    // 3. Aplicar límite de 10 turnos por minuto (60000 ms) para usuarios anónimos
+    const limitResult = rateLimit(ip, 10, 60000);
+
+    if (!limitResult.success) {
+      return errorResponse(
+        "Has superado el límite de reservas permitido por minuto. Por favor, aguarda un instante e intenta nuevamente.",
+        429
+      );
+    }
+  }
+
   const body = await request.json();
   const parsed = AppointmentInsertSchema.safeParse(body);
 
