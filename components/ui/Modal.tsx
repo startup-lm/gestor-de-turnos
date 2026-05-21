@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import CloseButton from "../buttons/CloseButton";
 
 type ModalSize = "sm" | "md" | "lg" | "xl";
@@ -17,6 +19,13 @@ export default function Modal({
   size?: ModalSize;
   leftHeaderElement?: React.ReactNode;
 }>) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
   const sizeClasses = {
     sm: "max-w-sm w-full",
     md: "max-w-md w-full",
@@ -24,13 +33,18 @@ export default function Modal({
     xl: "max-w-xl md:max-w-4xl w-full",
   };
 
-  return (
+  if (!mounted) {
+    return null;
+  }
+
+  return createPortal(
     <div 
-      className="fixed inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center z-50 px-4 py-6" 
+      className="fixed inset-0 bg-black/50 backdrop-blur-md flex justify-center items-center z-[100] px-4 py-6" 
       onClick={onClose} 
+      onMouseDown={(e) => e.stopPropagation()}
     >
       <div 
-        className={`relative bg-[var(--background)] border border-[var(--foreground)]/10 rounded-2xl shadow-2xl shadow-black/40 p-6 md:p-8 ${sizeClasses[size]} max-h-[90vh] flex flex-col ${className}`} 
+        className={`relative bg-[var(--background)] border border-slate-800/80 rounded-2xl shadow-2xl shadow-black/80 p-6 md:p-8 ${sizeClasses[size]} max-h-[90vh] flex flex-col ${className}`} 
         onClick={(e) => e.stopPropagation()} 
       >
         {leftHeaderElement}
@@ -39,6 +53,7 @@ export default function Modal({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

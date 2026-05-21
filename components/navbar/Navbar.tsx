@@ -11,11 +11,11 @@ export default function Navbar() {
 
   return (
     <header className="navbar sticky top-0 left-0 w-full z-50">
-      <div className="md:hidden">
+      <div className="md:hidden w-full">
         <MobileNavbar paths={paths} />
       </div>
 
-      <div className="hidden md:block">
+      <div className="hidden md:block w-full">
         <WebNavbar paths={paths} />
       </div>
     </header>
