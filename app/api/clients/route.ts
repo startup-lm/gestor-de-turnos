@@ -3,12 +3,16 @@ import { errorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { revalidateTag } from "next/cache";
 import { ClientUpsertSchema } from "@/lib/schemas";
+import { requireBarberOrAdmin } from "@/lib/api/auth";
 
 // GET /api/clients?search=<query>
 // Si query es numérico → busca por phone (starts with)
 // Si query es texto    → busca por name (ilike %query%)
 // Retorna máx 5 resultados. Usado por el autocomplete del barbero.
 export async function GET(request: Request) {
+  const staff = await requireBarberOrAdmin();
+  if (!staff) return errorResponse("No autorizado", 401);
+
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") ?? "";
 
@@ -39,6 +43,9 @@ export async function GET(request: Request) {
 // Upsert por teléfono: si ya existe → actualiza last_visit_date (sin pisar el nombre original)
 //                      si no existe  → crea el cliente nuevo
 export async function POST(request: Request) {
+  const staff = await requireBarberOrAdmin();
+  if (!staff) return errorResponse("No autorizado", 401);
+
   const body = await request.json();
   const parsed = ClientUpsertSchema.safeParse(body);
 

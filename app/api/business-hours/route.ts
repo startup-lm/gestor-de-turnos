@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
+import { requireAdmin } from "@/lib/api/auth";
 
 export async function GET() {
   const { data, error } = await supabaseAdmin
@@ -14,6 +15,9 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const payload = await req.json();
   const { data, error } = await supabaseAdmin
     .from("business_hours_global")

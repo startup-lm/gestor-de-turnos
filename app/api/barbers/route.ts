@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { successResponse, errorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
+import { requireAdmin } from "@/lib/api/auth";
 import { revalidateTag } from "next/cache";
 
 export async function GET(request: Request) {
@@ -33,6 +34,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const admin = await requireAdmin();
+  if (!admin) return errorResponse("No autorizado", 401);
+
   const { email, name, image, instagram, role } = await request.json();
   const { data, error } = await supabaseAdmin
     .from("barbers")
@@ -44,6 +48,9 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const admin = await requireAdmin();
+  if (!admin) return errorResponse("No autorizado", 401);
+
   const { id, ...values } = await request.json();
   const { data, error } = await supabaseAdmin
     .from("barbers")
@@ -58,6 +65,9 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const admin = await requireAdmin();
+  if (!admin) return errorResponse("No autorizado", 401);
+
   const { id }: { id: number } = await request.json();
   const { data, error } = await supabaseAdmin
     .from("barbers")
