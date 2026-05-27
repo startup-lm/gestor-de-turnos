@@ -51,8 +51,23 @@ export function BusinessProvider({ children }: Readonly<{ children: React.ReactN
     );
   }
 
+  const colors = businessSettings?.theme_colors;
+
   return (
     <BusinessContext.Provider value={{ businessHours, businessSettings, isLoading, refreshConfig: fetchConfig }}>
+      {colors && (
+        <style>
+          {`
+            :root {
+              ${colors.background ? `--background: ${colors.background} !important;` : ""}
+              ${colors.foreground ? `--foreground: ${colors.foreground} !important;` : ""}
+              ${colors.primary ? `--primary: ${colors.primary} !important;` : ""}
+              ${colors.secondary ? `--secondary: ${colors.secondary} !important;` : ""}
+              ${colors.accent ? `--accent: ${colors.accent} !important;` : ""}
+            }
+          `}
+        </style>
+      )}
       {children}
     </BusinessContext.Provider>
   );
