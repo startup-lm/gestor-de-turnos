@@ -1,3 +1,11 @@
+export type ThemeColors = {
+  background?: string;
+  foreground?: string;
+  primary?: string;
+  secondary?: string;
+  accent?: string;
+};
+
 export type BusinessSettings = {
   slot_step_minutes: 15 | 30 | 45 | 60;
   phone?: string;
@@ -8,4 +16,5 @@ export type BusinessSettings = {
   assignment_criteria?: "random" | "balanced" | "prioritize_admin" | "prioritize_barber";
   business_name?: string;
   business_logo?: string;
+  theme_colors?: ThemeColors;
 };

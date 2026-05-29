@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/api/auth";
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("business_settings")
-    .select("slot_step_minutes, phone, payment_methods, social_media, our_story, location_address, local_photo, assignment_criteria, business_name, business_logo")
+    .select("slot_step_minutes, phone, payment_methods, social_media, our_story, location_address, local_photo, assignment_criteria, business_name, business_logo, theme_colors")
     .eq("id", 1)
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -21,7 +21,7 @@ export async function PUT(req: Request) {
   const { data, error } = await supabaseAdmin
     .from("business_settings")
     .upsert({ id: 1, ...payload })
-    .select("slot_step_minutes, phone, payment_methods, social_media, our_story, location_address, local_photo, assignment_criteria, business_name, business_logo")
+    .select("slot_step_minutes, phone, payment_methods, social_media, our_story, location_address, local_photo, assignment_criteria, business_name, business_logo, theme_colors")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   revalidateTag("business-settings");
