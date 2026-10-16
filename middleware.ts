@@ -37,9 +37,15 @@ export async function middleware(request: NextRequest) {
     console.error("Middleware Auth Error:", error);
   }
 
-  // Si intenta acceder a /admin o /dashboard y no está logueado, redirigir al home
+  // Si intenta acceder a rutas protegidas y no está logueado, redirigir al home
   const pathname = request.nextUrl.pathname;
-  const isProtectedPath = pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+  const isProtectedPath =
+    pathname === "/configuracion" ||
+    pathname.startsWith("/configuracion/") ||
+    pathname === "/operaciones" ||
+    pathname.startsWith("/operaciones/") ||
+    pathname === "/dashboard" ||
+    pathname.startsWith("/dashboard/");
 
   if (isProtectedPath && !user) {
     const url = request.nextUrl.clone();
@@ -52,8 +58,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/admin",
-    "/admin/:path*",
+    "/configuracion",
+    "/configuracion/:path*",
+    "/operaciones",
+    "/operaciones/:path*",
     "/dashboard",
     "/dashboard/:path*",
   ],

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import Spinner from "@/components/loading/Spinner";
 
-export default function AdminLayout({
+export default function OperacionesLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -15,14 +15,11 @@ export default function AdminLayout({
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // Si tenemos un usuario autenticado pero el rol aún figura como "guest",
-    // significa que AuthContext está recuperando el rol de la base de datos de forma asíncrona.
-    // En este caso, esperamos a que termine antes de redirigir.
     if (role === "guest" && user) {
       return;
     }
 
-    if (role !== "admin") {
+    if (role !== "admin" && role !== "barber") {
       router.replace("/");
     } else {
       setChecking(false);
