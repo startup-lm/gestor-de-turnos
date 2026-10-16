@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { errorResponse } from "@/lib/api/response";
 import { revalidateTag } from "next/cache";
-import { isServerFeatureEnabled } from "@/lib/flags";
+import { isServerFeatureEnabled } from "@/lib/flags/server";
 
 function randomCae(): string {
   const min = 10 ** 13;

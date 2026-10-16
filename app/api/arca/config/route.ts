@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { errorResponse } from "@/lib/api/response";
-import { isServerFeatureEnabled } from "@/lib/flags";
+import { isServerFeatureEnabled } from "@/lib/flags/server";
 
 const DEFAULT_CONFIG = {
   environment: "mock",
