@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Barber } from "@/lib/types/Barbers";
+import { useAuth } from "@/lib/auth/AuthContext";
 import SignupModal from "@/components/auth/SignupModal";
 import EditBarberModal from "@/components/auth/EditBarberModal";
 import { updateBarber } from "@/lib/repository/barbers";
@@ -20,12 +21,20 @@ interface Props {
 
 export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
   const router = useRouter();
+  const { role, user } = useAuth();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [confirmModal, setConfirmModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const popup = usePopup();
+
+  useEffect(() => {
+    if (role === "guest" && user) return;
+    if (role && role !== "admin") {
+      router.replace("/operaciones");
+    }
+  }, [role, user, router]);
 
   const handleEdit = (id: number) => {
     setSelectedId(id);

@@ -8,7 +8,7 @@ test.describe('Flujo del Administrador', () => {
   });
 
   test('Debe poder acceder al bloqueo de fechas', async ({ page }) => {
-    await page.goto('/admin');
+    await page.goto('/operaciones');
 
     // El admin debería tener un botón "Bloquear Horarios"
     const blockBtn = page.getByTestId('btn-block-dates');
@@ -24,7 +24,7 @@ test.describe('Flujo del Administrador', () => {
   });
 
   test('Debe poder visualizar y guardar la Configuración del Negocio', async ({ page }) => {
-    await page.goto('/admin');
+    await page.goto('/configuracion');
 
     // Botón de Configuración
     const configBtn = page.getByTestId('btn-business-hours');
