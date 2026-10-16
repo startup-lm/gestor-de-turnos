@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { usePopup } from "@/lib/hooks/usePopup";
 import Modal from "@/components/ui/Modal";
@@ -14,6 +14,7 @@ import logo from "@/public/images/logo.png";
 
 export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void; }>) {
   const router = useRouter();
+  const pathname = usePathname();
   const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +34,9 @@ export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void;
       setPassword("");
       return;
     }
-    router.push("/turnos");
+    if (pathname === "/") {
+      router.push("/turnos");
+    }
     onClose();
   };
 
@@ -100,7 +103,7 @@ export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void;
 
           <div className="flex justify-center mt-8">
             <div data-testid="login-submit-wrapper" className="w-[200px]">
-              <LoginButton id="btn-login-submit" type="submit" loading={loading} disabled={isDisabled} onMouseEnter={() => router.prefetch("/turnos")} />
+              <LoginButton id="btn-login-submit" type="submit" loading={loading} disabled={isDisabled} onMouseEnter={() => { if (pathname === "/") router.prefetch("/turnos"); }} />
             </div>
           </div>
         </form>
