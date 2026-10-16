@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { errorResponse } from "@/lib/api/response";
 import { revalidateTag } from "next/cache";
+import { isServerFeatureEnabled } from "@/lib/flags";
 
 function randomCae(): string {
   const min = 10 ** 13;
@@ -14,6 +15,9 @@ function formatDate(value: Date): string {
 }
 
 export async function POST(req: Request) {
+  const enabled = await isServerFeatureEnabled("arca");
+  if (!enabled) return errorResponse("Facturación ARCA deshabilitada", 403);
+
   const payload = await req.json();
   const total = Number(payload?.total ?? 0);
   if (!total || total <= 0) return errorResponse("Total inválido", 400);

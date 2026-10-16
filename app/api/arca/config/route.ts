@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { errorResponse } from "@/lib/api/response";
+import { isServerFeatureEnabled } from "@/lib/flags";
 
 const DEFAULT_CONFIG = {
   environment: "mock",
@@ -28,6 +29,9 @@ function sanitize(data: Record<string, unknown>) {
 }
 
 export async function GET() {
+  const enabled = await isServerFeatureEnabled("arca");
+  if (!enabled) return errorResponse("Facturación ARCA deshabilitada", 403);
+
   const { data, error } = await supabaseAdmin
     .from("arca_settings")
     .select("*")
@@ -40,6 +44,9 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
+  const enabled = await isServerFeatureEnabled("arca");
+  if (!enabled) return errorResponse("Facturación ARCA deshabilitada", 403);
+
   const payload = await req.json();
   const update: Record<string, unknown> = {
     id: 1,

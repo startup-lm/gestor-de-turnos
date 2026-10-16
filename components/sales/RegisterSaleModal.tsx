@@ -17,8 +17,7 @@ import { emitArcaInvoice } from "@/lib/repository/arca";
 import { getArcaStatus } from "@/lib/repository/arca";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
 import { FileText } from "lucide-react";
-
-const ARCA_ENABLED = process.env.NEXT_PUBLIC_ENABLE_ARCA === "true";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
 
 const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
   { value: 99, label: "Consumidor Final" },
@@ -28,6 +27,8 @@ const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
 ];
 
 export default function RegisterSaleModal({ onClose }: Readonly<{ onClose: () => void; }>) {
+  const { isEnabled } = useBusinessContext();
+  const ARCA_ENABLED = isEnabled("arca");
   const { data } = useFetchOnce<Product[]>("products", getProducts);
   const { data: barbers = [], loading: loadingFetch } = useFetchOnce<Barber[]>("barbers", getBarbers);
   const { data: arcaStatus } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);

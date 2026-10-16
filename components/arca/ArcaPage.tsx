@@ -19,7 +19,6 @@ import type {
   ArcaDocType,
   ArcaEnvironment,
   ArcaInvoiceRecord,
-  ArcaSourceType,
   ArcaStatus,
 } from "@/lib/types/Arca";
 import {
