@@ -24,6 +24,9 @@ export default function BrandingSettingsModal({ onClose }: Readonly<Props>) {
   const [businessName, setBusinessName] = useState("");
   const [originalBusinessName, setOriginalBusinessName] = useState("");
   
+  const [slogan, setSlogan] = useState("");
+  const [originalSlogan, setOriginalSlogan] = useState("");
+  
   const [currentLogo, setCurrentLogo] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -38,10 +41,13 @@ export default function BrandingSettingsModal({ onClose }: Readonly<Props>) {
         if (res.ok) {
           const data = await res.json();
           const nameVal = data.business_name || "";
+          const sloganVal = data.slogan || "";
           const logoVal = data.business_logo || null;
           
           setBusinessName(nameVal);
           setOriginalBusinessName(nameVal);
+          setSlogan(sloganVal);
+          setOriginalSlogan(sloganVal);
           setCurrentLogo(logoVal);
         }
       } catch (err) {
@@ -90,6 +96,7 @@ export default function BrandingSettingsModal({ onClose }: Readonly<Props>) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           business_name: businessName.trim() || "Barbería Premium", 
+          slogan: slogan.trim() || null,
           business_logo: uploadedLogoUrl 
         }),
       });
@@ -110,7 +117,7 @@ export default function BrandingSettingsModal({ onClose }: Readonly<Props>) {
     }
   };
 
-  const hasChanges = businessName !== originalBusinessName || selectedFile !== null;
+  const hasChanges = businessName !== originalBusinessName || slogan !== originalSlogan || selectedFile !== null;
 
   if (loading) {
     return (
@@ -129,7 +136,7 @@ export default function BrandingSettingsModal({ onClose }: Readonly<Props>) {
 
         <div className="space-y-6 px-2 text-left">
           <p className="text-sm text-[var(--foreground)]/50 mb-2 leading-relaxed">
-            Personalizá el nombre y el logo principal de tu negocio. Estos cambios se verán reflejados al instante en todo el sitio web.
+            Personalizá el nombre, el slogan y el logo principal de tu negocio. Estos cambios se verán reflejados al instante en todo el sitio web.
           </p>
 
           {/* Business Name Field */}
@@ -147,6 +154,26 @@ export default function BrandingSettingsModal({ onClose }: Readonly<Props>) {
                 className="w-full bg-slate-950/40 border border-slate-700 focus:border-[var(--accent)]/50 focus:outline-none py-2.5 px-4 rounded-lg text-sm text-[var(--foreground)] transition-all"
               />
             </div>
+          </div>
+
+          {/* Slogan Field */}
+          <div>
+            <label htmlFor="branding-settings-slogan" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
+              Slogan o Frase de Portada
+            </label>
+            <div className="relative">
+              <input
+                id="branding-settings-slogan"
+                type="text"
+                value={slogan}
+                onChange={(e) => setSlogan(e.target.value)}
+                placeholder="Ej. 100% CALAMAR (opcional)"
+                className="w-full bg-slate-950/40 border border-slate-700 focus:border-[var(--accent)]/50 focus:outline-none py-2.5 px-4 rounded-lg text-sm text-[var(--foreground)] transition-all"
+              />
+            </div>
+            <p className="text-[11px] text-[var(--foreground)]/40 mt-1.5">
+              Frase destacada en la portada principal. Si lo dejás vacío, se usará el texto institucional por defecto.
+            </p>
           </div>
 
           {/* Business Logo Field */}

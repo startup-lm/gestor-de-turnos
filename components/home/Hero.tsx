@@ -51,7 +51,7 @@ export default function Hero() {
           </h1>
           <div className="w-16 h-[2px] bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent mx-auto my-3" />
           <p className="text-base sm:text-lg text-slate-300 font-medium tracking-wide max-w-md mx-auto leading-relaxed">
-            Corte, afeitado tradicional y estilo diseñado para el caballero moderno. Reservá tu turno de forma ágil y cómoda.
+            {businessSettings?.slogan ?? "Corte, afeitado tradicional y estilo diseñado para el caballero moderno. Reservá tu turno de forma ágil y cómoda."}
           </p>
         </div>
 

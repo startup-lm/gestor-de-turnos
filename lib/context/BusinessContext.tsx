@@ -6,11 +6,15 @@ import { BusinessSettings } from "@/lib/types/BusinessSettings";
 import { getCalendarConfig } from "@/lib/repository/calendar";
 import Spinner from "@/components/loading/Spinner";
 
+import { isFeatureEnabled, FeatureFlagName } from "@/lib/flags";
+
 interface BusinessContextType {
   businessHours: GlobalHours | null;
   businessSettings: BusinessSettings | null;
   isLoading: boolean;
   refreshConfig: () => Promise<void>;
+  isFeatureEnabled: (flag: FeatureFlagName) => boolean;
+  isEnabled: (flag: FeatureFlagName) => boolean;
 }
 
 const BusinessContext = createContext<BusinessContextType | undefined>(undefined);
@@ -53,8 +57,12 @@ export function BusinessProvider({ children }: Readonly<{ children: React.ReactN
 
   const colors = businessSettings?.theme_colors;
 
+  const checkFlag = (flag: FeatureFlagName) => {
+    return isFeatureEnabled(flag, businessSettings?.features);
+  };
+
   return (
-    <BusinessContext.Provider value={{ businessHours, businessSettings, isLoading, refreshConfig: fetchConfig }}>
+    <BusinessContext.Provider value={{ businessHours, businessSettings, isLoading, refreshConfig: fetchConfig, isFeatureEnabled: checkFlag, isEnabled: checkFlag }}>
       {colors && (
         <style>
           {`
@@ -83,5 +91,7 @@ export function useBusinessContext() {
     businessHours: context.businessHours!,
     businessSettings: context.businessSettings!,
     refreshConfig: context.refreshConfig,
+    isFeatureEnabled: context.isFeatureEnabled,
+    isEnabled: context.isEnabled,
   };
 }

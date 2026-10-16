@@ -17,8 +17,7 @@ import { emitArcaInvoice } from "@/lib/repository/arca";
 import { getArcaStatus } from "@/lib/repository/arca";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
 import { FileText } from "lucide-react";
-
-const ARCA_ENABLED = process.env.NEXT_PUBLIC_ENABLE_ARCA === "true";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
 
 const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
   { value: 99, label: "Consumidor Final" },
@@ -28,6 +27,8 @@ const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
 ];
 
 export default function RegisterSaleModal({ onClose }: Readonly<{ onClose: () => void; }>) {
+  const { isEnabled } = useBusinessContext();
+  const ARCA_ENABLED = isEnabled("arca");
   const { data } = useFetchOnce<Product[]>("products", getProducts);
   const { data: barbers = [], loading: loadingFetch } = useFetchOnce<Barber[]>("barbers", getBarbers);
   const { data: arcaStatus } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);
@@ -213,39 +214,39 @@ export default function RegisterSaleModal({ onClose }: Readonly<{ onClose: () =>
 
             {/* Toggle ARCA — solo visible si ARCA está habilitado y listo */}
             {arcaAvailable && (
-              <div className="md:col-span-2 border border-[var(--foreground)]/10 rounded-xl overflow-hidden">
+              <div className="md:col-span-2 border border-slate-700/60 rounded-xl overflow-hidden bg-slate-900/60">
                 <button
                   type="button"
                   onClick={() => setEmitInvoice(v => !v)}
-                  className={`w-full flex items-center justify-between px-4 py-3 text-sm transition-colors ${
+                  className={`!w-full !flex !items-center !justify-between !px-4 !py-3 !text-sm !transition-all !border-0 !rounded-none !cursor-pointer !transform-none ${
                     emitInvoice
-                      ? "bg-green-500/10 border-b border-green-500/20"
-                      : "bg-[var(--foreground)]/3 hover:bg-[var(--foreground)]/6"
+                      ? "!bg-emerald-950/50 !border-b !border-emerald-500/30"
+                      : "!bg-slate-900/70 hover:!bg-slate-800/90"
                   }`}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
                     <FileText
-                      className={`w-4 h-4 ${emitInvoice ? "text-green-400" : "text-[var(--foreground)]/50"}`}
+                      className={`w-4 h-4 transition-colors ${emitInvoice ? "text-emerald-400" : "text-slate-400"}`}
                     />
-                    <span className={`font-medium ${emitInvoice ? "text-green-300" : "text-[var(--foreground)]/70"}`}>
+                    <span className={`text-sm font-medium transition-colors ${emitInvoice ? "text-emerald-300" : "text-slate-200"}`}>
                       Emitir comprobante ARCA
                     </span>
                   </div>
                   <div
-                    className={`relative w-10 h-5 rounded-full transition-colors ${
-                      emitInvoice ? "bg-green-500" : "bg-[var(--foreground)]/20"
+                    className={`relative w-11 h-6 rounded-full transition-colors flex items-center p-0.5 ${
+                      emitInvoice ? "!bg-emerald-500" : "!bg-slate-700"
                     }`}
                   >
                     <div
-                      className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
-                        emitInvoice ? "translate-x-5" : "translate-x-0.5"
+                      className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform ${
+                        emitInvoice ? "translate-x-5" : "translate-x-0"
                       }`}
                     />
                   </div>
                 </button>
 
                 {emitInvoice && (
-                  <div className="px-4 py-3 space-y-3 bg-green-500/5">
+                  <div className="px-4 py-3 space-y-3 bg-emerald-950/30 border-t border-emerald-500/20">
                     <div>
                       <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1">
                         Tipo de documento
@@ -254,7 +255,7 @@ export default function RegisterSaleModal({ onClose }: Readonly<{ onClose: () =>
                         id="arca-doc-type-sale"
                         value={docType}
                         onChange={e => setDocType(Number(e.target.value) as ArcaDocType)}
-                        className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 transition-all rounded-lg p-2 w-full block text-sm h-[38px]"
+                        className="!bg-slate-900/90 !text-white !border !border-slate-700/80 focus:!border-[var(--accent)]/50 transition-all rounded-lg p-2 w-full block text-sm h-[38px]"
                       >
                         {DOC_TYPES.map(d => (
                           <option key={d.value} value={d.value} style={{ color: "black" }}>
@@ -275,12 +276,12 @@ export default function RegisterSaleModal({ onClose }: Readonly<{ onClose: () =>
                           value={docNumber}
                           onChange={e => setDocNumber(e.target.value)}
                           placeholder={docType === 80 ? "20-XXXXXXXX-X" : "XX.XXX.XXX"}
-                          className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 transition-all rounded-lg p-2 w-full block text-sm"
+                          className="!bg-slate-900/90 !text-white !border !border-slate-700/80 focus:!border-[var(--accent)]/50 transition-all rounded-lg p-2 w-full block text-sm"
                         />
                       </div>
                     )}
 
-                    <p className="text-[10px] text-[var(--foreground)]/40">
+                    <p className="text-[10px] text-slate-400">
                       Se emitirá Factura C por ${price * quantity} — Modo Demo (CAE de prueba)
                     </p>
                   </div>

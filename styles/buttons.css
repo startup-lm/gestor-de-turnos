@@ -186,3 +186,10 @@ button.btn-home-small {
   background: var(--button-whatsapp-hover);
   transform: scale(1.03);
 }
+
+.time-input::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  filter: invert(1) brightness(1.2) contrast(1.1);
+  cursor: pointer;
+  padding: 2px;
+}

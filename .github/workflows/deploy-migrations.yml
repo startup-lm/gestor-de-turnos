@@ -1,0 +1,62 @@
+name: Despliegue de Migraciones Supabase
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: 'Entorno o cliente destino'
+        required: true
+        default: 'testing'
+        type: choice
+        options:
+          - testing
+          - base
+          - hellfish
+          - hooligans
+          - all_clients
+
+jobs:
+  migrate:
+    name: Aplicar Migraciones
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Instalar Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Aplicar en Testing
+        if: ${{ github.event.inputs.target_env == 'testing' }}
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL_TESTING }}
+        run: |
+          echo "Aplicando migraciones en entorno Testing..."
+          supabase db push --db-url "$SUPABASE_DB_URL"
+
+      - name: Aplicar en Base
+        if: ${{ github.event.inputs.target_env == 'base' }}
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL_BASE }}
+        run: |
+          echo "Aplicando migraciones en Base..."
+          supabase db push --db-url "$SUPABASE_DB_URL"
+
+      - name: Aplicar en Hellfish
+        if: ${{ github.event.inputs.target_env == 'hellfish' || github.event.inputs.target_env == 'all_clients' }}
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL_HELLFISH }}
+        run: |
+          echo "Aplicando migraciones en Hellfish..."
+          supabase db push --db-url "$SUPABASE_DB_URL"
+
+      - name: Aplicar en Hooligans
+        if: ${{ github.event.inputs.target_env == 'hooligans' || github.event.inputs.target_env == 'all_clients' }}
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL_HOOLIGANS }}
+        run: |
+          echo "Aplicando migraciones en Hooligans..."
+          supabase db push --db-url "$SUPABASE_DB_URL"

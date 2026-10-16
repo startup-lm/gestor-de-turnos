@@ -21,8 +21,6 @@ import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { useAppointmentDetailsLogic } from "@/lib/hooks/useAppointmentDetailsLogic";
 import { Receipt } from "lucide-react";
 
-const ARCA_ENABLED = process.env.NEXT_PUBLIC_ENABLE_ARCA === "true";
-
 const ServicePaidModal = dynamic(() => import("./ServicePaidModal"), { ssr: false, loading: () => null });
 
 export default function AppointmentDetailsModal({
@@ -34,7 +32,8 @@ export default function AppointmentDetailsModal({
   appointment: Appointment;
   barbers: Barber[];
 }>) {
-  const { businessHours, businessSettings } = useBusinessContext();
+  const { businessHours, businessSettings, isEnabled } = useBusinessContext();
+  const ARCA_ENABLED = isEnabled("arca");
   const hasPaidRef = useRef(false);
   const allAppointments = generateAllAppointments({
     openTime: businessHours.open_time,

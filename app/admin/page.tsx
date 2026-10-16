@@ -32,10 +32,12 @@ import LocalPhotoSettingsModal from "@/components/admin/LocalPhotoSettingsModal"
 import AssignmentSettingsModal from "@/components/admin/AssignmentSettingsModal";
 import BrandingSettingsModal from "@/components/admin/BrandingSettingsModal";
 import ThemeSettingsModal from "@/components/admin/ThemeSettingsModal";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
 
 export default function AdminPage() {
   const [activeModal, setActiveModal] = useState<"whatsapp" | "payments" | "hours" | "block" | "social" | "story" | "sale" | "location" | "local_photo" | "assignment" | "branding" | "theme" | null>(null);
   const router = useRouter();
+  const { isEnabled } = useBusinessContext();
 
   interface AdminCard {
     label: string;
@@ -54,7 +56,7 @@ export default function AdminPage() {
     { label: "Ver Ventas", description: "Historial de productos", icon: ShoppingBag, category: "agenda_ventas", onClick: () => router.push("/admin/ventas") },
 
     { label: "Barberos", description: "Gestión de personal", icon: Users, category: "administracion_local", onClick: () => router.push("/admin/barberos") },
-    { label: "Facturación", description: "ARCA / AFIP", icon: FileText, category: "administracion_local", onClick: () => router.push("/admin/facturacion"), show: process.env.NEXT_PUBLIC_ENABLE_ARCA === "true" },
+    { label: "Facturación", description: "ARCA / AFIP", icon: FileText, category: "administracion_local", onClick: () => router.push("/admin/facturacion"), show: isEnabled("arca") },
     { label: "Nombre y Logo", description: "Nombre y Logo del local", icon: Store, category: "administracion_local", onClick: () => setActiveModal("branding") },
     { label: "Diseño y Colores", description: "Personalizar colores", icon: Palette, category: "administracion_local", onClick: () => setActiveModal("theme") },
     { label: "Horarios", description: "Días de atención", icon: Clock, category: "administracion_local", onClick: () => setActiveModal("hours") },

@@ -11,8 +11,7 @@ import { SaleWithRelations } from "@/lib/types/Sale";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { usePopup } from "@/lib/hooks/usePopup";
 import { Receipt } from "lucide-react";
-
-const ARCA_ENABLED = process.env.NEXT_PUBLIC_ENABLE_ARCA === "true";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
 
 const PAGE_SIZE = 10;
 
@@ -24,6 +23,8 @@ type EditState = {
 };
 
 export default function SalesTable() {
+  const { isEnabled } = useBusinessContext();
+  const ARCA_ENABLED = isEnabled("arca");
   const [sales, setSales] = useState<SaleWithRelations[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
