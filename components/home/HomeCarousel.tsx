@@ -78,11 +78,11 @@ export default function HomeCarousel({ type, items }: Readonly<{ type: CarouselT
                       src={item.image ?? logo}
                       alt={item.name}
                       fill
-                      className={`object-cover rounded-lg brightness-[0.4] group-hover:brightness-[0.5] group-hover:scale-105 transition-all duration-500 ${!item.image ? "bg-[var(--background)]" : ""}`}
+                      className={`object-cover rounded-lg brightness-95 group-hover:brightness-100 group-hover:scale-105 transition-all duration-500 ${!item.image ? "bg-[var(--background)]" : ""}`}
                       sizes="(max-width: 768px) 100vw, 33vw"
                     />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent p-4 flex flex-col justify-end min-h-[50%]">
-                      <span className="text-white font-bold text-center text-sm sm:text-base tracking-wide group-hover:text-[var(--accent)] transition-colors duration-300">
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-4 flex flex-col justify-end min-h-[45%]">
+                      <span className="text-white font-bold text-center text-sm sm:text-base tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-[var(--accent)] transition-colors duration-300">
                         {item.name}
                       </span>
                     </div>
