@@ -2,23 +2,32 @@
 
 import { useEffect } from "react";
 
-export default function GlobalError({ error, reset }: Readonly<{ error: Error; reset: () => void }>) {
+export default function ErrorBoundary({
+  error,
+  reset,
+}: Readonly<{
+  error: Error & { digest?: string };
+  reset: () => void;
+}>) {
   useEffect(() => {
     console.error("Error en la app:", error);
   }, [error]);
 
   return (
-    <html>
-      <body className="p-10 flex flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold mb-4">¡Ups! Algo salió mal.</h1>
-        <p className="mb-6">{error.message}</p>
-        <button
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          onClick={() => reset()}
-        >
-          Volver a intentar
-        </button>
-      </body>
-    </html>
+    <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
+        <span className="text-2xl text-red-400">⚠️</span>
+      </div>
+      <h1 className="text-2xl font-bold mb-2 text-[var(--foreground)]">¡Ups! Algo salió mal</h1>
+      <p className="mb-6 text-sm text-[var(--foreground)]/60 max-w-md">
+        {error.message || "Ocurrió un error inesperado al cargar la página."}
+      </p>
+      <button
+        className="px-5 py-2.5 bg-[var(--accent)] text-[var(--background)] font-medium rounded-xl hover:opacity-90 transition active:scale-95 shadow-md"
+        onClick={() => reset()}
+      >
+        Volver a intentar
+      </button>
+    </div>
   );
 }
