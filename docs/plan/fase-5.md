@@ -113,6 +113,7 @@ Una vez cargada la configuración, navegá tu app de `gestor-de-turnos` (en loca
 
 ### E. Blindaje de Feature Flags en Panel Admin (`/admin`)
 - [ ] **Tarjeta de Facturación**: La tarjeta de "Facturación ARCA" **NO aparece** en el panel admin (porque `features.arca = false`).
-- [ ] **Bloqueo de Ruta Directa**: Al tipear manualmente `/admin/facturacion` en la URL, se visualiza la pantalla de "Módulo No Disponible" y no se expone ningún formulario fiscal.
+- [ ] **Invisibilidad de Ruta Directa (404 Not Found)**: Al tipear manualmente `/admin/facturacion` en el navegador, el sistema ejecuta `notFound()` y renderiza la pantalla genérica de **"404 – Página no encontrada"**, exactamente igual que si la ruta no existiera en el proyecto. No filtra ningún mensaje de bloqueo ni revela la existencia del módulo.
+- [ ] **APIs Blindadas**: Las rutas `/api/arca/*` responden con HTTP 404 Not Found si el flag está apagado.
 - [ ] **Ventas**: En `/admin/ventas`, la tabla de ventas no muestra la columna de factura fiscal.
 - [ ] **Cobro de Turno**: En el modal de cobrar turno, no se solicita emisión de comprobante ARCA.
