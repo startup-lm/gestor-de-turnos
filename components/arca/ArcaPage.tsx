@@ -282,6 +282,7 @@ export default function ArcaPage() {
   // Invoices (con recarga manual por filtros)
   const [invoices, setInvoices] = useState<ArcaInvoiceRecord[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(true);
+  const [initialInvoicesLoaded, setInitialInvoicesLoaded] = useState(false);
 
   const loadInvoices = useCallback(async () => {
     setLoadingInvoices(true);
@@ -298,6 +299,7 @@ export default function ArcaPage() {
       setInvoices([]);
     } finally {
       setLoadingInvoices(false);
+      setInitialInvoicesLoaded(true);
     }
   }, [filterStatus, filterSource, filterDateFrom, filterDateTo]);
 
@@ -399,54 +401,52 @@ export default function ArcaPage() {
     }
   };
 
-  const isLoading = loadingConfig || loadingStatus;
+  const isInitialLoading = loadingConfig || loadingStatus || !initialInvoicesLoaded;
   const hasActiveFilters = !!(filterStatus || filterSource || filterDateFrom || filterDateTo);
 
   return (
     <div className="p-2 max-w-6xl mx-auto space-y-6">
       <h1 className="text-2xl md:text-3xl font-bold text-center">Facturación</h1>
 
-      {isLoading && (
-        <div className="flex justify-center">
+      {isInitialLoading ? (
+        <div className="flex justify-center py-20">
           <Spinner />
         </div>
-      )}
+      ) : (
+        <>
+          {/* ── Métricas ─────────────────────────────────────────────── */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <MetricCard
+              label="Facturado este mes"
+              value={`$${metrics.totalMonth.toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}
+              sub={`${metrics.countMonth} comprobante${metrics.countMonth !== 1 ? "s" : ""}`}
+              icon={Receipt}
+              color="accent"
+            />
+            <MetricCard
+              label="Total comprobantes"
+              value={metrics.totalAll}
+              icon={FileText}
+              color="green"
+            />
+            <MetricCard
+              label="Estado ARCA"
+              value={status?.ready ? "Listo" : "Incompleto"}
+              sub={ENV_LABELS[status?.environment ?? "mock"]}
+              icon={status?.ready ? CheckCircle : XCircle}
+              color={status?.ready ? "green" : "yellow"}
+            />
+            <MetricCard
+              label="Último CAE"
+              value={metrics.lastCae ? metrics.lastCae.slice(-6) : "—"}
+              sub={metrics.lastCae ? `...${metrics.lastCae.slice(-6)}` : "Sin comprobantes"}
+              icon={CheckCircle}
+              color="green"
+            />
+          </div>
 
-      {/* ── Métricas ─────────────────────────────────────────────── */}
-      {!isLoading && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <MetricCard
-            label="Facturado este mes"
-            value={`$${metrics.totalMonth.toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}
-            sub={`${metrics.countMonth} comprobante${metrics.countMonth !== 1 ? "s" : ""}`}
-            icon={Receipt}
-            color="accent"
-          />
-          <MetricCard
-            label="Total comprobantes"
-            value={metrics.totalAll}
-            icon={FileText}
-            color="green"
-          />
-          <MetricCard
-            label="Estado ARCA"
-            value={status?.ready ? "Listo" : "Incompleto"}
-            sub={ENV_LABELS[status?.environment ?? "mock"]}
-            icon={status?.ready ? CheckCircle : XCircle}
-            color={status?.ready ? "green" : "yellow"}
-          />
-          <MetricCard
-            label="Último CAE"
-            value={metrics.lastCae ? metrics.lastCae.slice(-6) : "—"}
-            sub={metrics.lastCae ? `...${metrics.lastCae.slice(-6)}` : "Sin comprobantes"}
-            icon={CheckCircle}
-            color="green"
-          />
-        </div>
-      )}
-
-      {/* ── Configuración ARCA ────────────────────────────────────── */}
-      <section className="bg-[var(--bg-carousel)] p-4 rounded-lg shadow-xl">
+          {/* ── Configuración ARCA ────────────────────────────────────── */}
+          <section className="bg-[var(--bg-carousel)] p-4 rounded-lg shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <h2 className="text-lg font-semibold">Configuración ARCA</h2>
           {status && (
@@ -774,6 +774,8 @@ export default function ArcaPage() {
           </div>
         )}
       </section>
+        </>
+      )}
 
       {popup.show && (
         <PopupModal
