@@ -23,13 +23,15 @@ export async function POST(request: Request) {
   if (!staff) return errorResponse("No autorizado", 401);
 
   const { barber_id, product_id, price, quantity, details, total } = await request.json();
-  const { error } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("sales")
-    .insert({ barber_id, product_id, price, quantity, details, total });
+    .insert({ barber_id, product_id, price, quantity, details, total })
+    .select("id")
+    .single();
 
   if (error) return errorResponse(error.message);
   revalidateTag("sales");
-  return successResponse();
+  return NextResponse.json({ success: true, id: data.id });
 }
 
 export async function PUT(request: Request) {

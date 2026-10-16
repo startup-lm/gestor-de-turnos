@@ -10,6 +10,9 @@ import CancelButton from "@/components/buttons/CancelButton";
 import { SaleWithRelations } from "@/lib/types/Sale";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { usePopup } from "@/lib/hooks/usePopup";
+import { Receipt } from "lucide-react";
+
+const ARCA_ENABLED = process.env.NEXT_PUBLIC_ENABLE_ARCA === "true";
 
 const PAGE_SIZE = 10;
 
@@ -147,6 +150,7 @@ export default function SalesTable() {
                   <th className="py-2 pr-3">Cant.</th>
                   <th className="py-2 pr-3">Total</th>
                   <th className="py-2 pr-3">Detalles</th>
+                  {ARCA_ENABLED && <th className="py-2 pr-3">Factura</th>}
                   <th className="py-2 pr-3 text-right">Acciones</th>
                 </tr>
               </thead>
@@ -249,6 +253,19 @@ export default function SalesTable() {
                           sale.details ?? "-"
                         )}
                       </td>
+
+                      {ARCA_ENABLED && (
+                        <td className="py-2 pr-3">
+                          {sale.arca_invoice_id ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-medium whitespace-nowrap">
+                              <Receipt className="w-3 h-3" />
+                              Emitida
+                            </span>
+                          ) : (
+                            <span className="text-[var(--foreground)]/30 text-xs">—</span>
+                          )}
+                        </td>
+                      )}
 
                       <td className="py-2 pr-3 text-right whitespace-nowrap">
                         {isEditing ? (

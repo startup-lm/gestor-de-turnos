@@ -23,6 +23,7 @@ export interface Appointment {
   deleted_at?: string | null;
   deleted_by?: string;
   updated_at?: string | null;
+  arca_invoice_id?: number | null;
 }
 
 export interface AppointmentUpdates {
@@ -39,4 +40,5 @@ export interface AppointmentUpdates {
   client_id?: number | null;
   deleted_at?: string | null;
   updated_at?: string | null;
+  arca_invoice_id?: number | null;
 };

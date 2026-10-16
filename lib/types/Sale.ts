@@ -7,6 +7,7 @@ export interface Sale {
   total: number;
   details: string;
   created_at?: string;
+  arca_invoice_id?: number | null;
 }
 
 export interface SaleWithRelations extends Sale {

@@ -19,6 +19,9 @@ import Spinner from "../loading/Spinner";
 import ClientAutocompleteFields from "./ClientAutocompleteFields";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { useAppointmentDetailsLogic } from "@/lib/hooks/useAppointmentDetailsLogic";
+import { Receipt } from "lucide-react";
+
+const ARCA_ENABLED = process.env.NEXT_PUBLIC_ENABLE_ARCA === "true";
 
 const ServicePaidModal = dynamic(() => import("./ServicePaidModal"), { ssr: false, loading: () => null });
 
@@ -64,9 +67,19 @@ export default function AppointmentDetailsModal({
           Detalles del turno
         </h2>
         {appointment.updated_at && (
-          <p className="text-xs text-center mb-6 text-[var(--button-home-disabled-text)]">
+          <p className="text-xs text-center mb-3 text-[var(--button-home-disabled-text)]">
             Última actualización: {format(new Date(appointment.updated_at), "dd/MM/yyyy HH:mm")}
           </p>
+        )}
+
+        {/* Badge de comprobante ARCA emitido */}
+        {ARCA_ENABLED && appointment.arca_invoice_id && (
+          <div className="flex items-center justify-center gap-1.5 mb-4 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full w-fit mx-auto">
+            <Receipt className="w-3.5 h-3.5 text-green-400 shrink-0" />
+            <span className="text-xs text-green-300 font-medium">
+              Comprobante emitido
+            </span>
+          </div>
         )}
         <form onSubmit={handleUpdate} className="space-y-6 px-2 text-left">
           {isBlockedRange ? (

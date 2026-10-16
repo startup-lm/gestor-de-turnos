@@ -33,17 +33,24 @@ export type ArcaStatus = {
   wsfe_url: string | null;
 };
 
+export type ArcaSourceType = "appointment" | "sale" | "manual";
+
+export type ArcaDocType = 80 | 86 | 96 | 99; // 80=CUIT, 86=CUIL, 96=DNI, 99=Consumidor Final
+
 export type ArcaEmitInput = {
   total: number;
   customerName?: string;
-  docType?: number;
+  docType?: ArcaDocType;
   docNumber?: string;
   voucherType?: number;
+  sourceType?: ArcaSourceType;
+  sourceId?: number;
 };
 
 export type ArcaEmitResult = {
   success: boolean;
   error?: string;
+  invoiceId?: number;
   cae?: string;
   caeDueDate?: string;
   voucherNumber?: number;
@@ -62,4 +69,9 @@ export type ArcaInvoiceRecord = {
   voucher_number: number | null;
   voucher_type: number | null;
   point_of_sale: number | null;
+  source_type: ArcaSourceType | null;
+  source_id: number | null;
+  doc_type: number | null;
+  doc_number: string | null;
+  invoice_type: number | null;
 };

@@ -49,8 +49,22 @@ export async function emitArcaInvoice(payload: ArcaEmitInput): Promise<ArcaEmitR
   return res.json();
 }
 
-export async function getArcaInvoices(limit: number = 20): Promise<ArcaInvoiceRecord[]> {
+export async function getArcaInvoices(
+  options: {
+    limit?: number;
+    sourceType?: string;
+    status?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  } = {}
+): Promise<ArcaInvoiceRecord[]> {
+  const { limit = 50, sourceType, status, dateFrom, dateTo } = options;
   const params = new URLSearchParams({ limit: String(limit) });
+  if (sourceType) params.set("source_type", sourceType);
+  if (status) params.set("status", status);
+  if (dateFrom) params.set("date_from", dateFrom);
+  if (dateTo) params.set("date_to", dateTo);
+
   const res = await fetch(`${BASE}/api/arca/invoices?${params.toString()}`, {
     next: { tags: ["arca-invoices"] },
   });

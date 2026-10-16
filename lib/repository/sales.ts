@@ -3,15 +3,15 @@ import { Sale, SaleWithRelations } from "../types/Sale";
 import { getBaseUrl } from "@/utils/getBaseUrl";
 const BASE = getBaseUrl();
 
-export async function createSale(sale: Sale): Promise<boolean> {
+export async function createSale(sale: Sale): Promise<{ success: boolean; id?: number }> {
   const res = await fetch(`${BASE}/api/sales`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(sale),
   });
-  if (!res.ok) return false;
-  const { success } = await res.json();
-  return success;
+  if (!res.ok) return { success: false };
+  const json = await res.json();
+  return { success: json.success ?? false, id: json.id };
 }
 
 export async function getTotalRevenueForAllSales(start_date: Date,end_date: Date) {
