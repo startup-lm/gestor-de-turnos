@@ -30,7 +30,7 @@ function sanitize(data: Record<string, unknown>) {
 
 export async function GET() {
   const enabled = await isServerFeatureEnabled("arca");
-  if (!enabled) return errorResponse("Facturación ARCA deshabilitada", 403);
+  if (!enabled) return errorResponse("Not Found", 404);
 
   const { data, error } = await supabaseAdmin
     .from("arca_settings")
@@ -45,7 +45,7 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   const enabled = await isServerFeatureEnabled("arca");
-  if (!enabled) return errorResponse("Facturación ARCA deshabilitada", 403);
+  if (!enabled) return errorResponse("Not Found", 404);
 
   const payload = await req.json();
   const update: Record<string, unknown> = {

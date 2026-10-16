@@ -16,7 +16,7 @@ function formatDate(value: Date): string {
 
 export async function POST(req: Request) {
   const enabled = await isServerFeatureEnabled("arca");
-  if (!enabled) return errorResponse("Facturación ARCA deshabilitada", 403);
+  if (!enabled) return errorResponse("Not Found", 404);
 
   const payload = await req.json();
   const total = Number(payload?.total ?? 0);
