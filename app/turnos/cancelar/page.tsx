@@ -56,7 +56,7 @@ export default function CancelarTurnoPage() {
   };
 
   return (
-    <div className="p-5 flex flex-col items-center text-center">
+    <div className="py-8 md:py-12 px-4 md:px-8 w-full max-w-[1720px] mx-auto flex flex-col items-center text-center">
       <h1 className="text-3xl font-bold mb-5">Querés cancelar tu turno?</h1>
 
       {/* Container Principal en Glassmorphic */}

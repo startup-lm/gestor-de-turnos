@@ -55,8 +55,17 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
   // but this page is already protected by middleware or layout potentially.
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 justify-center">
+    <div className="w-full space-y-6">
+      <div className="border-b border-slate-800/40 pb-4">
+        <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
+          Gestión de Barberos
+        </h2>
+        <p className="text-xs text-slate-400 mt-0.5">
+          Alta, edición de comisiones y estado activo del personal
+        </p>
+      </div>
+
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 justify-items-center sm:justify-items-start">
         <button
           onClick={() => setIsAddModalOpen(true)}
           className="flex flex-col items-center justify-center w-[320px] h-[326px] !bg-[var(--foreground)]/5 backdrop-blur-md !border-2 !border-dashed !border-[var(--accent)]/30 hover:!border-[var(--accent)]/80 rounded-2xl p-6 hover:shadow-lg hover:shadow-[var(--accent)]/5 hover:-translate-y-1 transition-all duration-300 group cursor-pointer"

@@ -16,7 +16,7 @@ export default function HeroActions() {
           className="!inline-flex !items-center !justify-center !gap-3 !py-4 !px-8 !rounded-xl !font-bold !text-slate-950 !bg-gradient-to-r !from-[var(--accent)] !to-[#fcebb6] hover:!opacity-95 active:scale-[0.98] !transition-all !duration-300 !shadow-lg !shadow-[var(--accent)]/20 !text-lg !w-full hover:!shadow-[var(--accent)]/40 hover:-translate-y-0.5"
         >
           <Scissors className="w-5 h-5" />
-          Reservar Turno
+          Reservar turno
         </button>
       </Link>
       <Link href="/turnos/cancelar" prefetch={true} className="w-full sm:w-auto">
@@ -26,7 +26,7 @@ export default function HeroActions() {
           className="!inline-flex !items-center !justify-center !gap-2 !py-4 !px-6 !rounded-xl !font-semibold !text-slate-400 hover:!text-red-400 !bg-slate-950/40 !backdrop-blur-md !border !border-slate-800/80 hover:!border-red-500/40 hover:!bg-red-500/5 active:scale-[0.98] !transition-all !duration-300 !text-sm !w-full hover:-translate-y-0.5"
         >
           <CalendarX className="w-4 h-4" />
-          Cancelar Turno
+          Cancelar turno
         </button>
       </Link>
     </div>

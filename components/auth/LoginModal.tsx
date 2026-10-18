@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import LoginButton from "../buttons/LoginButton";
 import InputPassword from "../input/InputPassword";
 import logo from "@/public/images/logo.png";
+import { Mail } from "lucide-react";
 
 export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void; }>) {
   const router = useRouter();
@@ -57,24 +58,29 @@ export default function LoginModal({ onClose, }: Readonly<{ onClose: () => void;
         </div>
 
         <h2 className="text-2xl font-bold mb-6 text-center text-[var(--foreground)]">
-          Iniciar Sesión
+          Iniciar sesión
         </h2>
         <form onSubmit={handleLogin} className="px-2">
           <div className="text-left mt-2 space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5 mt-3">
+              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
                 Email
               </label>
-              <input 
-                id="login-email" 
-                data-testid="login-email" 
-                type="email" 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
-                required 
-                placeholder="tumail@gmail.com" 
-                className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm"
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <input 
+                  id="login-email" 
+                  data-testid="login-email" 
+                  type="email" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  required 
+                  placeholder="tumail@gmail.com" 
+                  className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 !transition-all !rounded-xl !pl-10 !pr-4 !py-3 !w-full !block !text-sm placeholder:text-slate-500"
+                />
+              </div>
             </div>
 
             <div>

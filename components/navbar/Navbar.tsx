@@ -15,7 +15,7 @@ export default function Navbar() {
         <MobileNavbar paths={paths} />
       </div>
 
-      <div className="hidden md:block w-full">
+      <div className="hidden md:block w-full max-w-[1720px] mx-auto px-2 md:px-4">
         <WebNavbar paths={paths} />
       </div>
     </header>

@@ -29,6 +29,7 @@ export function useBarberCutsData(startDate: Date, endDate: Date) {
   const [pieData, setPieData] = useState<PieData[]>([]);
   const [summary, setSummary] = useState<BarberTotalData>({ totalAppt: 0, totalRevenue: 0 });
   const [paymentTotals, setPaymentTotals] = useState<PaymentMethodTotals>({ Efectivo: 0, MercadoPago: 0, Otros: 0 });
+  const [barberTotals, setBarberTotals] = useState<BarberTotals[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -53,11 +54,12 @@ export function useBarberCutsData(startDate: Date, endDate: Date) {
       setPieData(data);
       setSummary({ totalAppt: totalApptAll, totalRevenue: totalRevenueAll });
       setPaymentTotals(payTotals);
+      setBarberTotals(totals);
     })();
     return () => {
       mounted = false;
     };
   }, [startDate, endDate]);
 
-  return { summary, pieData, paymentTotals };
+  return { summary, pieData, paymentTotals, barberTotals };
 }

@@ -17,7 +17,7 @@ export default function InputPassword({ label, value, onChange, placeholder = ""
 
   return (
     <div>
-      <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5 mt-4">
+      <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
         {label}
       </label>
       <div className="relative">

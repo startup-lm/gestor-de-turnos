@@ -8,6 +8,7 @@ export interface ServiceParams {
   name: string;
   description: string;
   price: number;
+  duration?: number;
   image?: string;
 }
 
@@ -26,22 +27,45 @@ export const getServices = async (): Promise<Service[]> => {
   }
 };
 
-export async function createService({name,description,price,image,}: ServiceParams): Promise<boolean> {
+export const getServiceById = async (id: number): Promise<Service | null> => {
+  try {
+    const services = await getServices();
+    return services.find((s) => s.id === id) || null;
+  } catch (err) {
+    console.error("getServiceById error:", err);
+    return null;
+  }
+};
+
+export async function createService({
+  name,
+  description,
+  price,
+  duration,
+  image,
+}: ServiceParams): Promise<boolean> {
   const res = await fetch(`${BASE}/api/services`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, description, price, image }),
+    body: JSON.stringify({ name, description, price, duration, image }),
   });
   if (!res.ok) return false;
   const { success } = await res.json();
   return success;
 }
 
-export async function updateService({id,name,description,price,image,}: ServiceParams): Promise<boolean> {
+export async function updateService({
+  id,
+  name,
+  description,
+  price,
+  duration,
+  image,
+}: ServiceParams): Promise<boolean> {
   const res = await fetch(`${BASE}/api/services`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, name, description, price, image }),
+    body: JSON.stringify({ id, name, description, price, duration, image }),
   });
   if (!res.ok) return false;
   const { success } = await res.json();

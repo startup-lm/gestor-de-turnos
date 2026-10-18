@@ -476,7 +476,7 @@ export default function ThemeSettingsModal({ onClose }: Readonly<Props>) {
                       borderColor: `${colors.foreground}10`,
                     }}
                   >
-                    📅 Seleccioná tu Barbero Preferido...
+                    Seleccioná tu Barbero Preferido...
                   </div>
 
                   {/* Simulator Action Button */}

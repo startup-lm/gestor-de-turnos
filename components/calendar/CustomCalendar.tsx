@@ -1,6 +1,8 @@
 'use client';
 
-import { Calendar, momentLocalizer, SlotInfo } from 'react-big-calendar';
+import React from 'react';
+import { Calendar, momentLocalizer, SlotInfo, ToolbarProps } from 'react-big-calendar';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import moment from 'moment';
 import 'moment/locale/es';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -28,7 +30,56 @@ interface CustomCalendarProps {
   refreshSignal?: number;
 }
 
-export default function CustomCalendar({ selectedBarberId, barbers, role, isMobile, onSlotClick, onEventClick, refreshSignal, }: Readonly<CustomCalendarProps>) {
+function CustomCalendarToolbar({ label, onNavigate }: ToolbarProps<CalendarEvent, object>) {
+  return (
+    <div className="flex items-center justify-between mb-4 pb-3 border-b border-black/10 select-none">
+      {/* Botón Hoy a la izquierda */}
+      <div className="flex-1 basis-0 flex items-center justify-start">
+        <button
+          type="button"
+          onClick={() => onNavigate('TODAY')}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-black/20 bg-black/5 hover:bg-black/10 active:scale-95 text-xs font-bold text-slate-900 transition-all shadow-sm"
+          title="Ir al día de hoy"
+        >
+          <CalendarIcon className="w-3.5 h-3.5 stroke-[2.5]" />
+          <span>Hoy</span>
+        </button>
+      </div>
+
+      {/* Bloque central: [<] Semana del ... [>] */}
+      <div className="flex items-center justify-center gap-2 sm:gap-3.5 shrink-0">
+        <button
+          type="button"
+          onClick={() => onNavigate('PREV')}
+          className="p-1.5 sm:p-2 rounded-xl border border-black/20 bg-black/5 hover:bg-black/10 active:scale-95 text-slate-900 transition-all shadow-sm flex items-center justify-center"
+          title="Semana anterior"
+          aria-label="Semana anterior"
+        >
+          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+        </button>
+
+        <span className="text-sm sm:text-base md:text-lg font-black tracking-tight text-slate-900 text-center">
+          {label}
+        </span>
+
+        <button
+          type="button"
+          onClick={() => onNavigate('NEXT')}
+          className="p-1.5 sm:p-2 rounded-xl border border-black/20 bg-black/5 hover:bg-black/10 active:scale-95 text-slate-900 transition-all shadow-sm flex items-center justify-center"
+          title="Semana siguiente"
+          aria-label="Semana siguiente"
+        >
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+        </button>
+      </div>
+
+      {/* Espaciador equilibrado a la derecha para que el centro quede 100% simétrico */}
+      <div className="flex-1 basis-0 flex items-center justify-end" />
+    </div>
+  );
+}
+
+function CustomCalendarComponent({ selectedBarberId, barbers, role, isMobile, onSlotClick, onEventClick, refreshSignal, }: Readonly<CustomCalendarProps>) {
   const { businessHours, businessSettings } = useBusinessContext();
   const { currentDate, currentRange, onNavigate, onRangeChange } = useCalendarNavigation();
   const { events, allAppointments } = useCalendarData(selectedBarberId, role, currentRange, refreshSignal);
@@ -74,6 +125,9 @@ export default function CustomCalendar({ selectedBarberId, barbers, role, isMobi
         <Calendar
           localizer={localizer}
           events={selectedBarberId === 0 ? [] : events}
+          components={{
+            toolbar: CustomCalendarToolbar,
+          }}
           view={currentView}
           views={availableViews}
           selectable
@@ -199,3 +253,6 @@ export default function CustomCalendar({ selectedBarberId, barbers, role, isMobi
     </div>
   );
 }
+
+const CustomCalendar = React.memo(CustomCalendarComponent);
+export default CustomCalendar;

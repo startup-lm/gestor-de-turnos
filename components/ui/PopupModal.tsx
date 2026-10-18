@@ -1,11 +1,27 @@
 "use client";
 
+import { useEffect } from "react";
 import { CheckCircle, XCircle } from "lucide-react";
 import Modal from "./Modal";
 import WhatsappButton from "../buttons/WhatsappButton";
 
 export default function PopupModal({ message, success, onClose, showWhatsappButton, handleWhatsappButton}:
   Readonly<{ message: string; success: boolean; onClose: () => void; showWhatsappButton?: boolean; handleWhatsappButton?: () => void;}>) {
+
+  // Si no se requiere botón de acción de WhatsApp, la notificación ya la gestiona el Toast global.
+  // Cerramos limpiamente sin bloquear la pantalla con un modal centrado.
+  useEffect(() => {
+    if (!showWhatsappButton) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [showWhatsappButton, onClose]);
+
+  if (!showWhatsappButton) {
+    return null;
+  }
 
   return (
     <Modal onClose={onClose} size="sm">

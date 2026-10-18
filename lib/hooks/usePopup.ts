@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { toast } from "@/lib/store/useToastStore";
 
 export function usePopup(initialMessage = "", initialSuccess = false) {
   const [show, setShow] = useState(false);
@@ -11,6 +12,13 @@ export function usePopup(initialMessage = "", initialSuccess = false) {
     setMessage(msg);
     setSuccess(isSuccess);
     setShow(true);
+
+    // Disparar toast no bloqueante
+    if (isSuccess) {
+      toast.success(msg);
+    } else {
+      toast.error(msg);
+    }
   };
   const close = useCallback(() => setShow(false), []);
 

@@ -10,30 +10,44 @@ import { KeenAutoplayPlugin } from "@/utils/autoplayPlugin";
 import { CarouselItem, CarouselType } from "@/lib/types/Carousel";
 import logo from "@/public/images/logo.png";
 
-export default function HomeCarousel({ type, items }: Readonly<{ type: CarouselType; items: CarouselItem[]; }>) {
-  const title = type === "productos" ? "Nuestros Productos 🛍️" : "Nuestros Servicios 💈";
+export default function HomeCarousel({
+  type,
+  items,
+}: Readonly<{ type: CarouselType; items: CarouselItem[] }>) {
+  const title = type === "productos" ? "Nuestros productos" : "Nuestros servicios";
   const href = `/${type}`;
   const linkText = `Ver todos los ${type}`;
+
+  const count = items.length;
+  // Adaptive perView so the carousel gracefully fills the container without empty voids
+  const desktopPerView = Math.min(count, 3);
+  const tabletPerView = Math.min(count, 2);
+  const canSlideDesktop = count > 3;
+  const canSlideTablet = count > 2;
+  const canSlideMobile = count > 1;
+
   const [sliderRef, instanceRef] = useKeenSlider<HTMLDivElement>(
     {
-      loop: true,
+      loop: count > 3,
       mode: "snap",
       slides: {
         perView: 1,
-        spacing: 20,
+        spacing: 16,
       },
       breakpoints: {
         "(min-width: 640px)": {
-          slides: { perView: 2, spacing: 20 },
+          slides: { perView: tabletPerView, spacing: 16 },
         },
         "(min-width: 1024px)": {
-          slides: { perView: 3, spacing: 20 },
+          slides: { perView: desktopPerView, spacing: 16 },
         },
       },
       renderMode: "performance",
     },
-    [KeenAutoplayPlugin]
+    count > 3 ? [KeenAutoplayPlugin] : []
   );
+
+  if (count === 0) return null;
 
   return (
     <section className="py-8 px-6 sm:px-10 bg-[#0a0f1d]/75 backdrop-blur-xl border border-slate-800/80 rounded-3xl shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-[var(--accent)]/30">
@@ -41,21 +55,33 @@ export default function HomeCarousel({ type, items }: Readonly<{ type: CarouselT
         {title}
       </h2>
 
-      <div className="relative overflow-visible px-4">
-        {/* Navigation Buttons */}
-        <button 
-          onClick={() => instanceRef.current?.prev()} 
-          className="!absolute !-left-2 sm:!-left-4 !top-1/2 !-translate-y-1/2 !z-20 !w-10 !h-10 !flex !items-center !justify-center !rounded-full !bg-slate-950/90 !backdrop-blur-md !border !border-[var(--accent)]/60 !text-[var(--accent)] hover:!bg-[var(--accent)] hover:!text-slate-950 hover:!border-[var(--accent)] active:!scale-95 !transition-all !duration-300 !shadow-lg !shadow-[var(--accent)]/10 hover:!shadow-[var(--accent)]/20 !pointer-events-auto"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
+      <div className="relative overflow-visible px-2 sm:px-4">
+        {/* Navigation Buttons: only visible on viewports where items exceed the perView capacity */}
+        {canSlideMobile && (
+          <button
+            type="button"
+            onClick={() => instanceRef.current?.prev()}
+            aria-label="Anterior"
+            className={`!absolute !-left-2 sm:!-left-4 !top-1/2 !-translate-y-1/2 !z-20 !w-10 !h-10 !flex !items-center !justify-center !rounded-full !bg-slate-950/90 !backdrop-blur-md !border !border-[var(--accent)]/60 !text-[var(--accent)] hover:!bg-[var(--accent)] hover:!text-slate-950 hover:!border-[var(--accent)] active:!scale-95 !transition-all !duration-300 !shadow-lg !shadow-[var(--accent)]/10 hover:!shadow-[var(--accent)]/20 !pointer-events-auto cursor-pointer ${
+              !canSlideDesktop ? "lg:hidden" : ""
+            } ${!canSlideTablet ? "sm:hidden" : ""}`}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        )}
 
         <div ref={sliderRef} className="keen-slider z-10">
           {items.map((item) => {
+            const itemHref =
+              type === "servicios"
+                ? `/servicios/${item.id}`
+                : `/productos/${item.id}`;
+
             return (
-              <div 
-                key={item.id} 
-                className="keen-slider__slide !h-48 sm:!h-56 !rounded-2xl !bg-slate-950/40 border border-slate-800/80 overflow-hidden shadow-lg relative group transition-all duration-300 hover:border-[var(--accent)]/40 hover:-translate-y-1 hover:shadow-[var(--accent)]/10 flex flex-col justify-between"
+              <Link
+                key={item.id}
+                href={itemHref}
+                className="keen-slider__slide !h-48 sm:!h-56 !rounded-2xl !bg-slate-950/40 border border-slate-800/80 overflow-hidden shadow-lg relative group transition-all duration-300 hover:border-[var(--accent)]/50 hover:-translate-y-1 hover:shadow-[var(--accent)]/15 flex flex-col justify-between cursor-pointer block"
               >
                 {type === "productos" && item.image ? (
                   <div className="relative w-full h-full bg-slate-950/40 p-4 flex flex-col items-center justify-center group-hover:bg-slate-950/20 transition-colors duration-300">
@@ -78,7 +104,9 @@ export default function HomeCarousel({ type, items }: Readonly<{ type: CarouselT
                       src={item.image ?? logo}
                       alt={item.name}
                       fill
-                      className={`object-cover rounded-lg brightness-95 group-hover:brightness-100 group-hover:scale-105 transition-all duration-500 ${!item.image ? "bg-[var(--background)]" : ""}`}
+                      className={`object-cover rounded-lg brightness-95 group-hover:brightness-100 group-hover:scale-105 transition-all duration-500 ${
+                        !item.image ? "bg-[var(--background)]" : ""
+                      }`}
                       sizes="(max-width: 768px) 100vw, 33vw"
                     />
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-4 flex flex-col justify-end min-h-[45%]">
@@ -88,23 +116,29 @@ export default function HomeCarousel({ type, items }: Readonly<{ type: CarouselT
                     </div>
                   </div>
                 )}
-              </div>
+              </Link>
             );
           })}
         </div>
 
-        <button 
-          onClick={() => instanceRef.current?.next()} 
-          className="!absolute !-right-2 sm:!-right-4 !top-1/2 !-translate-y-1/2 !z-20 !w-10 !h-10 !flex !items-center !justify-center !rounded-full !bg-slate-950/90 !backdrop-blur-md !border !border-[var(--accent)]/60 !text-[var(--accent)] hover:!bg-[var(--accent)] hover:!text-slate-950 hover:!border-[var(--accent)] active:!scale-95 !transition-all !duration-300 !shadow-lg !shadow-[var(--accent)]/10 hover:!shadow-[var(--accent)]/20 !pointer-events-auto"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
+        {canSlideMobile && (
+          <button
+            type="button"
+            onClick={() => instanceRef.current?.next()}
+            aria-label="Siguiente"
+            className={`!absolute !-right-2 sm:!-right-4 !top-1/2 !-translate-y-1/2 !z-20 !w-10 !h-10 !flex !items-center !justify-center !rounded-full !bg-slate-950/90 !backdrop-blur-md !border !border-[var(--accent)]/60 !text-[var(--accent)] hover:!bg-[var(--accent)] hover:!text-slate-950 hover:!border-[var(--accent)] active:!scale-95 !transition-all !duration-300 !shadow-lg !shadow-[var(--accent)]/10 hover:!shadow-[var(--accent)]/20 !pointer-events-auto cursor-pointer ${
+              !canSlideDesktop ? "lg:hidden" : ""
+            } ${!canSlideTablet ? "sm:hidden" : ""}`}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       <div className="text-center mt-6">
-        <Link 
-          href={href} 
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--accent)] uppercase tracking-wider hover:text-white transition-colors duration-200 group" 
+        <Link
+          href={href}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--accent)] uppercase tracking-wider hover:text-white transition-colors duration-200 group"
           prefetch
         >
           {linkText}

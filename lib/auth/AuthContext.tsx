@@ -10,6 +10,7 @@ type AuthContextType = {
   user: any;
   role: string;
   barberId: number;
+  isLoadingAuth: boolean;
   setRole: (role: string) => void;
   setBarberId: (barberId: number) => void;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
@@ -21,9 +22,31 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [user, setUser] = useState<any>(null);
-  const [role, setRole] = useState<string>("guest");
-  const [barberId, setBarberId] = useState<number>(-1);
+  const [user, setUser] = useState<any>(() => {
+    if (typeof window !== "undefined") {
+      const stored = loadStoredAuth();
+      if (stored?.user) return stored.user;
+    }
+    return null;
+  });
+
+  const [role, setRole] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const stored = loadStoredAuth();
+      if (stored?.role) return stored.role;
+    }
+    return "guest";
+  });
+
+  const [barberId, setBarberId] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const stored = loadStoredAuth();
+      if (stored?.barberId !== undefined) return stored.barberId;
+    }
+    return -1;
+  });
+
+  const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(true);
 
   useEffect(() => {
     const stored = loadStoredAuth();
@@ -32,8 +55,12 @@ export function AuthProvider({
       setRole(stored.role);
       setBarberId(stored.barberId);
     }
+
     supabaseClient.auth.getUser().then(({ data: { user: supaUser } }) => {
       setUser(supaUser);
+      setIsLoadingAuth(false);
+    }).catch(() => {
+      setIsLoadingAuth(false);
     });
 
     const { data: sub } = supabaseClient.auth.onAuthStateChange(
@@ -59,6 +86,7 @@ export function AuthProvider({
           setRole("guest");
           setBarberId(-1);
         }
+        setIsLoadingAuth(false);
       }
     );
 
@@ -78,12 +106,12 @@ export function AuthProvider({
       if (error || !data.user) {
         return { error: "Email o contraseña incorrecta/s" };
       }
-      setUser(data.user);
-
       const result = await getIdAndRole(email);
       if (!result) {
         return { error: "No se pudo obtener rol de barbero" };
       }
+      saveStoredAuth({ user: data.user, role: result.role, barberId: result.id });
+      setUser(data.user);
       setBarberId(result.id);
       setRole(result.role);
 
@@ -105,12 +133,13 @@ export function AuthProvider({
       user,
       role,
       barberId,
+      isLoadingAuth,
       setRole,
       setBarberId,
       signIn,
       signOut,
     }),
-    [user, role, barberId, signIn, signOut]
+    [user, role, barberId, isLoadingAuth, signIn, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

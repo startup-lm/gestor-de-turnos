@@ -76,7 +76,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="p-5 flex flex-col items-center text-center relative overflow-hidden">
+    <div className="py-8 md:py-12 px-4 md:px-8 w-full max-w-[1720px] mx-auto flex flex-col items-center text-center relative overflow-hidden">
       {/* Ambient Background Glows */}
       <div className="absolute -top-40 -left-40 w-96 h-96 bg-[var(--accent)]/10 rounded-full blur-[120px] pointer-events-none z-0" />
       <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-blue-500/5 rounded-full blur-[120px] pointer-events-none z-0" />

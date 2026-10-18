@@ -405,8 +405,15 @@ export default function ArcaPage() {
   const hasActiveFilters = !!(filterStatus || filterSource || filterDateFrom || filterDateTo);
 
   return (
-    <div className="p-2 max-w-6xl mx-auto space-y-6">
-      <h1 className="text-2xl md:text-3xl font-bold text-center">Facturación</h1>
+    <div className="w-full space-y-6">
+      <div className="border-b border-slate-800/40 pb-4">
+        <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
+          Facturación Electrónica ARCA
+        </h2>
+        <p className="text-xs text-slate-400 mt-0.5">
+          Emisión de comprobantes, gestión de certificados fiscales y registro de facturas
+        </p>
+      </div>
 
       {isInitialLoading ? (
         <div className="flex justify-center py-20">
@@ -415,7 +422,7 @@ export default function ArcaPage() {
       ) : (
         <>
           {/* ── Métricas ─────────────────────────────────────────────── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
             <MetricCard
               label="Facturado este mes"
               value={`$${metrics.totalMonth.toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}
@@ -446,9 +453,9 @@ export default function ArcaPage() {
           </div>
 
           {/* ── Configuración ARCA ────────────────────────────────────── */}
-          <section className="bg-[var(--bg-carousel)] p-4 rounded-lg shadow-xl">
+          <section className="bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 rounded-2xl p-5 shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-          <h2 className="text-lg font-semibold">Configuración ARCA</h2>
+          <h2 className="text-base font-bold text-[var(--foreground)]">Configuración ARCA</h2>
           {status && (
             <span
               className={`text-xs px-2 py-1 rounded-full ${
@@ -566,9 +573,9 @@ export default function ArcaPage() {
       </section>
 
       {/* ── Emitir comprobante manual ─────────────────────────────── */}
-      <section className="bg-[var(--bg-carousel)] p-4 rounded-lg shadow-xl">
+      <section className="bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 rounded-2xl p-5 shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-          <h2 className="text-lg font-semibold">Emitir comprobante</h2>
+          <h2 className="text-base font-bold text-[var(--foreground)]">Emitir comprobante</h2>
           {status && !status.ready && (
             <span className="text-xs text-yellow-300">Configurá ARCA para emitir</span>
           )}
@@ -635,16 +642,16 @@ export default function ArcaPage() {
       </section>
 
       {/* ── Comprobantes emitidos ─────────────────────────────────── */}
-      <section className="bg-[var(--bg-carousel)] p-4 rounded-lg shadow-xl">
+      <section className="bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 rounded-2xl p-5 shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <h2 className="text-lg font-semibold">Comprobantes emitidos</h2>
+          <h2 className="text-base font-bold text-[var(--foreground)]">Comprobantes emitidos</h2>
           <div className="flex items-center gap-2">
             {/* Exportar CSV */}
             {invoices.length > 0 && (
               <button
                 type="button"
                 onClick={() => exportToCsv(invoices)}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-[var(--foreground)]/15 hover:border-[var(--accent)]/50 text-[var(--foreground)]/60 hover:text-[var(--accent)] transition-colors"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg !border !border-[var(--foreground)]/20 hover:!border-[var(--accent)]/50 !bg-white/5 !text-slate-200 hover:!text-[var(--accent)] transition-colors cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
                 Exportar CSV
@@ -654,10 +661,10 @@ export default function ArcaPage() {
             <button
               type="button"
               onClick={() => setFiltersOpen((v) => !v)}
-              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg !border transition-colors cursor-pointer ${
                 hasActiveFilters
-                  ? "border-[var(--accent)]/50 text-[var(--accent)] bg-[var(--accent)]/5"
-                  : "border-[var(--foreground)]/15 text-[var(--foreground)]/60 hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+                  ? "!border-[var(--accent)]/50 !text-[var(--accent)] !bg-[var(--accent)]/10 font-bold"
+                  : "!border-[var(--foreground)]/20 !text-slate-200 !bg-white/5 hover:!border-[var(--accent)]/50 hover:!text-[var(--accent)]"
               }`}
             >
               <Filter className="w-3.5 h-3.5" />
@@ -723,7 +730,7 @@ export default function ArcaPage() {
                     setFilterDateFrom("");
                     setFilterDateTo("");
                   }}
-                  className="text-xs text-[var(--foreground)]/50 hover:text-red-400 transition-colors"
+                  className="text-xs !bg-transparent !text-slate-400 hover:!text-red-400 transition-colors cursor-pointer underline underline-offset-2"
                 >
                   Limpiar filtros
                 </button>

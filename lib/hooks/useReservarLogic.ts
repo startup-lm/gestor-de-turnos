@@ -16,14 +16,23 @@ export function useReservarLogic(
   selectedBarberId: number,
   events: CalendarEvent[],
   onAppointmentCreated?: () => void,
-  barbers?: Barber[]
+  barbers?: Barber[],
+  initialServiceId?: number
 ) {
   const { role } = useAuth();
   const { businessHours, businessSettings } = useBusinessContext();
   const { data: services = [] } = useFetchOnce<Service[]>("services", getServices);
   const isGuest = role === "guest";
 
-  const [selectedServiceId, setSelectedServiceId] = useState(-1);
+  const [selectedServiceId, setSelectedServiceId] = useState(initialServiceId ?? -1);
+
+  useEffect(() => {
+    if (initialServiceId !== undefined && initialServiceId > 0) {
+      setSelectedServiceId(initialServiceId);
+    } else {
+      setSelectedServiceId(-1);
+    }
+  }, [initialServiceId]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -147,6 +156,7 @@ export function useReservarLogic(
     setLoading(true);
     const service = services?.find(s => s.id === selectedServiceId);
     if (!service) {
+      popup.open("Debes seleccionar un servicio para agendar el turno.", false);
       setLoading(false);
       return;
     }

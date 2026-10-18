@@ -30,16 +30,16 @@ export default async function NosotrosPage() {
   const storefrontPhoto = settings.local_photo || local;
 
   return (
-    <div className="p-5 flex flex-col items-center text-center max-w-6xl mx-auto pb-16">
-      <h1 className="text-3xl font-bold mb-5">Sobre Nosotros</h1>
+    <div className="py-8 md:py-12 px-4 md:px-8 flex flex-col items-center text-center w-full max-w-[1720px] mx-auto pb-20">
+      <h1 className="text-3xl font-bold mb-5">Sobre nosotros</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
         {/* Nuestros Barberos */}
         <section className="h-full flex flex-col bg-gradient-to-b from-[var(--foreground)]/6 to-[var(--foreground)]/2 backdrop-blur-md border border-[var(--foreground)]/10 p-6 md:p-8 rounded-2xl shadow-xl hover:border-[var(--accent)]/20 transition-all duration-300">
-          <h2 className="text-2xl font-semibold text-[var(--foreground)] text-center">Nuestros Barberos</h2>
+          <h2 className="text-2xl font-semibold text-[var(--foreground)] text-center">Nuestros barberos</h2>
           <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent mx-auto mt-2 mb-6" />
           
-          <div className="flex flex-wrap gap-6 justify-center flex-1 items-center">
+          <div className="flex flex-wrap gap-6 justify-center flex-1 items-stretch">
             {barbers.map((barber) => (
               <BarberCard
                 key={barber.id}
@@ -53,7 +53,7 @@ export default async function NosotrosPage() {
 
         {/* Nuestra Historia */}
         <section className="h-full flex flex-col bg-gradient-to-b from-[var(--foreground)]/6 to-[var(--foreground)]/2 backdrop-blur-md border border-[var(--foreground)]/10 p-6 md:p-8 rounded-2xl shadow-xl hover:border-[var(--accent)]/20 transition-all duration-300">
-          <h2 className="text-2xl font-semibold text-[var(--foreground)] text-center">Nuestra Historia</h2>
+          <h2 className="text-2xl font-semibold text-[var(--foreground)] text-center">Nuestra historia</h2>
           <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent mx-auto mt-2 mb-6" />
           
           <div className="flex-1 w-full px-2 text-left space-y-5">
@@ -80,7 +80,7 @@ export default async function NosotrosPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full mt-10">
         {/* ¿Dónde Estamos? */}
         <section className="h-full flex flex-col bg-gradient-to-b from-[var(--foreground)]/6 to-[var(--foreground)]/2 backdrop-blur-md border border-[var(--foreground)]/10 p-6 md:p-8 rounded-2xl shadow-xl hover:border-[var(--accent)]/20 transition-all duration-300">
-          <h2 className="text-2xl font-semibold text-[var(--foreground)] text-center">¿Dónde Estamos?</h2>
+          <h2 className="text-2xl font-semibold text-[var(--foreground)] text-center">¿Dónde estamos?</h2>
           <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent mx-auto mt-2 mb-4" />
           
           {settings.location_address && (
@@ -108,7 +108,7 @@ export default async function NosotrosPage() {
 
         {/* Nuestras Redes Sociales */}
         <section className="h-full flex flex-col bg-gradient-to-b from-[var(--foreground)]/6 to-[var(--foreground)]/2 backdrop-blur-md border border-[var(--foreground)]/10 p-6 md:p-8 rounded-2xl shadow-xl hover:border-[var(--accent)]/20 transition-all duration-300">
-          <h2 className="text-2xl font-semibold text-[var(--foreground)] text-center">Nuestras Redes Sociales</h2>
+          <h2 className="text-2xl font-semibold text-[var(--foreground)] text-center">Nuestras redes sociales</h2>
           <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent mx-auto mt-2 mb-6" />
           
           <div className="flex flex-col items-center justify-center gap-4 flex-1 w-full px-2">

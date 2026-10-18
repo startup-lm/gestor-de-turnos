@@ -40,6 +40,8 @@ export async function middleware(request: NextRequest) {
   // Si intenta acceder a rutas protegidas y no está logueado, redirigir al home
   const pathname = request.nextUrl.pathname;
   const isProtectedPath =
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
     pathname === "/configuracion" ||
     pathname.startsWith("/configuracion/") ||
     pathname === "/operaciones" ||
@@ -49,7 +51,8 @@ export async function middleware(request: NextRequest) {
 
   if (isProtectedPath && !user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/login";
+    url.searchParams.set("redirect", pathname);
     return NextResponse.redirect(url);
   }
 
@@ -58,6 +61,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/admin",
+    "/admin/:path*",
     "/configuracion",
     "/configuracion/:path*",
     "/operaciones",

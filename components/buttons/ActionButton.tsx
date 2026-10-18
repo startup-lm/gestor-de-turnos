@@ -20,7 +20,7 @@ export function ActionButton({
   loading = false,
   disabled = false,
   className = "",
-  buttonClass = "btn-home-primary",
+  buttonClass = "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold px-5 py-2.5 rounded-xl shadow-md shadow-[var(--accent)]/15 border border-[var(--accent)]/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed",
   hideLabel = false,
   ...rest
 }: Readonly<ActionButtonProps>) {

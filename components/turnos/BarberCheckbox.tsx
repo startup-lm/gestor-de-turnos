@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { Check } from "lucide-react";
+import { Check, Scissors } from "lucide-react";
 import { Barber } from "@/lib/types/Barbers";
 import logo from "@/public/images/logo.png";
 
@@ -41,7 +41,7 @@ export default function BarberCheckbox({ barbers, selectedBarberId, onChange }: 
               >
                 {isNoPreference ? (
                   <div className="w-full h-full rounded-full bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/30 backdrop-blur-md">
-                    <span className="text-3xl filter drop-shadow-[0_0_8px_rgba(223,186,115,0.4)]">💈</span>
+                    <Scissors className="w-8 h-8 text-[var(--accent)] drop-shadow-[0_0_8px_rgba(223,186,115,0.4)]" />
                   </div>
                 ) : (
                   <Image

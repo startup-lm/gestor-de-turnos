@@ -8,6 +8,8 @@ import { AuthProvider } from '@/lib/auth/AuthContext';
 import AutoLogoutManager from '@/lib/auth/AutoLogoutManager';
 import { BusinessProvider } from '@/lib/context/BusinessContext';
 
+import ToastContainer from "@/components/ui/ToastContainer";
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
 
   return (
@@ -27,6 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </main>
             <Footer />
             <WhatsappIcon />
+            <ToastContainer />
           </BusinessProvider>
         </AuthProvider>
       </body>

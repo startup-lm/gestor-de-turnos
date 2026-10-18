@@ -28,7 +28,7 @@ export default function SalesTable() {
   const [sales, setSales] = useState<SaleWithRelations[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [edit, setEdit] = useState<EditState | null>(null);
   const [savingId, setSavingId] = useState<number | null>(null);
@@ -125,7 +125,7 @@ export default function SalesTable() {
   };
 
   return (
-    <div className="bg-[var(--bg-carousel)] p-4 rounded-lg shadow-xl">
+    <div className="w-full space-y-4">
       {loading && (
         <div className="flex justify-center mb-3">
           <Spinner />
@@ -133,29 +133,29 @@ export default function SalesTable() {
       )}
 
       {!loading && sales.length === 0 && (
-        <p className="text-sm text-gray-400 text-center">
+        <p className="text-sm text-gray-400 text-center py-10 bg-[var(--background)] rounded-xl border border-[var(--border)]">
           No hay ventas registradas.
         </p>
       )}
 
       {sales.length > 0 && (
         <>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-xs md:text-sm">
-              <thead>
-                <tr className="border-b border-gray-700 text-left">
-                  <th className="py-2 pr-3">Fecha</th>
-                  <th className="py-2 pr-3">Barbero</th>
-                  <th className="py-2 pr-3">Producto</th>
-                  <th className="py-2 pr-3">Precio</th>
-                  <th className="py-2 pr-3">Cant.</th>
-                  <th className="py-2 pr-3">Total</th>
-                  <th className="py-2 pr-3">Detalles</th>
-                  {ARCA_ENABLED && <th className="py-2 pr-3">Factura</th>}
-                  <th className="py-2 pr-3 text-right">Acciones</th>
+          <div className="overflow-x-auto rounded-xl border border-[var(--border)] shadow-md bg-[var(--background)]">
+            <table className="w-full text-left text-xs md:text-sm whitespace-nowrap">
+              <thead className="bg-slate-900/80 text-slate-300 uppercase text-[11px] font-bold tracking-wider border-b border-[var(--border)]">
+                <tr>
+                  <th className="py-3 px-4">Fecha</th>
+                  <th className="py-3 px-4">Barbero</th>
+                  <th className="py-3 px-4">Producto</th>
+                  <th className="py-3 px-4">Precio</th>
+                  <th className="py-3 px-4">Cant.</th>
+                  <th className="py-3 px-4">Total</th>
+                  <th className="py-3 px-4">Detalles</th>
+                  {ARCA_ENABLED && <th className="py-3 px-4">Factura</th>}
+                  <th className="py-3 px-4 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[var(--border)]/60 text-[var(--foreground)]">
                 {sales.map((sale) => {
                   const isEditing = editingId === sale.id;
 
@@ -319,7 +319,7 @@ export default function SalesTable() {
                 type="button"
                 onClick={handlePrev}
                 disabled={page <= 1}
-                className="px-2 py-1 rounded border border-gray-600 disabled:opacity-40"
+                className="px-3 py-1.5 rounded-lg !bg-white/5 hover:!bg-white/10 !text-slate-200 hover:!text-white !border !border-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-medium text-xs"
               >
                 Anterior
               </button>
@@ -327,7 +327,7 @@ export default function SalesTable() {
                 type="button"
                 onClick={handleNext}
                 disabled={page >= totalPages}
-                className="px-2 py-1 rounded border border-gray-600 disabled:opacity-40"
+                className="px-3 py-1.5 rounded-lg !bg-white/5 hover:!bg-white/10 !text-slate-200 hover:!text-white !border !border-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-medium text-xs"
               >
                 Siguiente
               </button>
