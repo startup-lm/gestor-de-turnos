@@ -6,7 +6,13 @@ import { Barber } from "@/lib/types/Barbers";
 import { useBarberCutsData } from "@/lib/hooks/useBarberCutsdata";
 import { useTotalRevenueForAllSales } from "@/lib/hooks/useTotalSalesRevenue";
 import { useTotalCommissions } from "@/lib/hooks/useTotalComission";
-import DateRangeCalendar from "@/components/dashboard/DateRangeCalendar";
+import dynamic from "next/dynamic";
+import Spinner from "@/components/loading/Spinner";
+
+const DateRangeCalendar = dynamic(
+  () => import("@/components/dashboard/DateRangeCalendar"),
+  { ssr: false, loading: () => <div className="p-4 flex justify-center"><Spinner /></div> }
+);
 import {
   Wallet,
   Coins,
@@ -92,9 +98,9 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
   };
 
   // Obtener datos consolidados
-  const { summary, paymentTotals, barberTotals } = useBarberCutsData(startDate, endDate);
+  const { summary, paymentTotals, barberTotals } = useBarberCutsData(startDate, endDate, barbers);
   const { totalSalesRevenue, totalSales, totalSalesCommission } = useTotalRevenueForAllSales(startDate, endDate, barbers);
-  const totalCommissions = useTotalCommissions(startDate, endDate);
+  const totalCommissions = useTotalCommissions(barberTotals, barbers);
 
   // Cálculos financieros
   const totalTurnosRevenue = summary.totalRevenue;

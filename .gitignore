@@ -45,3 +45,6 @@ next-env.d.ts
 # playwright tests
 /playwright-report/
 /test-results/
+
+# sourcemaps
+public/*.map

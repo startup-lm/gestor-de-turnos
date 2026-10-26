@@ -6,20 +6,43 @@ import { Barber } from "@/lib/types/Barbers";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 
+import dynamic from "next/dynamic";
+import { SectionSkeleton } from "@/components/loading/Skeleton";
+
 // Modular Sidebar
 import AdminSidebar, { AdminSection } from "@/components/admin/sections/AdminSidebar";
 
-// Sections
-import DashboardClient from "@/app/dashboard/DashboardClient";
-import FinanzasSection from "@/components/admin/sections/FinanzasSection";
-import TurnosSection from "@/components/admin/sections/TurnosSection";
-import VentasSection from "@/components/admin/sections/VentasSection";
-import ArcaPage from "@/components/arca/ArcaPage";
-import AdminBarberosClient from "@/app/operaciones/barberos/AdminBarberosClient";
-import ConfigIdentidadSection from "@/components/admin/sections/ConfigIdentidadSection";
-import ConfigHorariosSection from "@/components/admin/sections/ConfigHorariosSection";
-import ConfigContactoSection from "@/components/admin/sections/ConfigContactoSection";
-import ConfigPagosSection from "@/components/admin/sections/ConfigPagosSection";
+// Sections (Lazy Loaded on Demand)
+const DashboardClient = dynamic(() => import("@/app/dashboard/DashboardClient"), {
+  loading: () => <SectionSkeleton />,
+});
+const FinanzasSection = dynamic(() => import("@/components/admin/sections/FinanzasSection"), {
+  loading: () => <SectionSkeleton />,
+});
+const TurnosSection = dynamic(() => import("@/components/admin/sections/TurnosSection"), {
+  loading: () => <SectionSkeleton />,
+});
+const VentasSection = dynamic(() => import("@/components/admin/sections/VentasSection"), {
+  loading: () => <SectionSkeleton />,
+});
+const ArcaPage = dynamic(() => import("@/components/arca/ArcaPage"), {
+  loading: () => <SectionSkeleton />,
+});
+const AdminBarberosClient = dynamic(() => import("@/app/operaciones/barberos/AdminBarberosClient"), {
+  loading: () => <SectionSkeleton />,
+});
+const ConfigIdentidadSection = dynamic(() => import("@/components/admin/sections/ConfigIdentidadSection"), {
+  loading: () => <SectionSkeleton />,
+});
+const ConfigHorariosSection = dynamic(() => import("@/components/admin/sections/ConfigHorariosSection"), {
+  loading: () => <SectionSkeleton />,
+});
+const ConfigContactoSection = dynamic(() => import("@/components/admin/sections/ConfigContactoSection"), {
+  loading: () => <SectionSkeleton />,
+});
+const ConfigPagosSection = dynamic(() => import("@/components/admin/sections/ConfigPagosSection"), {
+  loading: () => <SectionSkeleton />,
+});
 
 export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>) {
   const router = useRouter();

@@ -103,22 +103,27 @@ export async function deleteAppointmentsByDate(input: {barber_id: number;date: D
   return res.json();
 }
 
-export async function getTotalAndRevenueForAllBarbers(start_date: Date,end_date: Date) {
+export interface TotalAndRevenueResponse {
+  barberTotals: { barberId: number; totalAppt: number; totalRevenue: number }[];
+  paymentMethodTotals: { Efectivo: number; MercadoPago: number; Otros: number };
+}
+
+export async function getTotalAndRevenueForAllBarbers(start_date: Date, end_date: Date): Promise<TotalAndRevenueResponse> {
   const params = new URLSearchParams({
     start_date: start_date.toISOString().split("T")[0],
     end_date: end_date.toISOString().split("T")[0],
   });
   try {
     const res = await fetch(`${BASE}/api/appointments/all?${params}`, {
-      next: { tags: ["appointments"]},
+      next: { tags: ["appointments"] },
     });
-    if (!res.ok) return [];
+    if (!res.ok) return { barberTotals: [], paymentMethodTotals: { Efectivo: 0, MercadoPago: 0, Otros: 0 } };
     const text = await res.text();
-    if (!text.trim().startsWith("[")) return [];
+    if (!text.trim().startsWith("{")) return { barberTotals: [], paymentMethodTotals: { Efectivo: 0, MercadoPago: 0, Otros: 0 } };
     return JSON.parse(text);
   } catch (err) {
     console.error("getTotalAndRevenueForAllBarbers error:", err);
-    return [];
+    return { barberTotals: [], paymentMethodTotals: { Efectivo: 0, MercadoPago: 0, Otros: 0 } };
   }
 }
 

@@ -1,5 +1,11 @@
 import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
+import bundleAnalyzer from "@next/bundle-analyzer";
+import { withSentryConfig } from "@sentry/nextjs/config";
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const host = supabaseUrl ? new URL(supabaseUrl).hostname : "localhost";
@@ -22,6 +28,9 @@ const nextConfig: NextConfig = {
     // 4) Sube el TTL para disminuir revalidaciones/escrituras
     minimumCacheTTL: 2678400, // 31 días
   },
+  experimental: {
+    optimizePackageImports: ["lucide-react", "react-icons", "date-fns"],
+  },
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
   webpack(config, { dev }) {
@@ -38,4 +47,11 @@ const withPWA = withPWAInit({
   aggressiveFrontEndNavCaching: true,
 });
 
-export default withPWA(nextConfig);
+const analyzedConfig = withBundleAnalyzer(withPWA(nextConfig));
+
+export default withSentryConfig(analyzedConfig, {
+  org: "lm2",
+  project: "gestor-de-turnos",
+  silent: true,
+  widenClientFileUpload: true,
+});

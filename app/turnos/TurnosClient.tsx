@@ -13,12 +13,17 @@ import { CalendarEvent } from "@/lib/types/CalendarEvent";
 import { useSelectedBarber } from "@/lib/hooks/useSelectedBarber";
 import { useIsMobile } from "@/lib/hooks/useMediaQuery";
 import { useTurnosStore } from "@/lib/store/useTurnosStore";
+import { useShallow } from "zustand/react/shallow";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import { getServices } from "@/lib/repository/services";
 import ServiceSelectionCards from "@/components/turnos/ServiceSelectionCards";
 import BarberSelectionCards from "@/components/turnos/BarberSelectionCards";
-import BookingSplitPanel from "@/components/turnos/BookingSplitPanel";
 import { Check } from "lucide-react";
+
+const BookingSplitPanel = dynamic(
+  () => import("@/components/turnos/BookingSplitPanel"),
+  { ssr: false, loading: () => null }
+);
 
 const CustomCalendar = dynamic(() => import("@/components/calendar/CustomCalendar"), {
   ssr: false,
@@ -99,7 +104,21 @@ export default function TurnosClient({ initialBarbers, initialServices }: Readon
     closeDetail,
     triggerCalendarRefresh,
     openReservar,
-  } = useTurnosStore();
+  } = useTurnosStore(
+    useShallow((state) => ({
+      isReservarOpen: state.isReservarOpen,
+      isDetailOpen: state.isDetailOpen,
+      selectedAppointment: state.selectedAppointment,
+      selectedDate: state.selectedDate,
+      events: state.events,
+      calendarRefreshSignal: state.calendarRefreshSignal,
+      closeReservar: state.closeReservar,
+      openDetail: state.openDetail,
+      closeDetail: state.closeDetail,
+      triggerCalendarRefresh: state.triggerCalendarRefresh,
+      openReservar: state.openReservar,
+    }))
+  );
 
   const handleSelectService = (service: Service) => {
     setSelectedService(service);

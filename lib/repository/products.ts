@@ -13,6 +13,21 @@ export interface ProductParams {
 }
 
 export const getProducts = async (): Promise<Product[]> => {
+  if (typeof window === "undefined") {
+    try {
+      const { supabaseAdmin } = await import("@/lib/supabase/supabaseAdmin");
+      const { data, error } = await supabaseAdmin
+        .from("products")
+        .select()
+        .order("name", { ascending: true });
+      if (error || !data) return [];
+      return data;
+    } catch (e) {
+      console.error("getProducts server query error:", e);
+      return [];
+    }
+  }
+
   try {
     const res = await fetch(`${BASE}/api/products`, {
       next: { tags: ["products"] },

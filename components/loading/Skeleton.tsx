@@ -36,3 +36,19 @@ export function CalendarSkeleton() {
     </div>
   );
 }
+
+export function SectionSkeleton() {
+  return (
+    <div className="w-full space-y-4 animate-pulse p-4">
+      <Skeleton className="h-8 w-48 mb-6 bg-slate-800/40" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Skeleton className="h-28 rounded-2xl bg-slate-800/40" />
+        <Skeleton className="h-28 rounded-2xl bg-slate-800/40" />
+        <Skeleton className="h-28 rounded-2xl bg-slate-800/40" />
+      </div>
+      <Skeleton className="h-72 rounded-2xl mt-6 bg-slate-800/30" />
+    </div>
+  );
+}
+
+

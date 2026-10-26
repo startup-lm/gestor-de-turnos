@@ -1,37 +1,40 @@
-"use client";
+import type { Metadata, Viewport } from "next";
+import { Inter, Montserrat } from "next/font/google";
+import "@/styles/globals.css";
+import ClientProviders from "@/components/providers/ClientProviders";
 
-import '@/styles/globals.css';
-import Navbar from "@/components/navbar/Navbar";
-import WhatsappIcon from "@/components/buttons/WhatsappIcon";
-import Footer from "@/components/ui/Footer";
-import { AuthProvider } from '@/lib/auth/AuthContext';
-import AutoLogoutManager from '@/lib/auth/AutoLogoutManager';
-import { BusinessProvider } from '@/lib/context/BusinessContext';
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
-import ToastContainer from "@/components/ui/ToastContainer";
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-montserrat",
+});
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export const metadata: Metadata = {
+  title: "Gestor de Turnos",
+  description: "Sistema de gestión y reserva de turnos",
+  manifest: "/manifest.json",
+  icons: {
+    apple: "/icon-192x192.png",
+  },
+};
 
+export const viewport: Viewport = {
+  themeColor: "#000000",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es">
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#000000" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
-      </head>
+    <html lang="es" className={`${inter.variable} ${montserrat.variable}`}>
       <body className="flex flex-col min-h-screen">
-        <AuthProvider>
-          <AutoLogoutManager timeoutMinutes={60} />
-          <BusinessProvider>
-            <Navbar />
-            <main className="flex-grow">
-              {children}
-            </main>
-            <Footer />
-            <WhatsappIcon />
-            <ToastContainer />
-          </BusinessProvider>
-        </AuthProvider>
+        <ClientProviders>{children}</ClientProviders>
       </body>
     </html>
   );

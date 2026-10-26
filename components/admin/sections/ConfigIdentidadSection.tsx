@@ -8,7 +8,7 @@ import SaveButton from "@/components/buttons/SaveButton";
 import { uploadImage, deleteImage } from "@/lib/repository/storage";
 import { toast } from "@/lib/store/useToastStore";
 import logoPlaceholder from "@/public/images/logo.png";
-import localPlaceholder from "@/public/images/local.png";
+import localPlaceholder from "@/public/images/local.webp";
 
 export default function ConfigIdentidadSection() {
   const [loading, setLoading] = useState(true);

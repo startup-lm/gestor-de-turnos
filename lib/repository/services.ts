@@ -13,6 +13,21 @@ export interface ServiceParams {
 }
 
 export const getServices = async (): Promise<Service[]> => {
+  if (typeof window === "undefined") {
+    try {
+      const { supabaseAdmin } = await import("@/lib/supabase/supabaseAdmin");
+      const { data, error } = await supabaseAdmin
+        .from("services")
+        .select()
+        .order("name", { ascending: true });
+      if (error || !data) return [];
+      return data;
+    } catch (e) {
+      console.error("getServices server query error:", e);
+      return [];
+    }
+  }
+
   try {
     const res = await fetch(`${BASE}/api/services`, {
       next: { tags: ["services"] },

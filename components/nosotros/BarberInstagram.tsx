@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import instagramIcon from "@/public/images/instagram.png";
+import instagramIcon from "@/public/images/instagram.webp";
 
 export default function BarberInstagram({ username }: Readonly<{ username: string; }>) {
   const cleanUsername = username.replace(/^@+/, "");

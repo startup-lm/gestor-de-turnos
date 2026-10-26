@@ -25,7 +25,7 @@ export interface PaymentMethodTotals {
   Otros: number;
 }
 
-export function useBarberCutsData(startDate: Date, endDate: Date) {
+export function useBarberCutsData(startDate: Date, endDate: Date, initialBarbers?: Barber[]) {
   const [pieData, setPieData] = useState<PieData[]>([]);
   const [summary, setSummary] = useState<BarberTotalData>({ totalAppt: 0, totalRevenue: 0 });
   const [paymentTotals, setPaymentTotals] = useState<PaymentMethodTotals>({ Efectivo: 0, MercadoPago: 0, Otros: 0 });
@@ -38,7 +38,7 @@ export function useBarberCutsData(startDate: Date, endDate: Date) {
       const totals: BarberTotals[] = response.barberTotals || [];
       const payTotals: PaymentMethodTotals = response.paymentMethodTotals || { Efectivo: 0, MercadoPago: 0, Otros: 0 };
       
-      const barbers: Barber[] = await getBarbers();
+      const barbers: Barber[] = (initialBarbers && initialBarbers.length > 0) ? initialBarbers : await getBarbers();
       if (!mounted) return;
 
       const data = totals.map((t) => {
@@ -59,7 +59,7 @@ export function useBarberCutsData(startDate: Date, endDate: Date) {
     return () => {
       mounted = false;
     };
-  }, [startDate, endDate]);
+  }, [startDate, endDate, initialBarbers]);
 
   return { summary, pieData, paymentTotals, barberTotals };
 }

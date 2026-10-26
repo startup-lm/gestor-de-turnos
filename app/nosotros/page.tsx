@@ -5,7 +5,7 @@ import GoogleMapsLocation from "@/components/nosotros/GoogleMapsLocation";
 import { getBusinessSettings } from "@/lib/repository/businessSettings";
 import { FaInstagram, FaFacebook, FaTiktok, FaWhatsapp, FaLink } from "react-icons/fa";
 import Image from "next/image";
-import local from "@/public/images/local.png";
+import local from "@/public/images/local.webp";
 
 export const revalidate = 60;
 

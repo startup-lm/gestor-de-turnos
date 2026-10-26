@@ -8,7 +8,7 @@ import Spinner from "@/components/loading/Spinner";
 import { uploadImage, deleteImage } from "@/lib/repository/storage";
 import { Upload } from "lucide-react";
 import Image from "next/image";
-import local from "@/public/images/local.png";
+import local from "@/public/images/local.webp";
 import SaveButton from "@/components/buttons/SaveButton";
 
 interface Props {

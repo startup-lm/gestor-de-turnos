@@ -10,25 +10,32 @@ import { KeenAutoplayPlugin } from "@/utils/autoplayPlugin";
 import { CarouselItem, CarouselType } from "@/lib/types/Carousel";
 import logo from "@/public/images/logo.png";
 
+interface HomeCarouselProps {
+  type: CarouselType;
+  items: CarouselItem[];
+  sideBySide?: boolean;
+}
+
 export default function HomeCarousel({
   type,
   items,
-}: Readonly<{ type: CarouselType; items: CarouselItem[] }>) {
+  sideBySide = false,
+}: Readonly<HomeCarouselProps>) {
   const title = type === "productos" ? "Nuestros productos" : "Nuestros servicios";
   const href = `/${type}`;
   const linkText = `Ver todos los ${type}`;
 
   const count = items.length;
   // Adaptive perView so the carousel gracefully fills the container without empty voids
-  const desktopPerView = Math.min(count, 3);
+  const desktopPerView = sideBySide ? Math.min(count, 2) : Math.min(count, 3);
   const tabletPerView = Math.min(count, 2);
-  const canSlideDesktop = count > 3;
+  const canSlideDesktop = sideBySide ? count > 2 : count > 3;
   const canSlideTablet = count > 2;
   const canSlideMobile = count > 1;
 
   const [sliderRef, instanceRef] = useKeenSlider<HTMLDivElement>(
     {
-      loop: count > 3,
+      loop: canSlideDesktop,
       mode: "snap",
       slides: {
         perView: 1,
@@ -44,13 +51,13 @@ export default function HomeCarousel({
       },
       renderMode: "performance",
     },
-    count > 3 ? [KeenAutoplayPlugin] : []
+    canSlideDesktop ? [KeenAutoplayPlugin] : []
   );
 
   if (count === 0) return null;
 
   return (
-    <section className="py-8 px-6 sm:px-10 bg-[#0a0f1d]/75 backdrop-blur-xl border border-slate-800/80 rounded-3xl shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-[var(--accent)]/30">
+    <section className="py-8 px-4 sm:px-8 bg-[#0a0f1d]/75 backdrop-blur-xl border border-slate-800/80 rounded-3xl shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-[var(--accent)]/30 flex flex-col justify-between h-full">
       <h2 className="text-2xl font-bold mb-6 text-center text-white tracking-wide">
         {title}
       </h2>

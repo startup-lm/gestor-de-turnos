@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { GlobalHours } from "@/lib/types/BusinessHours";
 import { BusinessSettings } from "@/lib/types/BusinessSettings";
 import { getCalendarConfig } from "@/lib/repository/calendar";
@@ -24,7 +24,7 @@ export function BusinessProvider({ children }: Readonly<{ children: React.ReactN
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchConfig = async () => {
+  const fetchConfig = useCallback(async () => {
     setIsLoading(true);
     try {
       const config = await getCalendarConfig();
@@ -35,17 +35,33 @@ export function BusinessProvider({ children }: Readonly<{ children: React.ReactN
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchConfig();
-  }, []);
+  }, [fetchConfig]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && businessSettings?.business_name) {
       document.title = businessSettings.business_name;
     }
   }, [businessSettings?.business_name]);
+
+  const checkFlag = useCallback((flag: FeatureFlagName) => {
+    return isFeatureEnabled(flag, businessSettings?.features);
+  }, [businessSettings?.features]);
+
+  const value = useMemo(
+    () => ({
+      businessHours,
+      businessSettings,
+      isLoading,
+      refreshConfig: fetchConfig,
+      isFeatureEnabled: checkFlag,
+      isEnabled: checkFlag,
+    }),
+    [businessHours, businessSettings, isLoading, fetchConfig, checkFlag]
+  );
 
   if (isLoading) {
     return (
@@ -57,12 +73,8 @@ export function BusinessProvider({ children }: Readonly<{ children: React.ReactN
 
   const colors = businessSettings?.theme_colors;
 
-  const checkFlag = (flag: FeatureFlagName) => {
-    return isFeatureEnabled(flag, businessSettings?.features);
-  };
-
   return (
-    <BusinessContext.Provider value={{ businessHours, businessSettings, isLoading, refreshConfig: fetchConfig, isFeatureEnabled: checkFlag, isEnabled: checkFlag }}>
+    <BusinessContext.Provider value={value}>
       {colors && (
         <style>
           {`
