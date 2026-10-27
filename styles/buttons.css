@@ -1,28 +1,27 @@
-button {
+@layer base {
+  button {
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s ease-in-out, color 0.2s ease-in-out, transform 0.2s ease, border-color 0.2s ease;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.btn-default {
   background: var(--button-bg);
   color: var(--button-text);
   padding: 8px 16px;
   border-radius: 6px;
   font-weight: bold;
-  transition: background 0.3s ease-in-out, transform 0.2s ease;
-  cursor: pointer;
 }
 
-button:hover {
+.btn-default:hover {
   background: var(--button-hover);
   transform: scale(1.03);
-}
-
-button:active {
-  transform: scale(0.97);
-  cursor: pointer;
-}
-
-button:disabled {
-  background: var(--button-home-disabled);
-  color: var(--button-home-disabled-text);
-  cursor: not-allowed;
-  opacity: 0.5;
 }
 
 .btn-appointment {
@@ -125,8 +124,16 @@ button.btn-auth-mobile:hover {
 }
 
 button.btn-home-primary {
-  background: var(--button-home-primary-bg);
-  color: var(--button-home-primary-text);
+  background: var(--accent);
+  color: #020617;
+  font-weight: 700;
+  border: 1px solid rgba(223, 186, 115, 0.4);
+  box-shadow: 0 4px 14px 0 rgba(223, 186, 115, 0.2);
+}
+
+button.btn-home-primary:hover {
+  background: #E8CA8C;
+  transform: scale(1.02);
 }
 
 button.btn-home-secondary {

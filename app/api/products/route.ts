@@ -20,10 +20,16 @@ export async function POST(request: Request) {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
 
-  const { name, description, price, image } = await request.json();
+  const { name, description, price, image, stock } = await request.json();
   const { error } = await supabaseAdmin
     .from("products")
-    .insert({ name, description, price, image });
+    .insert({
+      name,
+      description,
+      price,
+      image,
+      stock: stock ? Number(stock) : 0,
+    });
 
   if (error) return errorResponse(error.message);
   revalidateTag("products");
@@ -34,10 +40,13 @@ export async function PUT(request: Request) {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
 
-  const { id, name, description, price, image } = await request.json();
+  const { id, name, description, price, image, stock } = await request.json();
+  const updateData: Record<string, unknown> = { name, description, price, image };
+  if (stock !== undefined) updateData.stock = Number(stock);
+
   const { error } = await supabaseAdmin
     .from("products")
-    .update({ name, description, price, image })
+    .update(updateData)
     .eq("id", id);
 
   if (error) return errorResponse(error.message);

@@ -3,10 +3,26 @@ import { GlobalHours } from "@/lib/types/BusinessHours";
 import { getBaseUrl } from "@/utils/getBaseUrl";
 const BASE = getBaseUrl();
 
-export const getBusinessHours = async (): Promise<GlobalHours| null> => {
+export const getBusinessHours = async (): Promise<GlobalHours | null> => {
+  if (typeof window === "undefined") {
+    try {
+      const { supabaseAdmin } = await import("@/lib/supabase/supabaseAdmin");
+      const { data, error } = await supabaseAdmin
+        .from("business_hours_global")
+        .select("open_time, close_time, lunch_start, lunch_end, closed_days")
+        .eq("id", 1)
+        .single();
+      if (error || !data) return null;
+      return data;
+    } catch (e) {
+      console.error("getBusinessHours server query error:", e);
+      return null;
+    }
+  }
+
   try {
     const res = await fetch(`${BASE}/api/business-hours`, {
-      next: { tags: ["business-hours"]},
+      next: { tags: ["business-hours"] },
     });
     if (!res.ok) return null;
     const text = await res.text();

@@ -19,11 +19,11 @@ export default async function AdminTurnosPage() {
   }
 
   return (
-    <div className="p-2 sm:p-5 flex flex-col items-center w-full">
-      <div className="w-full max-w-[1400px] mb-4">
+    <div className="p-4 md:p-8 flex flex-col items-center w-full max-w-[1720px] mx-auto">
+      <div className="w-full mb-4">
         <BackButton href="/operaciones" label="Operaciones" />
       </div>
-      <h1 className="text-3xl font-bold mb-5">Gestión de Turnos</h1>
+      <h1 className="text-3xl font-bold mb-5">Gestión de turnos</h1>
       <AdminTurnosClient appointments={appointments} />
     </div>
   );

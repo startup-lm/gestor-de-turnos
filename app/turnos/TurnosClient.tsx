@@ -1,230 +1,425 @@
 "use client";
 
+import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
-import Image from "next/image";
-import Spinner from "@/components/loading/Spinner";
+import { useSearchParams } from "next/navigation";
 import { CalendarSkeleton } from "@/components/loading/Skeleton";
 import { Barber } from "@/lib/types/Barbers";
+import { Service } from "@/lib/types/Services";
 import { Appointment } from "@/lib/types/Appointment";
 import { useAuth } from "@/lib/auth/AuthContext";
-import BarberCheckbox from "@/components/turnos/BarberCheckbox";
 import { CalendarEvent } from "@/lib/types/CalendarEvent";
 import { useSelectedBarber } from "@/lib/hooks/useSelectedBarber";
 import { useIsMobile } from "@/lib/hooks/useMediaQuery";
 import { useTurnosStore } from "@/lib/store/useTurnosStore";
-import logo from "@/public/images/logo.png";
+import { useShallow } from "zustand/react/shallow";
+import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
+import { getServices } from "@/lib/repository/services";
+import ServiceSelectionCards from "@/components/turnos/ServiceSelectionCards";
+import BarberSelectionCards from "@/components/turnos/BarberSelectionCards";
+import { Check } from "lucide-react";
+
+const BookingSplitPanel = dynamic(
+  () => import("@/components/turnos/BookingSplitPanel"),
+  { ssr: false, loading: () => null }
+);
 
 const CustomCalendar = dynamic(() => import("@/components/calendar/CustomCalendar"), {
   ssr: false,
-  loading: () => <CalendarSkeleton />
+  loading: () => <CalendarSkeleton />,
 });
-const ReservarInlineCard = dynamic(() => import("@/components/turnos/ReservarInlineCard"), {
-  ssr: false,
-  loading: () => <div className="flex justify-center py-10"><Spinner /></div>
-});
-const AppointmentDetailsModal = dynamic(() => import("@/components/turnos/AppointmentDetailsModal"), { ssr: false, loading: () => null });
+
+const AppointmentDetailsSplitPanel = dynamic(
+  () => import("@/components/turnos/AppointmentDetailsSplitPanel"),
+  { ssr: false, loading: () => null }
+);
 
 interface Props {
   initialBarbers: Barber[];
+  initialServices?: Service[];
 }
 
-export default function TurnosClient({ initialBarbers }: Readonly<Props>) {
+export default function TurnosClient({ initialBarbers, initialServices }: Readonly<Props>) {
   const { barberId, role } = useAuth();
-  const { selectedBarberId, selectedBarber, setBarberId } = useSelectedBarber(initialBarbers, role, barberId);
+  const searchParams = useSearchParams();
   const isMobile = useIsMobile();
 
-  const {
-    isReservarOpen, isDetailOpen, selectedAppointment, selectedDate, events, calendarRefreshSignal,
-    closeReservar, openDetail, closeDetail, triggerCalendarRefresh, openReservar
-  } = useTurnosStore();
+  // Servicios disponibles
+  const { data: fetchedServices = [] } = useFetchOnce<Service[]>("services", getServices);
+  const services: Service[] = useMemo(() => {
+    if (initialServices && initialServices.length > 0) return initialServices;
+    return fetchedServices || [];
+  }, [initialServices, fetchedServices]);
 
-  const handleSlotClick = (appt: Appointment, evts: CalendarEvent[]) => {
-    openReservar(new Date(`${appt.date}T${appt.start_time}:00-03:00`), evts);
-  };
+  // Manejo de barbero seleccionado
+  const { selectedBarberId, selectedBarber, setBarberId } = useSelectedBarber(
+    initialBarbers,
+    role,
+    barberId
+  );
 
-  const handleEventClick = (appt: Appointment) => {
+  // Servicio seleccionado
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+
+  // Inicializar servicio desde query param (?service=id_o_slug)
+  useEffect(() => {
+    const serviceParam = searchParams.get("service");
+    if (serviceParam && services.length > 0 && !selectedService) {
+      const match = services.find(
+        (s) => s.id === Number(serviceParam) || s.name.toLowerCase() === serviceParam.toLowerCase()
+      );
+      if (match) {
+        setSelectedService(match);
+        if (role === "guest" && (selectedBarberId === null || selectedBarberId < 0)) {
+          setCurrentStep(2);
+        }
+      }
+    }
+  }, [searchParams, services, selectedService, role, selectedBarberId]);
+
+  // Paso actual (1: Servicio, 2: Barbero, 3: Calendario & Split-View)
+  // Para barberos/admin logueados, inicializar directamente en el calendario (paso 3)
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(() => {
+    if (role !== "guest") return 3;
+    return 1;
+  });
+
+  // Asegurar que usuarios logueados (admin/barbero) vean directamente la agenda en el Paso 3
+  useEffect(() => {
     if (role !== "guest") {
-      openDetail(appt);
+      setCurrentStep(3);
+    }
+  }, [role]);
+
+  const {
+    isReservarOpen,
+    isDetailOpen,
+    selectedAppointment,
+    selectedDate,
+    events,
+    calendarRefreshSignal,
+    closeReservar,
+    openDetail,
+    closeDetail,
+    triggerCalendarRefresh,
+    openReservar,
+  } = useTurnosStore(
+    useShallow((state) => ({
+      isReservarOpen: state.isReservarOpen,
+      isDetailOpen: state.isDetailOpen,
+      selectedAppointment: state.selectedAppointment,
+      selectedDate: state.selectedDate,
+      events: state.events,
+      calendarRefreshSignal: state.calendarRefreshSignal,
+      closeReservar: state.closeReservar,
+      openDetail: state.openDetail,
+      closeDetail: state.closeDetail,
+      triggerCalendarRefresh: state.triggerCalendarRefresh,
+      openReservar: state.openReservar,
+    }))
+  );
+
+  const handleSelectService = (service: Service) => {
+    setSelectedService(service);
+    if (role !== "guest" && selectedBarberId !== null && selectedBarberId >= 0) {
+      setCurrentStep(3);
+    } else {
+      setCurrentStep(2);
     }
   };
+
+  const handleSelectBarber = (barberIdToSet: number) => {
+    setBarberId(barberIdToSet);
+    setCurrentStep(3);
+  };
+
+  const handleSlotClick = useCallback(
+    (appt: Appointment, evts: CalendarEvent[]) => {
+      // Preservar la fecha y hora seleccionada
+      const slotDate = new Date(`${appt.date}T${appt.start_time}:00-03:00`);
+      closeDetail();
+      openReservar(slotDate, evts);
+    },
+    [openReservar, closeDetail]
+  );
+
+  const handleCloseReservar = useCallback(() => {
+    closeReservar();
+    if (role !== "guest") {
+      setSelectedService(null);
+    }
+  }, [closeReservar, role]);
+
+  const handleEventClick = useCallback(
+    (appt: Appointment) => {
+      if (role !== "guest") {
+        handleCloseReservar();
+        openDetail(appt);
+      }
+    },
+    [role, openDetail, handleCloseReservar]
+  );
 
   const handleAppointmentCreated = () => {
     triggerCalendarRefresh();
   };
 
-  // Determinar paso activo derivándolo de los estados actuales
-  const isBarberSelected = selectedBarberId !== null && selectedBarberId >= 0;
-  const activeStep = isReservarOpen ? 3 : isBarberSelected ? 2 : 1;
+  const handleResetFlow = () => {
+    handleCloseReservar();
+    setSelectedService(null);
+    if (role === "guest") {
+      setBarberId(-1);
+      setCurrentStep(1);
+    } else {
+      setCurrentStep(3);
+    }
+  };
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto min-h-screen">
-      {/* Título de la pantalla estandarizado */}
-      <h1 className="text-3xl font-bold mb-5 text-center">Reserva tu turno</h1>
+    <div className="p-4 md:p-6 w-full max-w-[1720px] mx-auto min-h-screen">
+      {/* Título de la pantalla */}
+      <h1 className="text-3xl font-extrabold mb-4 text-center tracking-tight text-[var(--foreground)]">
+        Reserva tu turno
+      </h1>
 
-      {/* 🌟 Stepper de Progreso Premium */}
-      <div className="max-w-xl mx-auto mb-10 mt-2 px-2">
+      {/* 🌟 Stepper Interactivo Premium */}
+      <div className="max-w-xl mx-auto mb-8 mt-2 px-2">
         <div className="flex items-center justify-between relative">
           {/* Línea gris de fondo */}
           <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-slate-800 -z-10 rounded-full" />
-          
+
           {/* Línea dorada de progreso */}
-          <div 
-            className="absolute left-0 top-1/2 -translate-y-1/2 h-[2px] bg-[var(--accent)] transition-all duration-500 ease-out -z-10 rounded-full shadow-[0_0_8px_rgba(223,186,115,0.5)]" 
-            style={{ width: activeStep === 1 ? "0%" : activeStep === 2 ? "50%" : "100%" }}
+          <div
+            className="absolute left-0 top-1/2 -translate-y-1/2 h-[2px] bg-[var(--accent)] transition-all duration-500 ease-out -z-10 rounded-full shadow-[0_0_8px_rgba(223,186,115,0.5)]"
+            style={{
+              width: currentStep === 1 ? "0%" : currentStep === 2 ? "50%" : "100%",
+            }}
           />
 
-          {/* Pasos */}
+          {/* Pasos interactivos */}
           {[
-            { stepNum: 1, label: "Elegí Barbero" },
-            { stepNum: 2, label: "Seleccioná Fecha" },
-            { stepNum: 3, label: "Completá Datos" }
+            { stepNum: 1, label: "1. Servicio", canClick: true },
+            { stepNum: 2, label: "2. Barbero", canClick: Boolean(selectedService) || role !== "guest" },
+            {
+              stepNum: 3,
+              label: "3. Fecha y Hora",
+              canClick: (Boolean(selectedService) && selectedBarberId >= 0) || role !== "guest",
+            },
           ].map((s) => {
-            const isCompleted = activeStep > s.stepNum;
-            const isActive = activeStep === s.stepNum;
+            const isCompleted = currentStep > s.stepNum;
+            const isActive = currentStep === s.stepNum;
             return (
-              <div key={s.stepNum} className="flex flex-col items-center gap-2 bg-[var(--background)] px-2">
-                <div 
-                  className={`w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-xs md:text-sm transition-all duration-500 border-2 ${
-                    isCompleted 
-                      ? "bg-[var(--accent)] border-[var(--accent)] text-[var(--background)] shadow-[0_0_15px_rgba(223,186,115,0.4)] scale-100" 
+              <button
+                key={s.stepNum}
+                type="button"
+                disabled={!s.canClick}
+                onClick={() => {
+                  if (s.canClick) setCurrentStep(s.stepNum as 1 | 2 | 3);
+                }}
+                className={`flex flex-col items-center gap-2 bg-[var(--background)] px-2 transition-transform ${
+                  s.canClick ? "cursor-pointer hover:scale-105" : "cursor-not-allowed opacity-60"
+                }`}
+              >
+                <div
+                  className={`w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-xs md:text-sm transition-all duration-300 border-2 ${
+                    isCompleted
+                      ? "bg-[var(--accent)] border-[var(--accent)] text-[var(--background)] shadow-[0_0_15px_rgba(223,186,115,0.4)]"
                       : isActive
                       ? "bg-[var(--background)] border-[var(--accent)] text-[var(--accent)] shadow-[0_0_15px_rgba(223,186,115,0.3)] scale-110"
-                      : "bg-[var(--background)] border-slate-700 text-slate-500 scale-90"
+                      : "bg-[var(--background)] border-slate-700 text-slate-500"
                   }`}
                 >
-                  {isCompleted ? "✓" : s.stepNum}
+                  {isCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : s.stepNum}
                 </div>
-                <span 
-                  className={`text-[9px] md:text-xs font-semibold tracking-wider uppercase transition-colors duration-300 ${
+                <span
+                  className={`text-[10px] md:text-xs font-bold tracking-wider uppercase transition-colors duration-300 ${
                     isActive || isCompleted ? "text-[var(--accent)]" : "text-slate-500"
                   }`}
                 >
                   {s.label}
                 </span>
-              </div>
+              </button>
             );
           })}
         </div>
       </div>
 
+      {/* CONTENIDO SEGÚN PASO ACTIVO */}
       <div className="w-full mx-auto">
-        
-        {/* RUTA DE PASOS EN PANTALLA */}
-        {activeStep === 1 && (
-          /* PASO 1: Selector de Profesional */
-          <div className="max-w-6xl mx-auto w-full md:w-11/12 lg:w-4/5">
-            <div 
-              className="flex flex-col items-center mb-6 animate-fade-in-up"
-              style={{ animation: "fadeInUp 400ms ease-out forwards" }}
-            >
-              <h2 className="mb-6 text-center text-lg font-medium text-[var(--foreground)]/80 tracking-wide">
-                {role === "guest" ? "¿Con quién te querés cortar?" : "Elegí el barbero para ver sus turnos"}
-              </h2>
-              <BarberCheckbox
-                barbers={initialBarbers}
-                selectedBarberId={selectedBarberId}
-                onChange={setBarberId}
-              />
-
-              {/* Placeholder de agenda vacía */}
-              <div className="w-full bg-[var(--bg-carousel)] border border-[var(--foreground)]/5 rounded-2xl p-10 flex flex-col items-center text-center shadow-lg mt-8">
-                <div className="w-16 h-16 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mb-4 border border-[var(--accent)]/20 animate-pulse">
-                  <span className="text-2xl text-[var(--accent)]">💈</span>
-                </div>
-                <h3 className="text-lg font-bold mb-2 text-[var(--foreground)]">Elegí tu Profesional</h3>
-                <p className="text-sm text-[var(--foreground)]/50 max-w-sm">
-                  Seleccioná uno de nuestros barberos especializados arriba para cargar su agenda interactiva y elegir tu horario de preferencia.
-                </p>
-              </div>
-            </div>
-          </div>
+        {/* PASO 1: Elegir Servicio */}
+        {currentStep === 1 && (
+          <ServiceSelectionCards
+            services={services}
+            selectedServiceId={selectedService?.id ?? null}
+            onSelectService={handleSelectService}
+          />
         )}
 
-        {activeStep === 2 && (
-          /* PASO 2: Calendario Activo */
-          <div 
-            className="space-y-4 animate-fade-in-up"
-            style={{ animation: "fadeInUp 400ms ease-out forwards" }}
-          >
-            {/* Header del profesional seleccionado */}
-            <div className="flex flex-row justify-between items-center bg-[var(--bg-carousel)] border border-[var(--foreground)]/5 rounded-2xl p-4 shadow-md gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full ring-2 ring-[var(--accent)]/30 overflow-hidden shadow-inner flex-shrink-0">
-                  <Image 
-                    src={selectedBarber?.image || logo} 
-                    alt={selectedBarber?.name || "Barbero"}
-                    width={48}
-                    height={48}
-                    className="object-cover w-full h-full bg-[var(--background)]"
+        {/* PASO 2: Elegir Barbero */}
+        {currentStep === 2 && (
+          <BarberSelectionCards
+            barbers={initialBarbers}
+            selectedBarberId={selectedBarberId}
+            onSelectBarber={handleSelectBarber}
+            onBack={() => setCurrentStep(1)}
+            selectedServiceName={selectedService?.name}
+          />
+        )}
+
+        {/* PASO 3: Calendario Interactivo con Split-View */}
+        {currentStep === 3 && (
+          <div className="animate-fade-in">
+            {/* Layout Principal: Calendario (Izquierda) + Panel Dinámico (Derecha en Desktop) */}
+            <div
+              className={`flex flex-col lg:flex-row items-stretch w-full relative transition-all duration-300 ${
+                (isReservarOpen || (isDetailOpen && selectedAppointment)) && !isMobile ? "gap-6" : "gap-0"
+              }`}
+            >
+              {/* Columna Izquierda: Calendario interactivo (siempre visible) */}
+              <div
+                className="w-full transition-all duration-300 ease-out min-w-0 flex flex-col"
+                style={{
+                  flex: (isReservarOpen || (isDetailOpen && selectedAppointment)) && !isMobile ? "1 1 0%" : "1 1 100%",
+                }}
+              >
+                <div className="bg-[var(--background)] rounded-2xl overflow-hidden shadow-xl border border-[var(--foreground)]/10 h-full">
+                  <CustomCalendar
+                    key={`cal-${selectedBarberId}`}
+                    selectedBarberId={selectedBarberId}
+                    barbers={initialBarbers}
+                    role={role}
+                    isMobile={isMobile}
+                    onSlotClick={handleSlotClick}
+                    onEventClick={handleEventClick}
+                    refreshSignal={calendarRefreshSignal}
                   />
                 </div>
-                <div>
-                  <p className="text-[10px] text-[var(--foreground)]/40 font-semibold uppercase tracking-wider">Profesional Seleccionado</p>
-                  <h4 className="text-base md:text-lg font-bold text-[var(--accent)] leading-snug">{selectedBarber?.name}</h4>
-                </div>
               </div>
-              
-              <button
-                type="button"
-                onClick={() => setBarberId(-1)}
-                className="text-[10px] md:text-xs font-bold px-4 py-2.5 rounded-xl border border-[var(--accent)]/25 text-[var(--accent)] bg-[var(--accent)]/5 hover:bg-[var(--accent)]/15 transition-all duration-200 active:scale-95 shadow-md flex items-center gap-1.5"
-              >
-                ← Cambiar Profesional
-              </button>
+
+              {/* Columna Derecha: Panel de Reserva / Detalle en Desktop con deslizamiento suave */}
+              {!isMobile && (
+                <div
+                  className={`transition-all duration-300 ease-out shrink-0 self-stretch ${
+                    isReservarOpen || (isDetailOpen && selectedAppointment)
+                      ? "w-[400px] xl:w-[440px] opacity-100 translate-x-0 pointer-events-auto"
+                      : "w-0 opacity-0 translate-x-8 pointer-events-none overflow-hidden"
+                  }`}
+                  style={{
+                    transitionProperty: "width, opacity, transform",
+                  }}
+                >
+                  <div className="w-[400px] xl:w-[440px] h-full flex flex-col">
+                    {isReservarOpen && (
+                      <BookingSplitPanel
+                        onClose={handleCloseReservar}
+                        selectedDate={selectedDate}
+                        selectedBarber={selectedBarber?.name || ""}
+                        selectedBarberId={selectedBarberId}
+                        events={events}
+                        barbers={initialBarbers}
+                        selectedService={selectedService}
+                        onServiceChange={setSelectedService}
+                        onSelectAnotherService={() => setCurrentStep(1)}
+                        onSelectAnotherBarber={() => setCurrentStep(2)}
+                        onResetFlow={handleResetFlow}
+                        onAppointmentCreated={handleAppointmentCreated}
+                      />
+                    )}
+                    {isDetailOpen && selectedAppointment && (
+                      <AppointmentDetailsSplitPanel
+                        key={selectedAppointment.id}
+                        onClose={closeDetail}
+                        appointment={selectedAppointment}
+                        barbers={initialBarbers}
+                        onAppointmentChanged={triggerCalendarRefresh}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Contenedor del Calendario */}
-            <div className="bg-[var(--background)] rounded-2xl overflow-hidden shadow-xl border border-[var(--foreground)]/5">
-              <CustomCalendar
-                key={`cal-${selectedBarberId}`}
-                selectedBarberId={selectedBarberId}
-                barbers={initialBarbers}
-                role={role}
-                isMobile={isMobile}
-                onSlotClick={handleSlotClick}
-                onEventClick={handleEventClick}
-                refreshSignal={calendarRefreshSignal}
-              />
-            </div>
+            {/* Bottom Sheet Modal para Dispositivos Móviles (< 1024px) */}
+            {(isReservarOpen || (isDetailOpen && selectedAppointment)) && isMobile && (
+              <>
+                {/* Backdrop semi-transparente */}
+                <div
+                  className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+                  onClick={() => {
+                    if (isReservarOpen) handleCloseReservar();
+                    if (isDetailOpen) closeDetail();
+                  }}
+                />
+                {/* Drawer que sube desde abajo */}
+                <div className="fixed inset-x-0 bottom-0 z-50 max-h-[90vh] overflow-y-auto bg-[var(--bg-carousel)] rounded-t-3xl border-t-2 border-[var(--accent)]/40 shadow-2xl p-4 animate-slide-up">
+                  {/* Tirador visual de arrastre */}
+                  <div className="w-12 h-1.5 bg-slate-600 rounded-full mx-auto mb-4" />
+                  {isReservarOpen && (
+                    <BookingSplitPanel
+                      onClose={handleCloseReservar}
+                      selectedDate={selectedDate}
+                      selectedBarber={selectedBarber?.name || ""}
+                      selectedBarberId={selectedBarberId}
+                      events={events}
+                      barbers={initialBarbers}
+                      selectedService={selectedService}
+                      onServiceChange={setSelectedService}
+                      onSelectAnotherService={() => {
+                        handleCloseReservar();
+                        setCurrentStep(1);
+                      }}
+                      onSelectAnotherBarber={() => {
+                        handleCloseReservar();
+                        setCurrentStep(2);
+                      }}
+                      onResetFlow={handleResetFlow}
+                      onAppointmentCreated={handleAppointmentCreated}
+                    />
+                  )}
+                  {isDetailOpen && selectedAppointment && (
+                    <AppointmentDetailsSplitPanel
+                      key={selectedAppointment.id}
+                      onClose={closeDetail}
+                      appointment={selectedAppointment}
+                      barbers={initialBarbers}
+                      onAppointmentChanged={triggerCalendarRefresh}
+                      isMobileModal
+                    />
+                  )}
+                </div>
+              </>
+            )}
           </div>
-        )}
-
-        {activeStep === 3 && (
-          /* PASO 3: Formulario de Confirmación Inline */
-          <div className="max-w-6xl mx-auto w-full md:w-11/12 lg:w-4/5">
-            <ReservarInlineCard
-              onClose={closeReservar}
-              selectedDate={selectedDate}
-              selectedBarber={selectedBarber?.name || ""}
-              selectedBarberId={selectedBarberId}
-              events={events}
-              barbers={initialBarbers}
-              onAppointmentCreated={handleAppointmentCreated}
-            />
-          </div>
-        )}
-
-        {/* Modal de Detalles de Turno (Admin/Barbero) */}
-        {isDetailOpen && selectedAppointment && (
-          <AppointmentDetailsModal
-            onClose={closeDetail}
-            appointment={selectedAppointment}
-            barbers={initialBarbers}
-          />
         )}
       </div>
 
-      {/* Estilos CSS locales para transiciones fluidas */}
+      {/* Animaciones CSS locales */}
       <style jsx global>{`
-        @keyframes fadeInUp {
+        @keyframes fadeIn {
           from {
             opacity: 0;
-            transform: translateY(12px);
+            transform: translateY(8px);
           }
           to {
             opacity: 1;
             transform: translateY(0);
           }
+        }
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(100%);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fadeIn 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-slide-up {
+          animation: slideUp 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
     </div>

@@ -18,8 +18,8 @@ export function useSalesRevenueForBarber(
   useEffect(() => {
     let mounted = true;
 
-    // si no hay barbero seleccionado, reseteamos
-    if (!barberId) {
+    // si es inválido (ej: -1 o no definido), reseteamos
+    if (barberId === undefined || barberId === null || barberId === -1) {
       setTotalSalesRevenue(0);
       setTotalSales(0);
       return;
@@ -33,10 +33,17 @@ export function useSalesRevenueForBarber(
 
       if (!mounted) return;
 
-      const row = data.find((r) => r.barberId === barberId);
-
-      setTotalSalesRevenue(row?.totalSalesRevenue ?? 0);
-      setTotalSales(row?.totalSales ?? 0);
+      if (barberId === 0) {
+        // Todos los barberos
+        const totalRev = data.reduce((acc, curr) => acc + (curr.totalSalesRevenue ?? 0), 0);
+        const totalCount = data.reduce((acc, curr) => acc + (curr.totalSales ?? 0), 0);
+        setTotalSalesRevenue(totalRev);
+        setTotalSales(totalCount);
+      } else {
+        const row = data.find((r) => r.barberId === barberId);
+        setTotalSalesRevenue(row?.totalSalesRevenue ?? 0);
+        setTotalSales(row?.totalSales ?? 0);
+      }
     })();
 
     return () => {

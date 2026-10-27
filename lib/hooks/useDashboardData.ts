@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getBarbersAppointmentsFromDates } from "@/lib/repository/appointments";
+import { Appointment } from "@/lib/types/Appointment";
 
 export type ViewMode = "day" | "week" | "month";
 export type DataType = "count" | "revenue";
@@ -24,69 +25,85 @@ export function useDashboardData(
   viewMode: ViewMode,
   dataType: DataType
 ) {
-  const [total, setTotal] = useState<number | null>(null);
-  const [chartData, setChartData] = useState<DataPoint[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+
+  const startIso = startDate.toISOString().slice(0, 10);
+  const endIso = endDate.toISOString().slice(0, 10);
 
   useEffect(() => {
     if (barberId === -1) {
-      setTotal(null);
-      setChartData([]);
+      setAppointments([]);
       return;
     }
 
+    let mounted = true;
     (async () => {
       const allAppt = await getBarbersAppointmentsFromDates(barberId, startDate, endDate);
-      const all = allAppt.filter(appt => appt.phone !== "0000000000");
-
-      const tot = dataType === "revenue" ? all.reduce((sum, a) => sum + (a.price ?? 0), 0) : all.length;
-      setTotal(tot);
-
-      const grouped: Record<string, { count: number; revenue: number; label: string }> = {};
-
-      all.forEach((appt) => {
-        const dateObj = new Date(appt.date + "T00:00:00");
-
-        let key: string;
-        let label: string;
-
-        if (viewMode === "day") {
-          key = dateObj.toISOString().slice(0, 10);
-          const day = dateObj.getDate();
-          const month = dateObj.getMonth() + 1;
-          label = `${day}/${month}`;
-        } else if (viewMode === "week") {
-          const monday = getMonday(new Date(dateObj));
-          const sunday = new Date(monday);
-          sunday.setDate(sunday.getDate() + 6);
-
-          key = monday.toISOString().slice(0, 10);
-          const startDay = monday.getDate();
-          const endDay = sunday.getDate();
-          const month = sunday.toLocaleDateString("es-AR", { month: "long" });
-          label = `${startDay}-${endDay} ${month.charAt(0).toUpperCase() + month.slice(1)}`;
-        } else {
-          const year = dateObj.getFullYear();
-          const month = dateObj.toLocaleDateString("es-AR", { month: "long" });
-          key = `${year}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
-          label = `${month.charAt(0).toUpperCase() + month.slice(1)} ${year}`;
-        }
-
-        const price = appt.price || 0;
-        if (grouped[key]) {
-          grouped[key].count += 1;
-          grouped[key].revenue += price;
-        } else {
-          grouped[key] = { count: 1, revenue: price, label };
-        }
-      });
-
-      const dataPoints = Object.entries(grouped)
-        .map(([date, { count, revenue, label }]) => ({ date, count, revenue, label }))
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-      setChartData(dataPoints);
+      if (!mounted) return;
+      const valid = allAppt.filter((appt) => appt.phone !== "0000000000");
+      setAppointments(valid);
     })();
-  }, [barberId, startDate, endDate, viewMode, dataType]);
+
+    return () => {
+      mounted = false;
+    };
+  }, [barberId, startIso, endIso]);
+
+  const { total, chartData } = useMemo(() => {
+    if (barberId === -1 || appointments.length === 0) {
+      return { total: barberId === -1 ? null : 0, chartData: [] };
+    }
+
+    const tot =
+      dataType === "revenue"
+        ? appointments.reduce((sum, a) => sum + (a.price ?? 0), 0)
+        : appointments.length;
+
+    const grouped: Record<string, { count: number; revenue: number; label: string }> = {};
+
+    appointments.forEach((appt) => {
+      const dateObj = new Date(appt.date + "T00:00:00");
+
+      let key: string;
+      let label: string;
+
+      if (viewMode === "day") {
+        key = dateObj.toISOString().slice(0, 10);
+        const day = dateObj.getDate();
+        const month = dateObj.getMonth() + 1;
+        label = `${day}/${month}`;
+      } else if (viewMode === "week") {
+        const monday = getMonday(new Date(dateObj));
+        const sunday = new Date(monday);
+        sunday.setDate(sunday.getDate() + 6);
+
+        key = monday.toISOString().slice(0, 10);
+        const startDay = monday.getDate();
+        const endDay = sunday.getDate();
+        const month = sunday.toLocaleDateString("es-AR", { month: "long" });
+        label = `${startDay}-${endDay} ${month.charAt(0).toUpperCase() + month.slice(1)}`;
+      } else {
+        const year = dateObj.getFullYear();
+        const month = dateObj.toLocaleDateString("es-AR", { month: "long" });
+        key = `${year}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
+        label = `${month.charAt(0).toUpperCase() + month.slice(1)} ${year}`;
+      }
+
+      const price = appt.price || 0;
+      if (grouped[key]) {
+        grouped[key].count += 1;
+        grouped[key].revenue += price;
+      } else {
+        grouped[key] = { count: 1, revenue: price, label };
+      }
+    });
+
+    const dataPoints: DataPoint[] = Object.entries(grouped)
+      .map(([date, { count, revenue, label }]) => ({ date, count, revenue, label }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    return { total: tot, chartData: dataPoints };
+  }, [appointments, barberId, dataType, viewMode]);
 
   return { total, chartData };
 }

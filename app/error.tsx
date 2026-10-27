@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { AlertTriangle } from "lucide-react";
 
 export default function ErrorBoundary({
   error,
@@ -16,7 +17,7 @@ export default function ErrorBoundary({
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
       <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
-        <span className="text-2xl text-red-400">⚠️</span>
+        <AlertTriangle className="w-8 h-8 text-red-400" />
       </div>
       <h1 className="text-2xl font-bold mb-2 text-[var(--foreground)]">¡Ups! Algo salió mal</h1>
       <p className="mb-6 text-sm text-[var(--foreground)]/60 max-w-md">

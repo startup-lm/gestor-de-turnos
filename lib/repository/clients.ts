@@ -31,3 +31,20 @@ export async function upsertClient(name: string, phone: string): Promise<Client 
   if (!res.ok) return null;
   return res.json();
 }
+
+/**
+ * Consulta segura para clientes invitados en la reserva pública.
+ * Solo busca por coincidencia exacta de teléfono normalizado.
+ */
+export async function lookupClientByPhone(phone: string): Promise<{ found: boolean; name?: string; firstName?: string }> {
+  if (!phone || phone.length < 8) return { found: false };
+  try {
+    const params = new URLSearchParams({ phone });
+    const res = await fetch(`${BASE}/api/clients/lookup?${params}`, { cache: "no-store" });
+    if (!res.ok) return { found: false };
+    return res.json();
+  } catch {
+    return { found: false };
+  }
+}
+

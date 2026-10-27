@@ -1,32 +1,40 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { supabaseClient } from "../supabase/supabaseClient";
 
 export const useRealtimeData = (table: string, fetchFunction: () => Promise<any>, refreshSignal?: number) => {
   const [data, setData] = useState<any[]>([]);
-
-  const fetchData = useCallback(async () => {
-    const result = await fetchFunction();
-    setData(result);
-  }, [fetchFunction]);
+  const fetchRef = useRef(fetchFunction);
 
   useEffect(() => {
-    fetchData();
+    fetchRef.current = fetchFunction;
+  });
 
+  const executeFetch = useCallback(async () => {
+    try {
+      const result = await fetchRef.current();
+      setData(result);
+    } catch (e) {
+      console.error(`Error in useRealtimeData fetch for ${table}:`, e);
+    }
+  }, [table]);
+
+  useEffect(() => {
+    executeFetch();
+  }, [executeFetch, refreshSignal, fetchFunction]);
+
+  useEffect(() => {
     const channel = supabaseClient
       .channel(`realtime:${table}`)
-      .on("postgres_changes", { event: "*", schema: "public", table }, fetchData)
+      .on("postgres_changes", { event: "*", schema: "public", table }, () => {
+        executeFetch();
+      })
       .subscribe();
 
     return () => {
       supabaseClient.removeChannel(channel);
     };
-  }, [table, fetchData]);
-
-  useEffect(() => {
-    if (refreshSignal === undefined) return;
-    fetchData();
-  }, [refreshSignal, fetchData]);
+  }, [table, executeFetch]);
 
   return data;
 };

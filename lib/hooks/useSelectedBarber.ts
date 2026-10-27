@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import type { Barber } from "@/lib/types/Barbers";
 import { slugify } from "@/utils/slug";
@@ -17,8 +17,6 @@ export function useSelectedBarber(
   role: Role,
   authBarberId: number
 ) {
-  const [selectedBarberId, setSelectedBarberId] = useState<number>(-1);
-
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -57,41 +55,28 @@ export function useSelectedBarber(
     [validIds]
   );
 
-  // Inicializar SOLO una vez (no pisar selección del usuario)
-  const didInit = useRef(false);
-  useEffect(() => {
-    if (didInit.current) return;
-
-    // 1) Prioriza slug (?barber=martin-acuna)
+  // Inicializar de forma síncrona para que no arranque en -1
+  const [selectedBarberId, setSelectedBarberId] = useState<number>(() => {
     const slug = searchParams.get("barber");
-    if (slug === "no-preferencia") {
-      setSelectedBarberId(0);
-      didInit.current = true;
-      return;
-    }
-    if (slug && slugToId.has(slug)) {
-      setSelectedBarberId(slugToId.get(slug)!);
-      didInit.current = true;
-      return;
-    }
+    if (slug === "no-preferencia") return 0;
+    if (slug && slugToId.has(slug)) return slugToId.get(slug)!;
 
-    // 2) Back-compat (?barberId=123)
     const fromId = Number(searchParams.get("barberId") ?? -1);
-    if (!Number.isNaN(fromId) && fromId >= 0 && isValidBarber(fromId)) {
-      setSelectedBarberId(fromId);
-      didInit.current = true;
-      return;
-    }
+    if (!Number.isNaN(fromId) && fromId >= 0 && validIds.has(fromId)) return fromId;
 
-    // 3) Fallback por role
-    if (role === "guest") {
-      setSelectedBarberId(barbersWithId.length === 1 ? barbersWithId[0].id : -1);
-    } else {
-      setSelectedBarberId(isValidBarber(authBarberId) ? authBarberId : -1);
+    if (role !== "guest" && validIds.has(authBarberId)) {
+      return authBarberId;
     }
+    return barbersWithId.length === 1 ? barbersWithId[0].id : -1;
+  });
 
-    didInit.current = true;
-  }, [role, authBarberId, barbersWithId, searchParams, slugToId, isValidBarber]);
+  // Sincronizar automáticamente cuando el usuario inicia sesión como barbero/admin
+  useEffect(() => {
+    const hasExplicitParam = searchParams.has("barber") || searchParams.has("barberId");
+    if (!hasExplicitParam && role !== "guest" && isValidBarber(authBarberId)) {
+      setSelectedBarberId(authBarberId);
+    }
+  }, [role, authBarberId, isValidBarber, searchParams]);
 
   // Cambiar selección y reflejar slug en la URL
   const setBarberId = useCallback(

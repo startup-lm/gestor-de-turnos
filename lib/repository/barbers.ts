@@ -5,6 +5,22 @@ import { getBaseUrl } from "@/utils/getBaseUrl";
 const BASE = getBaseUrl();
 
 export const getBarbers = async (): Promise<Barber[]> => {
+  if (typeof window === "undefined") {
+    try {
+      const { supabaseAdmin } = await import("@/lib/supabase/supabaseAdmin");
+      const { data, error } = await supabaseAdmin
+        .from("barbers")
+        .select("id, email, name, image, instagram, role, active, commission, sale_commission")
+        .eq("active", true)
+        .order("id", { ascending: true });
+      if (error || !data) return [];
+      return data;
+    } catch (e) {
+      console.error("getBarbers server query error:", e);
+      return [];
+    }
+  }
+
   try {
     const res = await fetch(`${BASE}/api/barbers`);
     if (!res.ok) return [];
@@ -39,17 +55,6 @@ export const addBarber = async (values: Barber): Promise<Barber | null> => {
   });
   if (!res.ok) return null;
   return res.json();
-};
-
-export const deleteBarber = async (id: number): Promise<boolean> => {
-  const res = await fetch(`${BASE}/api/barbers`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id }),
-  });
-  if (!res.ok) return false;
-  const { success } = await res.json();
-  return success;
 };
 
 export const getBarberByEmail = async (email: string): Promise<Barber | null> => {

@@ -2,14 +2,14 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { CircleUser, User } from "lucide-react";
 import NavbarLogoutButton from "../NavbarLogoutButton";
-import LoginModal from "@/components/auth/LoginModal";
 
 export default function UserMenu() {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { role, barberId } = useAuth();
 
@@ -25,9 +25,9 @@ export default function UserMenu() {
 
   const handleUserClick = () => {
     if (role === "guest") {
-      setLoginOpen(true);
+      router.push("/login");
     } else {
-      setMenuOpen(o => !o);
+      setMenuOpen((o) => !o);
     }
   };
 
@@ -43,10 +43,6 @@ export default function UserMenu() {
           <CircleUser className="w-7 h-7 !text-[var(--accent)]" />
         </span>
       </button>
-
-      {loginOpen && (
-        <LoginModal onClose={() => setLoginOpen(false)} />
-      )}
 
       {menuOpen && role !== "guest" && (
         <div className="!absolute !right-0 !w-48 !bg-slate-950/90 !backdrop-blur-xl !border !border-slate-800/80 !rounded-2xl !shadow-[0_10px_40px_rgba(0,0,0,0.6)] !z-50 !overflow-hidden !mt-3 !py-1.5 animate-in fade-in slide-in-from-top-2 duration-200">

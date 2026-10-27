@@ -6,12 +6,14 @@ export interface TotalSalesData {
   totalSales: number;
   totalSalesRevenue: number;
   totalSalesCommission: number;
+  salesByBarber: Array<{ barberId: number; totalSales: number; totalSalesRevenue: number }>;
 }
 
 export function useTotalRevenueForAllSales(startDate: Date, endDate: Date, barbers: Barber[] ): TotalSalesData {
   const [totalSalesRevenue, setTotalSalesRevenue] = useState<number>(0);
   const [totalSales, setTotalSales] = useState<number>(0);
   const [totalSalesCommission, setTotalSalesCommission] = useState<number>(0);
+  const [salesByBarber, setSalesByBarber] = useState<Array<{ barberId: number; totalSales: number; totalSalesRevenue: number }>>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -44,6 +46,7 @@ export function useTotalRevenueForAllSales(startDate: Date, endDate: Date, barbe
       setTotalSalesRevenue(total);
       setTotalSales(salesCount);
       setTotalSalesCommission(salesCommission);
+      setSalesByBarber(data ?? []);
     })();
 
     return () => {
@@ -51,5 +54,5 @@ export function useTotalRevenueForAllSales(startDate: Date, endDate: Date, barbe
     };
   }, [startDate, endDate, barbers]);
 
-  return { totalSales, totalSalesRevenue, totalSalesCommission };
+  return { totalSales, totalSalesRevenue, totalSalesCommission, salesByBarber };
 }

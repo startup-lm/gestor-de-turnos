@@ -3,28 +3,39 @@ import Hero from "@/components/home/Hero";
 import HomeCarousel from "@/components/home/HomeCarousel";
 import { getProducts } from "@/lib/repository/products";
 import { getServices } from "@/lib/repository/services";
+import { getBusinessSettings } from "@/lib/repository/businessSettings";
 
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [rawServices, rawProducts] = await Promise.all([getServices(), getProducts(),]);
-  const services = rawServices.map(({ id, name, image }) => ({ id, name, image, }));
-  const products = rawProducts.map(({ id, name, image }) => ({ id, name, image, }));
+  const [rawServices, rawProducts, settings] = await Promise.all([
+    getServices(),
+    getProducts(),
+    getBusinessSettings(),
+  ]);
+
+  const services = rawServices.map(({ id, name, image }) => ({ id, name, image }));
+  const products = rawProducts.map(({ id, name, image }) => ({ id, name, image }));
 
   return (
-    <main className="bg-[var(--background)] text-[var(--foreground)] space-y-16 px-4 pb-16 relative overflow-hidden">
-      {/* Ambient background glows */}
-      <div className="absolute top-[20%] -left-40 w-96 h-96 bg-[var(--accent)]/5 rounded-full blur-[130px] pointer-events-none z-0" />
-      <div className="absolute top-[50%] -right-40 w-96 h-96 bg-blue-500/5 rounded-full blur-[130px] pointer-events-none z-0" />
-      <div className="absolute top-[80%] -left-40 w-96 h-96 bg-[var(--accent)]/5 rounded-full blur-[130px] pointer-events-none z-0" />
+    <main className="bg-[var(--background)] text-[var(--foreground)] pb-20 relative overflow-hidden">
+      {/* Ambient background glows across the wide layout */}
+      <div className="absolute top-[10%] -left-40 w-[550px] h-[550px] bg-[var(--accent)]/5 rounded-full blur-[150px] pointer-events-none z-0" />
+      <div className="absolute top-[45%] -right-40 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[160px] pointer-events-none z-0" />
+      <div className="absolute top-[80%] -left-40 w-[550px] h-[550px] bg-[var(--accent)]/5 rounded-full blur-[150px] pointer-events-none z-0" />
 
-      <div className="relative z-10">
+      <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-6 md:px-8 space-y-8 sm:space-y-12 relative z-10 pt-4 sm:pt-6">
+        {/* HERO: Impactful full-width banner within max-w-[1720px] */}
         <Hero />
-      </div>
-      <div className="max-w-4xl mx-auto space-y-16 relative z-10">
-        <HomeCarousel type="servicios" items={services} />
-        <HomeCarousel type="productos" items={products} />
-        <AboutUs />
+
+        {/* CAROUSELS: Servicios & Productos side-by-side in 1 row on desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
+          <HomeCarousel type="servicios" items={services} sideBySide />
+          <HomeCarousel type="productos" items={products} sideBySide />
+        </div>
+
+        {/* LOCAL INFO: Storefront Photo (40%) & Google Maps (60%) */}
+        <AboutUs address={settings?.location_address} photo={settings?.local_photo} />
       </div>
     </main>
   );

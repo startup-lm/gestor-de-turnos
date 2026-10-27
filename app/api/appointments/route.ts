@@ -12,6 +12,7 @@ import {
   AppointmentPatchSchema,
   AppointmentDeleteSchema,
 } from "@/lib/schemas";
+import { normalizePhone } from "@/utils/phone";
 
 export async function GET(request: Request) {
   // Verificar si es barbero o admin para devolver datos reales o enmascarados
@@ -36,7 +37,9 @@ export async function GET(request: Request) {
       query = query.eq(key, value);
     }
   }
-  const { data, error } = await query.order("start_time", { ascending: true });
+  const { data, error } = await query
+    .order("date", { ascending: true })
+    .order("start_time", { ascending: true });
   if (error) return errorResponse(error.message);
   const formatted = data.map(item => ({
     ...item,
@@ -84,19 +87,60 @@ export async function POST(request: Request) {
 
   const { client, barber_id, date, start_time, end_time, phone, service_id, created_by, client_id, type } = parsed.data;
 
+  // Normalizar teléfono canónico (+549...)
+  let canonicalPhone = phone ?? "";
+  if (phone && phone !== "0000000000") {
+    const norm = normalizePhone(phone);
+    if (norm.isValid) {
+      canonicalPhone = norm.e164;
+    }
+  }
+
+  let finalClientId = client_id;
+
+  // Asegurar registro de cliente en tabla clients desde el servidor
+  if (!finalClientId && client && canonicalPhone && canonicalPhone !== "0000000000" && type !== "block") {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const norm = normalizePhone(canonicalPhone);
+      const { data: existingClient } = await supabaseAdmin
+        .from("clients")
+        .select("id")
+        .or(`phone.eq.${canonicalPhone},phone.eq.${norm.national}`)
+        .maybeSingle();
+
+      if (existingClient) {
+        finalClientId = existingClient.id;
+        await supabaseAdmin
+          .from("clients")
+          .update({ last_visit_date: today, phone: canonicalPhone })
+          .eq("id", existingClient.id);
+      } else {
+        const { data: newClient } = await supabaseAdmin
+          .from("clients")
+          .insert({ name: client, phone: canonicalPhone, last_visit_date: today })
+          .select("id")
+          .single();
+        if (newClient) finalClientId = newClient.id;
+      }
+    } catch (err) {
+      console.error("Error sincronizando cliente en creación de turno:", err);
+    }
+  }
+
   const insertPayload: Record<string, unknown> = {
     client,
     barber_id,
     date: date.split("T")[0],
     start_time: `${start_time}:00`,
     end_time: `${end_time}:00`,
-    phone: phone ?? "",
+    phone: canonicalPhone,
     service_id,
     type,
     created_at: new Date().toISOString(),
   };
   if (created_by) insertPayload.created_by = created_by;
-  if (client_id) insertPayload.client_id = client_id;
+  if (finalClientId) insertPayload.client_id = finalClientId;
   const { data, error } = await supabaseAdmin
     .from("appointments")
     .insert(insertPayload)

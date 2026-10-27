@@ -1,16 +1,27 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { GlobalHours } from "@/lib/types/BusinessHours";
 import { BusinessSettings } from "@/lib/types/BusinessSettings";
-import { getCalendarConfig } from "@/lib/repository/calendar";
-import Spinner from "@/components/loading/Spinner";
-
+import { getCalendarConfig, CalendarConfig } from "@/lib/repository/calendar";
 import { isFeatureEnabled, FeatureFlagName } from "@/lib/flags";
 
+export const DEFAULT_BUSINESS_HOURS: GlobalHours = {
+  open_time: "09:00",
+  close_time: "20:00",
+  lunch_start: null,
+  lunch_end: null,
+  closed_days: [0],
+};
+
+export const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
+  slot_step_minutes: 30,
+  business_name: "Barbería",
+};
+
 interface BusinessContextType {
-  businessHours: GlobalHours | null;
-  businessSettings: BusinessSettings | null;
+  businessHours: GlobalHours;
+  businessSettings: BusinessSettings;
   isLoading: boolean;
   refreshConfig: () => Promise<void>;
   isFeatureEnabled: (flag: FeatureFlagName) => boolean;
@@ -19,15 +30,21 @@ interface BusinessContextType {
 
 const BusinessContext = createContext<BusinessContextType | undefined>(undefined);
 
-export function BusinessProvider({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [businessHours, setBusinessHours] = useState<GlobalHours | null>(null);
-  const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function BusinessProvider({
+  children,
+  initialConfig,
+}: Readonly<{ children: React.ReactNode; initialConfig?: CalendarConfig }>) {
+  const [businessHours, setBusinessHours] = useState<GlobalHours>(
+    () => initialConfig?.businessHours ?? DEFAULT_BUSINESS_HOURS
+  );
+  const [businessSettings, setBusinessSettings] = useState<BusinessSettings>(
+    () => initialConfig?.businessSettings ?? DEFAULT_BUSINESS_SETTINGS
+  );
+  const [isLoading, setIsLoading] = useState(!initialConfig);
 
-  const fetchConfig = async () => {
-    setIsLoading(true);
+  const fetchConfig = useCallback(async () => {
     try {
-      const config = await getCalendarConfig();
+      const config = await getCalendarConfig(true);
       setBusinessHours(config.businessHours);
       setBusinessSettings(config.businessSettings);
     } catch (error) {
@@ -35,11 +52,14 @@ export function BusinessProvider({ children }: Readonly<{ children: React.ReactN
     } finally {
       setIsLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchConfig();
   }, []);
+
+  // Si no vino configuración inicial del servidor (ej. navegación client-only), la buscamos
+  useEffect(() => {
+    if (!initialConfig) {
+      fetchConfig();
+    }
+  }, [initialConfig, fetchConfig]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && businessSettings?.business_name) {
@@ -47,22 +67,26 @@ export function BusinessProvider({ children }: Readonly<{ children: React.ReactN
     }
   }, [businessSettings?.business_name]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Spinner />
-      </div>
-    );
-  }
+  const checkFlag = useCallback((flag: FeatureFlagName) => {
+    return isFeatureEnabled(flag, businessSettings?.features);
+  }, [businessSettings?.features]);
+
+  const value = useMemo(
+    () => ({
+      businessHours,
+      businessSettings,
+      isLoading,
+      refreshConfig: fetchConfig,
+      isFeatureEnabled: checkFlag,
+      isEnabled: checkFlag,
+    }),
+    [businessHours, businessSettings, isLoading, fetchConfig, checkFlag]
+  );
 
   const colors = businessSettings?.theme_colors;
 
-  const checkFlag = (flag: FeatureFlagName) => {
-    return isFeatureEnabled(flag, businessSettings?.features);
-  };
-
   return (
-    <BusinessContext.Provider value={{ businessHours, businessSettings, isLoading, refreshConfig: fetchConfig, isFeatureEnabled: checkFlag, isEnabled: checkFlag }}>
+    <BusinessContext.Provider value={value}>
       {colors && (
         <style>
           {`
@@ -86,10 +110,10 @@ export function useBusinessContext() {
   if (!context) {
     throw new Error("useBusinessContext debe usarse dentro de un BusinessProvider");
   }
-  // En este punto sabemos que no son null porque el Provider renderiza a los hijos solo si isLoading es falso.
   return {
-    businessHours: context.businessHours!,
-    businessSettings: context.businessSettings!,
+    businessHours: context.businessHours || DEFAULT_BUSINESS_HOURS,
+    businessSettings: context.businessSettings || DEFAULT_BUSINESS_SETTINGS,
+    isLoading: context.isLoading,
     refreshConfig: context.refreshConfig,
     isFeatureEnabled: context.isFeatureEnabled,
     isEnabled: context.isEnabled,

@@ -4,23 +4,18 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { updatePassword } from "@/lib/repository/auth";
 import { supabaseClient } from "@/lib/supabase/supabaseClient";
-import dynamic from "next/dynamic";
-import SaveButton from "@/components/buttons/SaveButton";
+import { ActionButton } from "@/components/buttons/ActionButton";
 import InputPassword from "@/components/input/InputPassword";
 import Link from "next/link";
 import { Check, KeyRound } from "lucide-react";
-import Spinner from "@/components/loading/Spinner";
-
-const PopupModal = dynamic(() => import("@/components/ui/PopupModal"), { ssr: false, loading: () => null });
+import { LoginCardSkeleton } from "@/components/loading/Skeleton";
+import { toast } from "@/lib/store/useToastStore";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [loadingSession, setLoadingSession] = useState(true);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPopup, setShowPopup] = useState(false);
-  const [popupMessage, setPopupMessage] = useState("");
-  const [popupSuccess, setPopupSuccess] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
   const isDisabled = !newPassword || newPassword.length < 6 || confirmPassword !== newPassword || passwordChanged;
   const [loading, setLoading] = useState(false);
@@ -38,45 +33,33 @@ export default function ResetPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 6) {
-      setPopupMessage("La contraseña debe tener al menos 6 caracteres.");
-      setPopupSuccess(false);
-      setShowPopup(true);
+      toast.error("La contraseña debe tener al menos 6 caracteres.");
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPopupMessage("Las contraseñas no coinciden.");
-      setPopupSuccess(false);
-      setShowPopup(true);
+      toast.error("Las contraseñas no coinciden.");
       return;
     }
     setLoading(true);
     const updated = await updatePassword(newPassword);
 
-    setPopupMessage(updated ? "Contraseña modificada con éxito!" : "No se pudo cambiar la contraseña");
-    setPopupSuccess(updated);
-    setShowPopup(true);
-
     if (updated) {
+      toast.success("¡Contraseña modificada con éxito!");
       setNewPassword("");
       setConfirmPassword("");
       setPasswordChanged(true);
+    } else {
+      toast.error("No se pudo cambiar la contraseña");
     }
     setLoading(false);
   };
 
   if (loadingSession) {
-    return (
-      <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center bg-[var(--background)]">
-        <Spinner />
-        <p className="text-sm font-medium text-slate-400 mt-4 animate-pulse">
-          Cargando formulario de seguridad...
-        </p>
-      </div>
-    );
+    return <LoginCardSkeleton />;
   }
 
   return (
-    <div className="p-5 flex flex-col items-center text-center relative overflow-hidden">
+    <div className="py-8 md:py-12 px-4 md:px-8 w-full max-w-[1720px] mx-auto flex flex-col items-center text-center relative overflow-hidden">
       {/* Ambient Background Glows */}
       <div className="absolute -top-40 -left-40 w-96 h-96 bg-[var(--accent)]/10 rounded-full blur-[120px] pointer-events-none z-0" />
       <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-blue-500/5 rounded-full blur-[120px] pointer-events-none z-0" />
@@ -137,19 +120,19 @@ export default function ResetPasswordPage() {
             />
 
             <div className="flex justify-center mt-10">
-              <div className="w-[200px]">
-                <SaveButton id="btn-reset-password-submit" type="submit" disabled={isDisabled} loading={loading} />
+              <div className="w-[240px]">
+                <ActionButton
+                  id="btn-reset-password-submit"
+                  type="submit"
+                  name="Restablecer contraseña"
+                  Icon={KeyRound}
+                  disabled={isDisabled}
+                  loading={loading}
+                  className="w-full"
+                />
               </div>
             </div>
           </form>
-        )}
-
-        {showPopup && (
-          <PopupModal
-            message={popupMessage}
-            success={popupSuccess}
-            onClose={() => { setShowPopup(false) }}
-          />
         )}
       </div>
     </div>

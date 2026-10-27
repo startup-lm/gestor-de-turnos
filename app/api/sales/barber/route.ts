@@ -8,17 +8,25 @@ export async function GET(request: Request) {
   const start    = searchParams.get("start_date");
   const end      = searchParams.get("end_date");
 
-  if (!barberId || !start || !end) {
+  if (barberId === null || barberId === undefined || !start || !end) {
     return errorResponse("barber_id, start_date y end_date son requeridos", 400);
   }
 
-  const { data, error } = await supabaseAdmin
+  const startIso = start.includes("T") ? start : `${start}T00:00:00.000Z`;
+  const endIso = end.includes("T") ? end : `${end}T23:59:59.999Z`;
+
+  let query = supabaseAdmin
     .from("sales")
-    .select("id, total, created_at")
-    .eq("barber_id", Number(barberId))
-    .gte("created_at", start)
-    .lte("created_at", end)
-    .order("created_at", { ascending: true });
+    .select("id, total, created_at, barber_id")
+    .gte("created_at", startIso)
+    .lte("created_at", endIso);
+
+  const numBarberId = Number(barberId);
+  if (numBarberId !== 0) {
+    query = query.eq("barber_id", numBarberId);
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: true });
 
   if (error) return errorResponse(error.message);
 

@@ -17,11 +17,11 @@ export default function InputPassword({ label, value, onChange, placeholder = ""
 
   return (
     <div>
-      <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5 mt-4">
+      <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
         {label}
       </label>
       <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
           <Lock className="w-4 h-4" />
         </div>
         <input
@@ -31,7 +31,7 @@ export default function InputPassword({ label, value, onChange, placeholder = ""
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className={`!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 !transition-all !rounded-xl !pl-10 !pr-10 !py-3 !w-full !block !text-sm placeholder:text-slate-500 ${error ? "!border-red-500" : ""}`}
+          className={`!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 !transition-all !rounded-xl !pl-11 !pr-10 !py-3 !w-full !block !text-sm placeholder:text-slate-500 ${error ? "!border-red-500" : ""}`}
           required={requiered}
         />
         <div 

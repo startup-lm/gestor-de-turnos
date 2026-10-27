@@ -2,15 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Card from "@/components/card/Card";
-import EditCardModal from "@/components/card/EditCardModal";
 import { Service } from "@/lib/types/Services";
-import { usePopup } from "@/lib/hooks/usePopup";
 import { deleteService } from "@/lib/repository/services";
-import ConfirmModal from "@/components/ui/ConfirmModal";
-import PopupModal from "@/components/ui/PopupModal";
-import CreateCardModal from "@/components/card/CreateCardModal";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { toast } from "@/lib/store/useToastStore";
+import { Plus } from "lucide-react";
 
 interface Props {
   services: Service[];
@@ -19,109 +17,76 @@ interface Props {
 export default function ServiciosClient({ services }: Readonly<Props>) {
   const router = useRouter();
   const { role } = useAuth();
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedName, setSelectedName] = useState("");
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [confirmModal, setConfirmModal] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const popup = usePopup();
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const handleEdit = (id: number) => {
-    const svc = services.find(s => s.id === id);
-    if (!svc) return;
-    setSelectedName(svc.name);
-    setSelectedId(id);
-    setIsEditModalOpen(true);
-  };
-
-  const handleDelete = async () => {
-    setLoading(true);
-    const success = await deleteService(selectedId!);
-    popup.open(success ? "Servicio eliminado con éxito" : "Error al eliminar el Servicio", success);
-    setLoading(false);
-    setConfirmModal(false);
+  const handleDelete = async (id: number) => {
+    setDeletingId(id);
+    try {
+      const success = await deleteService(id);
+      if (success) {
+        toast.success("Servicio eliminado con éxito");
+        router.refresh();
+      } else {
+        toast.error("Error al eliminar el servicio");
+      }
+    } catch (err) {
+      console.error("Error eliminando servicio:", err);
+      toast.error("Error inesperado al eliminar el servicio");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
-    <>
+    <div className="w-full flex flex-col items-center">
+      {/* Cabecera */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800/40 pb-6 mb-8 md:mb-10 w-full">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--foreground)]">
+            Nuestros Servicios
+          </h1>
+          <p className="text-sm sm:text-base text-slate-400 mt-1.5">
+            Cortes clásicos, perfilado de barba con toalla caliente y tratamientos exclusivos
+          </p>
+        </div>
 
-
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 justify-center">
-        {role !== "guest" && (
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex flex-col items-center justify-center w-[320px] h-[326px] !bg-[var(--foreground)]/5 backdrop-blur-md !border-2 !border-dashed !border-[var(--accent)]/30 hover:!border-[var(--accent)]/80 rounded-2xl p-6 hover:shadow-lg hover:shadow-[var(--accent)]/5 hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+        {role === "admin" && (
+          <Link
+            href="/servicios/nuevo"
+            data-testid="btn-add-service"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 self-start sm:self-auto"
           >
-            <div className="bg-[var(--accent)]/10 p-4 rounded-full mb-4 border border-[var(--accent)]/20 group-hover:scale-110 transition-transform duration-300 text-[var(--accent)]">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
-            </div>
-            <span className="text-lg font-bold text-[var(--accent)] tracking-wide">Agregar Servicio</span>
-          </button>
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>Nuevo servicio</span>
+          </Link>
         )}
-        {services.map(svc => (
-          <div key={svc.id} className="relative" >
-            <Card
-              title={svc.name}
-              price={svc.price}
-              description={svc.description}
-              image={svc.image}
-              onEdit={() => handleEdit(svc.id)}
-              onDelete={() => {
-                setSelectedId(svc.id);
-                setConfirmModal(true);
-              }}
-              onCardClick={() => router.push("/turnos")}
-            />
-          </div>
-        ))}
       </div>
 
-      {isCreateModalOpen && (
-        <CreateCardModal
-          type="Servicio"
-          onClose={() => setIsCreateModalOpen(false)}
-        />
+      {/* Grilla de Servicios */}
+      {services.length === 0 ? (
+        <div className="text-center py-16 px-4">
+          <p className="text-slate-400 text-sm">
+            No hay servicios cargados en el catálogo en este momento.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-6 md:gap-8 justify-center w-full max-w-[1720px] mx-auto">
+          {services.map((svc) => (
+            <div key={svc.id} className="relative">
+              <Card
+                title={svc.name}
+                price={svc.price}
+                description={svc.description}
+                image={svc.image}
+                onEdit={() => router.push(`/servicios/${svc.id}`)}
+                onDelete={() => handleDelete(svc.id)}
+                onCardClick={() => router.push(`/servicios/${svc.id}`)}
+                isDeleting={deletingId === svc.id}
+              />
+            </div>
+          ))}
+        </div>
       )}
-
-      {isEditModalOpen && selectedId !== null && (
-        <EditCardModal
-          id={selectedId}
-          name={selectedName}
-          description={services.find(s => s.id === selectedId)?.description ?? ""}
-          price={services.find(s => s.id === selectedId)?.price ?? 0}
-          duration={services.find(s => s.id === selectedId)?.duration ?? 30}
-          image={services.find((s) => s.id === selectedId)?.image ?? null}
-          type="Servicio"
-          onClose={() => setIsEditModalOpen(false)}
-          onSave={() => {
-            setIsEditModalOpen(false);
-            router.refresh();
-          }}
-        />
-      )}
-
-      {confirmModal && (
-        <ConfirmModal
-          title={`¿Estás seguro que querés eliminar este servicio?`}
-          onConfirm={handleDelete}
-          onCancel={() => {
-            popup.close();
-            setConfirmModal(false);
-          }}
-          loading={loading}
-          button="delete"
-        />
-      )}
-
-      {popup.show && (
-        <PopupModal message={popup.message} success={popup.success}
-          onClose={() => {
-            popup.close();
-            if (popup.success) router.refresh();
-          }}
-        />
-      )}
-    </>
+    </div>
   );
 }

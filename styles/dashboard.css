@@ -223,8 +223,11 @@
 /* Flechas y navegación de meses */
 .rdrMonthAndYearWrapper {
   background: transparent !important;
-  padding-top: 0.25rem !important;
+  padding: 0.5rem 0.25rem !important;
   height: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
   border-bottom: 1px solid rgba(249, 250, 251, 0.05) !important;
   margin-bottom: 0.5rem !important;
 }
@@ -237,31 +240,61 @@
   border-radius: 6px !important;
   font-size: 0.8rem !important;
   font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: border-color 200ms ease !important;
+}
+
+.rdrMonthAndYearPickers select:hover {
+  border-color: rgba(223, 186, 115, 0.4) !important;
 }
 
 .rdrNextPrevButton {
   background: rgba(249, 250, 251, 0.05) !important;
-  border: 1px solid rgba(249, 250, 251, 0.08) !important;
+  border: 1px solid rgba(249, 250, 251, 0.1) !important;
   border-radius: 8px !important;
-  width: 24px !important;
-  height: 24px !important;
-  display: flex !important;
+  width: 26px !important;
+  height: 26px !important;
+  display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  margin: 0 !important;
   transition: all 200ms ease !important;
 }
 
 .rdrNextPrevButton:hover {
-  background: rgba(223, 186, 115, 0.1) !important;
-  border-color: rgba(223, 186, 115, 0.3) !important;
+  background: rgba(223, 186, 115, 0.15) !important;
+  border-color: rgba(223, 186, 115, 0.4) !important;
 }
 
 .rdrNextPrevButton i {
+  display: block !important;
+  width: 7px !important;
+  height: 7px !important;
+  border-style: solid !important;
+  border-width: 2px 0 0 2px !important;
   border-color: var(--foreground) !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  transition: border-color 200ms ease !important;
 }
 
 .rdrNextPrevButton:hover i {
   border-color: var(--accent) !important;
+}
+
+.rdrPprevButton i {
+  transform: rotate(-45deg) !important;
+  margin: 0 0 0 2px !important;
+  border-width: 2px 0 0 2px !important;
+}
+
+.rdrNextButton i {
+  transform: rotate(135deg) !important;
+  margin: 0 2px 0 0 !important;
+  border-width: 2px 0 0 2px !important;
 }
 
 /* 🏷️ Select Premium (Sidebar) */

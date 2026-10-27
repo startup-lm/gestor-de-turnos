@@ -24,7 +24,7 @@ export default function OperacionesFacturacionPage() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 w-full max-w-[1720px] mx-auto space-y-6">
       <BackButton href="/operaciones" label="Operaciones" />
       <ArcaPage />
     </div>

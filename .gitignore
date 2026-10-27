@@ -45,3 +45,11 @@ next-env.d.ts
 # playwright tests
 /playwright-report/
 /test-results/
+
+# sourcemaps
+public/*.map
+
+# PWA generated service workers
+public/sw*
+public/workbox*
+public/swe-worker*

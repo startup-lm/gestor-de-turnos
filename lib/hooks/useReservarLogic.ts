@@ -3,12 +3,13 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import { Service } from "@/lib/types/Services";
 import { getServices } from "@/lib/repository/services";
-import { searchClients, upsertClient } from "@/lib/repository/clients";
+import { lookupClientByPhone } from "@/lib/repository/clients";
 import { createAppointment } from "@/lib/repository/appointments";
 import { CalendarEvent } from "@/lib/types/CalendarEvent";
 import { Barber } from "@/lib/types/Barbers";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
-import { usePopup } from "@/lib/hooks/usePopup";
+import { toast } from "@/lib/store/useToastStore";
+import { normalizePhone } from "@/utils/phone";
 
 export function useReservarLogic(
   selectedDate: Date,
@@ -16,35 +17,49 @@ export function useReservarLogic(
   selectedBarberId: number,
   events: CalendarEvent[],
   onAppointmentCreated?: () => void,
-  barbers?: Barber[]
+  barbers?: Barber[],
+  initialServiceId?: number
 ) {
   const { role } = useAuth();
   const { businessHours, businessSettings } = useBusinessContext();
   const { data: services = [] } = useFetchOnce<Service[]>("services", getServices);
   const isGuest = role === "guest";
 
-  const [selectedServiceId, setSelectedServiceId] = useState(-1);
+  const [selectedServiceId, setSelectedServiceId] = useState(initialServiceId ?? -1);
+
+  useEffect(() => {
+    if (initialServiceId !== undefined && initialServiceId > 0) {
+      setSelectedServiceId(initialServiceId);
+    } else {
+      setSelectedServiceId(-1);
+    }
+  }, [initialServiceId]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [appointmentId, setAppointmentId] = useState(0);
   const [showWhatsapp, setShowWhatsapp] = useState(false);
   const [bienvenidaName, setBienvenidaName] = useState<string | null>(null);
+  const [confirmedService, setConfirmedService] = useState<Service | null>(null);
 
   const isDisabled = !name || (isGuest && !phone) || selectedServiceId < 0;
-  const popup = usePopup();
 
-  // Reconocimiento por teléfono para clientes (guest)
+  // Reconocimiento seguro por teléfono para clientes habituales (guest)
   useEffect(() => {
-    if (!isGuest || phone.length < 10) {
+    if (!isGuest) {
       setBienvenidaName(null);
       return;
     }
-    searchClients(phone).then((results) => {
-      if (results.length > 0 && results[0].phone === phone) {
-        const firstName = results[0].name.split(" ")[0];
-        setBienvenidaName(firstName);
-        if (!name) setName(results[0].name);
+    const norm = normalizePhone(phone);
+    if (!norm.isValid || norm.national.length < 10) {
+      setBienvenidaName(null);
+      return;
+    }
+
+    lookupClientByPhone(phone).then((res) => {
+      if (res.found && res.name) {
+        setBienvenidaName(res.firstName || res.name.split(" ")[0]);
+        if (!name) setName(res.name);
       } else {
         setBienvenidaName(null);
       }
@@ -147,6 +162,7 @@ export function useReservarLogic(
     setLoading(true);
     const service = services?.find(s => s.id === selectedServiceId);
     if (!service) {
+      toast.error("Debes seleccionar un servicio para agendar el turno.");
       setLoading(false);
       return;
     }
@@ -163,14 +179,13 @@ export function useReservarLogic(
         const lunchWindow = startBreak && endBreak ? `${startBreak.toTimeString().slice(0, 5)}-${endBreak.toTimeString().slice(0, 5)}` : null;
         const cierreTime = cierre ? cierre.toTimeString().slice(0, 5) : null;
         const reasons = [lunchWindow && `el horario de almuerzo (${lunchWindow})`, cierreTime && `el horario de cierre (${cierreTime} hs)`].filter(Boolean).join(" o ");
-        popup.open(`No se puede reservar: el turno finaliza dentro de ${reasons}.`, false);
+        toast.error(`No se puede reservar: el turno finaliza dentro de ${reasons}.`);
         setLoading(false);
         return;
       }
     }
 
     const finalBarberId = assignedBarber.id;
-    const assignedBarberName = assignedBarber.name;
 
     if (selectedBarberId === 0) {
       const activeBarbers = (barbers || []).filter(b => b.id && b.id !== 0);
@@ -184,12 +199,12 @@ export function useReservarLogic(
 
       if (freeBarbers.length === 0) {
         if (isGuest) {
-          popup.open("Lo sentimos, no hay barberos disponibles en el horario seleccionado.", false);
+          toast.error("Lo sentimos, no hay barberos disponibles en el horario seleccionado.");
           setLoading(false);
           return;
         } else {
           if (activeBarbers.length === 0) {
-            popup.open("Error: No hay barberos activos registrados.", false);
+            toast.error("Error: No hay barberos activos registrados.");
             setLoading(false);
             return;
           }
@@ -199,27 +214,23 @@ export function useReservarLogic(
       const conflict = events.some(ev => selectedDate < ev.end! && endDate > ev.start!);
       if (isGuest && conflict) {
         const msg = `Tu turno de ${selectedDate.toTimeString().slice(0, 5)} a ${endDate.toTimeString().slice(0, 5)} coincide con otro ya agendado. Por favor, elegí otro horario.`;
-        popup.open(msg, false);
+        toast.error(msg);
         setLoading(false);
         return;
       }
     }
 
     let finalPhone = phone;
-    if (finalPhone && finalPhone.startsWith("+54") && !finalPhone.startsWith("+549")) {
-      const rest = finalPhone.slice(3);
-      if (rest.length !== 10) {
-        popup.open("El número de Argentina debe tener exactamente 10 dígitos.", false);
+    if (phone) {
+      const norm = normalizePhone(phone);
+      if (isGuest && !norm.isValid) {
+        toast.error("Por favor ingresá un número de celular válido de Argentina (10 dígitos, ej: 11 2345 6789).");
         setLoading(false);
         return;
       }
-      finalPhone = `+549${rest}`;
-    }
-
-    let clientId: number | undefined;
-    if (name && finalPhone) {
-      const clientRecord = await upsertClient(name, finalPhone);
-      if (clientRecord) clientId = clientRecord.id;
+      if (norm.isValid) {
+        finalPhone = norm.e164;
+      }
     }
 
     const createdBy = isGuest ? name : selectedBarber;
@@ -232,27 +243,18 @@ export function useReservarLogic(
       phone: finalPhone,
       service_id: selectedServiceId,
       created_by: createdBy,
-      client_id: clientId,
     });
 
     if (result.success && result.id) {
       setAppointmentId(result.id);
+      setConfirmedService(service);
       setShowWhatsapp(true);
       onAppointmentCreated?.();
     }
 
-    let successMsg = "";
-    if (selectedBarberId === 0) {
-      successMsg = bienvenidaName
-        ? `¡Bienvenido de nuevo, ${bienvenidaName}!\nTu turno con ${assignedBarberName} fue reservado con éxito.\nNúmero de turno: #${result.id}`
-        : `Tu turno con ${assignedBarberName} fue reservado con éxito.\nNúmero de turno: #${result.id}`;
-    } else {
-      successMsg = bienvenidaName
-        ? `¡Bienvenido de nuevo, ${bienvenidaName}!\nTu turno fue reservado con éxito.\nNúmero de turno: #${result.id}`
-        : `Tu turno fue reservado con éxito.\nNúmero de turno: #${result.id}`;
+    if (!result.success) {
+      toast.error("Error al reservar el turno. Por favor intenta nuevamente.");
     }
-
-    popup.open(result.success ? successMsg : "Error al reservar el turno", result.success);
     setLoading(false);
   };
 
@@ -270,8 +272,8 @@ export function useReservarLogic(
     showWhatsapp,
     bienvenidaName,
     isDisabled,
-    popup,
     handleReservar,
     assignedBarber,
+    confirmedService,
   };
 }

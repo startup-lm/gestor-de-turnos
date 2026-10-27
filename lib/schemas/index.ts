@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isValidPhoneNumber } from "libphonenumber-js";
+import { normalizePhone } from "@/utils/phone";
 
 // --- Appointments ---
 export const AppointmentInsertSchema = z.object({
@@ -8,7 +8,10 @@ export const AppointmentInsertSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}(T.*)?$/, "Formato de fecha inválido (YYYY-MM-DD)"),
   start_time: z.string().regex(/^\d{2}:\d{2}$/, "Formato de hora inválido (HH:mm)"),
   end_time: z.string().regex(/^\d{2}:\d{2}$/, "Formato de hora inválido (HH:mm)"),
-  phone: z.string().optional(),
+  phone: z.string().optional().refine((val) => {
+    if (!val || val === "0000000000") return true;
+    return normalizePhone(val).isValid;
+  }, { message: "Número de teléfono inválido" }),
   service_id: z.number().int().positive("Servicio inválido"),
   created_by: z.string().optional(),
   client_id: z.number().int().positive().optional().nullable(),
@@ -36,11 +39,6 @@ export const AppointmentDeleteSchema = z.object({
 export const ClientUpsertSchema = z.object({
   name: z.string().min(1, "El nombre es obligatorio"),
   phone: z.string().refine((val) => {
-    try {
-      // Validate using libphonenumber-js. We assume default country AR if not prefixed with '+'.
-      return isValidPhoneNumber(val, 'AR');
-    } catch {
-      return false;
-    }
+    return normalizePhone(val).isValid;
   }, { message: "Número de teléfono inválido" }),
 });

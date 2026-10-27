@@ -14,11 +14,14 @@ export async function GET(request: Request) {
 
   if (!start || !end) return errorResponse("start_date y end_date son requeridos", 400);
 
+  const startIso = start.includes("T") ? start : `${start}T00:00:00.000Z`;
+  const endIso = end.includes("T") ? end : `${end}T23:59:59.999Z`;
+
   const { data, error } = await supabaseAdmin
     .from("sales")
     .select("barber_id, total")
-    .gte("created_at", start)
-    .lte("created_at", end);
+    .gte("created_at", startIso)
+    .lte("created_at", endIso);
 
   if (error) return errorResponse(error.message);
 

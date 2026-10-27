@@ -1,34 +1,64 @@
-"use client";
+import type { Metadata, Viewport } from "next";
+import { Inter, Montserrat } from "next/font/google";
+import "@/styles/globals.css";
+import ClientProviders from "@/components/providers/ClientProviders";
+import { getCalendarConfig } from "@/lib/repository/calendar";
 
-import '@/styles/globals.css';
-import Navbar from "@/components/navbar/Navbar";
-import WhatsappIcon from "@/components/buttons/WhatsappIcon";
-import Footer from "@/components/ui/Footer";
-import { AuthProvider } from '@/lib/auth/AuthContext';
-import AutoLogoutManager from '@/lib/auth/AutoLogoutManager';
-import { BusinessProvider } from '@/lib/context/BusinessContext';
+export const revalidate = 60;
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-montserrat",
+});
+
+export const metadata: Metadata = {
+  title: "Gestor de turnos",
+  description: "Sistema de gestión y reserva de turnos",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-192x192.png",
+    apple: "/icon-192x192.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
+};
+
+export default async function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  const initialConfig = await getCalendarConfig();
+  const colors = initialConfig.businessSettings?.theme_colors;
 
   return (
-    <html lang="es">
+    <html lang="es" className={`${inter.variable} ${montserrat.variable}`}>
       <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#000000" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        {colors && (
+          <style
+            dangerouslySetInnerHTML={{
+              __html: `
+                :root {
+                  ${colors.background ? `--background: ${colors.background} !important;` : ""}
+                  ${colors.foreground ? `--foreground: ${colors.foreground} !important;` : ""}
+                  ${colors.primary ? `--primary: ${colors.primary} !important;` : ""}
+                  ${colors.secondary ? `--secondary: ${colors.secondary} !important;` : ""}
+                  ${colors.accent ? `--accent: ${colors.accent} !important;` : ""}
+                }
+              `,
+            }}
+          />
+        )}
       </head>
       <body className="flex flex-col min-h-screen">
-        <AuthProvider>
-          <AutoLogoutManager timeoutMinutes={60} />
-          <BusinessProvider>
-            <Navbar />
-            <main className="flex-grow">
-              {children}
-            </main>
-            <Footer />
-            <WhatsappIcon />
-          </BusinessProvider>
-        </AuthProvider>
+        <ClientProviders initialConfig={initialConfig}>{children}</ClientProviders>
       </body>
     </html>
   );

@@ -8,7 +8,15 @@ export type CalendarConfig = {
   businessSettings: BusinessSettings;
 };
 
-export const getCalendarConfig = async (): Promise<CalendarConfig> => {
+let cachedConfig: CalendarConfig | null = null;
+let cacheTime = 0;
+const CACHE_TTL = 60_000; // 1 minuto
+
+export const getCalendarConfig = async (forceRefresh = false): Promise<CalendarConfig> => {
+  const now = Date.now();
+  if (!forceRefresh && cachedConfig && now - cacheTime < CACHE_TTL) {
+    return cachedConfig;
+  }
   const [hours, settings] = await Promise.all([getBusinessHours(), getBusinessSettings()]);
   const businessHours: GlobalHours = {
     open_time: hours?.open_time ?? null,
@@ -17,5 +25,7 @@ export const getCalendarConfig = async (): Promise<CalendarConfig> => {
     lunch_end: hours?.lunch_end ?? null,
     closed_days: Array.isArray(hours?.closed_days) ? hours.closed_days : [],
   };
-  return { businessHours, businessSettings: settings ?? { slot_step_minutes: 30 },};
+  cachedConfig = { businessHours, businessSettings: settings ?? { slot_step_minutes: 30 } };
+  cacheTime = now;
+  return cachedConfig;
 };

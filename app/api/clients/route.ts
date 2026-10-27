@@ -4,11 +4,11 @@ import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { revalidateTag } from "next/cache";
 import { ClientUpsertSchema } from "@/lib/schemas";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
+import { normalizePhone } from "@/utils/phone";
 
 // GET /api/clients?search=<query>
-// Si query es numérico → busca por phone (starts with)
-// Si query es texto    → busca por name (ilike %query%)
-// Retorna máx 5 resultados. Usado por el autocomplete del barbero.
+// Búsqueda inteligente por nombre (texto) o por teléfono (numérico / E.164 / local)
+// Retorna máx 10 resultados. Usado por el autocomplete del barbero.
 export async function GET(request: Request) {
   const staff = await requireBarberOrAdmin();
   if (!staff) return errorResponse("No autorizado", 401);
@@ -20,16 +20,30 @@ export async function GET(request: Request) {
     return NextResponse.json([]);
   }
 
-  const isNumeric = /^\d+$/.test(search);
+  const cleanDigits = search.replace(/\D/g, "");
+  const normalized = normalizePhone(search);
+  const hasDigits = cleanDigits.length >= 3;
 
   let query = supabaseAdmin
     .from("clients")
     .select("id, name, phone")
-    .limit(5)
+    .limit(10)
     .order("name", { ascending: true });
 
-  if (isNumeric) {
-    query = query.ilike("phone", `${search}%`);
+  if (hasDigits) {
+    const nationalQuery = normalized.isValid ? normalized.national : cleanDigits;
+    const e164Query = normalized.isValid ? normalized.e164 : "";
+
+    const orFilters = [
+      `phone.ilike.%${cleanDigits}%`,
+      `phone.ilike.%${nationalQuery}%`,
+      e164Query ? `phone.ilike.%${e164Query}%` : null,
+      `name.ilike.%${search}%`,
+    ]
+      .filter(Boolean)
+      .join(",");
+
+    query = query.or(orFilters);
   } else {
     query = query.ilike("name", `%${search}%`);
   }
@@ -40,8 +54,8 @@ export async function GET(request: Request) {
 }
 
 // POST /api/clients
-// Upsert por teléfono: si ya existe → actualiza last_visit_date (sin pisar el nombre original)
-//                      si no existe  → crea el cliente nuevo
+// Upsert por teléfono normalizado: si ya existe → actualiza last_visit_date (sin pisar el nombre original)
+//                                  si no existe  → crea el cliente nuevo con formato canónico (+549...)
 export async function POST(request: Request) {
   const staff = await requireBarberOrAdmin();
   if (!staff) return errorResponse("No autorizado", 401);
@@ -54,22 +68,24 @@ export async function POST(request: Request) {
   }
 
   const { name, phone } = parsed.data;
+  const normalized = normalizePhone(phone);
+  const canonicalPhone = normalized.isValid ? normalized.e164 : phone;
 
   const today = new Date().toISOString().split("T")[0];
 
-  // Buscar si ya existe por teléfono
+  // Buscar si ya existe por teléfono canónico o nacional
   const { data: existing } = await supabaseAdmin
     .from("clients")
     .select("*")
-    .eq("phone", phone)
+    .or(`phone.eq.${canonicalPhone},phone.eq.${normalized.national}`)
     .maybeSingle();
 
   if (existing) {
-    // Preservar el nombre original, solo actualizar last_visit_date
+    // Preservar el nombre original, actualizar last_visit_date y normalizar teléfono a canónico
     const { data, error } = await supabaseAdmin
       .from("clients")
-      .update({ last_visit_date: today })
-      .eq("phone", phone)
+      .update({ last_visit_date: today, phone: canonicalPhone })
+      .eq("id", existing.id)
       .select()
       .single();
     if (error) return errorResponse(error.message);
@@ -80,7 +96,7 @@ export async function POST(request: Request) {
   // Crear cliente nuevo
   const { data, error } = await supabaseAdmin
     .from("clients")
-    .insert({ name, phone, last_visit_date: today })
+    .insert({ name, phone: canonicalPhone, last_visit_date: today })
     .select()
     .single();
   if (error) return errorResponse(error.message);
