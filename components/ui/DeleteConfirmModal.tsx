@@ -11,7 +11,6 @@ interface DeleteConfirmModalProps {
   description?: string;
   confirmText?: string;
   cancelText?: string;
-  loadingText?: string;
   loading?: boolean;
 }
 
@@ -23,7 +22,6 @@ export default function DeleteConfirmModal({
   description = "Esta acción no se puede deshacer.",
   confirmText = "Eliminar",
   cancelText = "Cancelar",
-  loadingText = "Eliminando...",
   loading = false,
 }: Readonly<DeleteConfirmModalProps>) {
   useEffect(() => {

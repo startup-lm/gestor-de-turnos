@@ -713,7 +713,9 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
         {barbers.map((barber) => (
           <div
             key={barber.id}
-            className="relative w-[320px] h-[326px] border border-[var(--foreground)]/10 rounded-2xl p-4 flex flex-col items-center text-center bg-gradient-to-b from-[var(--foreground)]/8 to-[var(--foreground)]/4 backdrop-blur-md max-w-xs shadow-lg hover:border-[var(--accent)]/40 hover:shadow-xl hover:shadow-[var(--accent)]/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+            className={`group relative w-[300px] sm:w-[320px] min-h-[350px] border border-[var(--foreground)]/10 rounded-2xl p-5 flex flex-col items-center text-center bg-gradient-to-b from-[var(--foreground)]/[0.07] to-[var(--foreground)]/[0.02] backdrop-blur-md shadow-lg hover:border-[var(--accent)]/40 hover:shadow-xl hover:shadow-[var(--accent)]/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden ${
+              !barber.active ? "opacity-75" : ""
+            }`}
           >
             {/* Inline Delete Confirmation Overlay */}
             {deletingId === barber.id && (
@@ -728,18 +730,13 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
               />
             )}
 
-            {/* Botón de deshabilitar / eliminar */}
+            {/* Acciones en esquinas opuestas: Eliminar a la izquierda, Editar a la derecha */}
             {deletingId !== barber.id && (
-              <div className="absolute top-3 left-3 z-10">
+              <div className="w-full flex items-center justify-between mb-2 z-10">
                 <DeleteCardButton
                   onDelete={() => setDeletingId(barber.id!)}
                 />
-              </div>
-            )}
 
-            {/* Botón de editar */}
-            {deletingId !== barber.id && (
-              <div className="absolute top-3 right-3 z-10">
                 <EditCardButton
                   data-testid="btn-edit-barber"
                   onEdit={() => startEdit(barber)}
@@ -748,7 +745,7 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
             )}
 
             {/* Foto del Barbero */}
-            <div className="w-36 h-36 relative mb-3 rounded-full overflow-hidden border border-[var(--foreground)]/10 shadow-md flex items-center justify-center bg-[var(--background)]">
+            <div className="w-24 h-24 relative mb-3 rounded-full overflow-hidden border-2 border-[var(--accent)]/30 group-hover:border-[var(--accent)]/80 shadow-md flex items-center justify-center bg-[var(--background)] transition-all duration-300 group-hover:scale-105 shrink-0">
               <Image
                 alt={barber.name}
                 src={
@@ -757,34 +754,71 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
                     : logo
                 }
                 fill
-                className="object-cover transition-transform duration-500 hover:scale-105"
-                sizes="144px"
+                className="object-cover"
+                sizes="96px"
               />
             </div>
 
             {/* Nombre y datos de contacto */}
-            <h3 className="text-[var(--foreground)] mb-0.5 font-bold text-lg tracking-wide line-clamp-1 w-full">
+            <h3 className="text-[var(--foreground)] font-bold text-lg tracking-wide line-clamp-1 w-full text-center">
               {barber.name}
             </h3>
-            <p className="text-xs text-slate-400 mb-2">{barber.instagram || barber.email}</p>
 
-            {/* Badges de Estado y Comisiones */}
-            <div className="mt-auto mb-2 flex gap-1.5 items-center justify-center w-full px-2 flex-wrap">
+            <div className="min-h-[1.25rem] flex items-center justify-center text-xs text-slate-400 mt-0.5 mb-2 max-w-full px-2">
+              {barber.instagram ? (
+                <span className="inline-flex items-center gap-1.5 text-[var(--accent)] hover:underline truncate">
+                  <Instagram className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">@{barber.instagram.replace(/^@+/, "")}</span>
+                </span>
+              ) : barber.email ? (
+                <span className="inline-flex items-center gap-1.5 text-slate-400 truncate">
+                  <Mail className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{barber.email}</span>
+                </span>
+              ) : (
+                <span className="text-slate-500 text-[11px] italic">Sin contacto registrado</span>
+              )}
+            </div>
+
+            {/* Badge de Estado: debajo de contacto */}
+            <div className="mb-3.5">
               <span
-                className={`px-2.5 py-1 text-[10px] rounded-full font-bold tracking-wider ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-bold rounded-full border tracking-wider uppercase ${
                   barber.active
-                    ? "bg-green-500/10 text-green-400 border border-green-500/20"
-                    : "bg-red-500/10 text-red-400 border border-red-500/20"
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                    : "bg-rose-500/10 text-rose-400 border-rose-500/20"
                 }`}
               >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    barber.active ? "bg-emerald-400 animate-pulse" : "bg-rose-400"
+                  }`}
+                />
                 {barber.active ? "Activo" : "Inactivo"}
               </span>
-              <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 text-[10px] rounded-full font-bold tracking-wider">
-                Corte: {((barber.commission ?? 0) * 100).toFixed(0)}%
-              </span>
-              <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 text-[10px] rounded-full font-bold tracking-wider">
-                Venta: {((barber.sale_commission ?? 0) * 100).toFixed(0)}%
-              </span>
+            </div>
+
+            {/* Módulo de Comisiones estilo Dashboard */}
+            <div className="w-full mt-auto grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80">
+              <div className="flex flex-col items-center justify-center py-1 px-2 border-r border-slate-800/80">
+                <div className="flex items-center gap-1 text-[11px] font-medium text-slate-400 mb-0.5">
+                  <Scissors className="w-3 h-3 text-[var(--accent)]" />
+                  <span>Corte</span>
+                </div>
+                <span className="text-base font-extrabold text-[var(--foreground)] tracking-tight">
+                  {((barber.commission ?? 0) * 100).toFixed(0)}%
+                </span>
+              </div>
+
+              <div className="flex flex-col items-center justify-center py-1 px-2">
+                <div className="flex items-center gap-1 text-[11px] font-medium text-slate-400 mb-0.5">
+                  <ShoppingBag className="w-3 h-3 text-[var(--accent)]" />
+                  <span>Venta</span>
+                </div>
+                <span className="text-base font-extrabold text-[var(--foreground)] tracking-tight">
+                  {((barber.sale_commission ?? 0) * 100).toFixed(0)}%
+                </span>
+              </div>
             </div>
           </div>
         ))}

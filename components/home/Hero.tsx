@@ -1,12 +1,28 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
+import { Clock } from "lucide-react";
 import HeroActions from "./HeroActions";
 import homeBg from "@/public/images/home.jpg";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { getBusinessOpenStatus, getScheduleSummary, BusinessOpenStatus } from "@/utils/businessHours";
 
 export default function Hero() {
-  const { businessSettings } = useBusinessContext();
+  const { businessSettings, businessHours } = useBusinessContext();
+  const [openStatus, setOpenStatus] = useState<BusinessOpenStatus | null>(null);
+
+  useEffect(() => {
+    const checkStatus = () => {
+      setOpenStatus(getBusinessOpenStatus(businessHours));
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 30_000);
+    return () => clearInterval(interval);
+  }, [businessHours]);
+
+  const scheduleSummary = getScheduleSummary(businessHours);
   const name = businessSettings?.business_name || "Barbería Premium";
   const words = name.trim().split(/\s+/);
   
@@ -35,13 +51,44 @@ export default function Hero() {
       {/* High-fidelity color mesh overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-[#050811]/70 to-[#050811] z-0 pointer-events-none" />
 
-      {/* Decorative top gold indicator */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full border border-[var(--accent)]/30 bg-slate-950/60 backdrop-blur-md z-10 flex items-center gap-1.5 pointer-events-none">
-        <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-ping" />
-        <span className="text-[10px] font-bold tracking-[0.2em] text-[var(--accent)] uppercase">Abierto Ahora</span>
-      </div>
+      {/* Dynamic business status indicator & schedule */}
+      {openStatus && (
+        <div className="absolute top-5 sm:top-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 w-full max-w-lg px-4 pointer-events-none">
+          <div
+            className={`px-3 py-1 rounded-full backdrop-blur-md flex items-center gap-1.5 transition-all duration-300 border ${
+              openStatus.isOpen
+                ? "border-[var(--accent)]/30 bg-slate-950/70 shadow-sm shadow-[var(--accent)]/15"
+                : "border-slate-800/80 bg-slate-950/80 shadow-sm"
+            }`}
+          >
+            {openStatus.isOpen ? (
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[var(--accent)]" />
+              </span>
+            ) : (
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-500/80" />
+            )}
 
-      <div className="relative z-10 space-y-6 px-6 max-w-2xl py-12">
+            <span
+              className={`text-[10px] font-bold tracking-[0.2em] uppercase ${
+                openStatus.isOpen ? "text-[var(--accent)]" : "text-slate-400"
+              }`}
+            >
+              {openStatus.isOpen ? "Abierto Ahora" : "Cerrado"}
+            </span>
+          </div>
+
+          {scheduleSummary && (
+            <div className="flex items-center justify-center gap-1.5 text-[11px] sm:text-xs text-slate-300/85 font-medium tracking-wide drop-shadow-sm">
+              <Clock className="w-3.5 h-3.5 text-[var(--accent)] flex-shrink-0" />
+              <span>{scheduleSummary}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="relative z-10 space-y-6 px-6 max-w-2xl py-12 pt-20 sm:pt-24">
         <div className="space-y-3">
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-none">
             {firstPart}{firstPart ? " " : ""}

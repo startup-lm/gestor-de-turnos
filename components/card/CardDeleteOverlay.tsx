@@ -8,7 +8,6 @@ interface CardDeleteOverlayProps {
   description?: string;
   confirmText?: string;
   cancelText?: string;
-  loadingText?: string;
   loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -19,7 +18,6 @@ export default function CardDeleteOverlay({
   description = "Esta acción no se puede deshacer.",
   confirmText = "Eliminar",
   cancelText = "Cancelar",
-  loadingText = "Eliminando...",
   loading = false,
   onConfirm,
   onCancel,
