@@ -3,7 +3,6 @@
 import { useAuth } from "@/lib/auth/AuthContext";
 import Image from "next/image";
 import React, { useState } from "react";
-import { Loader2 } from "lucide-react";
 import DeleteCardButton from "./DeleteCardButton";
 import EditCardButton from "./EditCardButton";
 import CardDeleteOverlay from "./CardDeleteOverlay";

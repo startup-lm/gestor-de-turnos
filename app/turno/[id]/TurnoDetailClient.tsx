@@ -8,7 +8,7 @@ import { getServices } from "@/lib/repository/services";
 import BarberSelector from "@/components/turnos/BarberSelector";
 import { Barber } from "@/lib/types/Barbers";
 import { getBarbers } from "@/lib/repository/barbers";
-import Spinner from "@/components/loading/Spinner";
+import { DetailFormSkeleton } from "@/components/loading/Skeleton";
 import { updateAppointment, deleteAppointment } from "@/lib/repository/appointments";
 import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
@@ -18,14 +18,11 @@ import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
 import { Appointment } from "@/lib/types/Appointment";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { formatPhoneDisplay, normalizePhone } from "@/utils/phone";
+import { normalizePhone } from "@/utils/phone";
 import {
   Calendar,
   Clock,
   User,
-  Phone,
-  Scissors,
-  DollarSign,
   FileText,
   ArrowLeft,
   Save,
@@ -251,13 +248,8 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
 
   if (loadingServices || loadingBarbers) {
     return (
-      <div className="w-full max-w-[1720px] mx-auto px-4 md:px-8 py-12">
-        <div className="w-full h-64 flex flex-col items-center justify-center bg-[var(--background)]/40 rounded-2xl border border-[var(--border)]">
-          <Spinner />
-          <span className="text-xs text-slate-400 mt-3 font-medium">
-            Cargando datos del turno...
-          </span>
-        </div>
+      <div className="w-full max-w-[1720px] mx-auto px-4 md:px-8 py-8 md:py-12">
+        <DetailFormSkeleton />
       </div>
     );
   }

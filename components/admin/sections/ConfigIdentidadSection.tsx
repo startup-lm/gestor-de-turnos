@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Upload, Building2, Sparkles, Store, BookOpen, Camera, X } from "lucide-react";
-import Spinner from "@/components/loading/Spinner";
+import { ConfigFormSkeleton } from "@/components/loading/Skeleton";
 import SaveButton from "@/components/buttons/SaveButton";
 import { uploadImage, deleteImage } from "@/lib/repository/storage";
 import { toast } from "@/lib/store/useToastStore";
@@ -178,11 +178,7 @@ export default function ConfigIdentidadSection() {
     photoFile !== null;
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <Spinner />
-      </div>
-    );
+    return <ConfigFormSkeleton />;
   }
 
   const paragraphCount = story.split("\n\n").filter((p) => p.trim().length > 0).length;

@@ -11,7 +11,6 @@ import {
   Upload,
   Save,
   Trash2,
-  AlertTriangle,
   CheckCircle2,
   Loader2,
 } from "lucide-react";

@@ -7,41 +7,49 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 
 import dynamic from "next/dynamic";
-import { SectionSkeleton } from "@/components/loading/Skeleton";
+import {
+  SectionSkeleton,
+  DashboardSkeleton,
+  AppointmentsTableSkeleton,
+  SalesTableSkeleton,
+  ArcaSkeleton,
+  BarbersGridSkeleton,
+  ConfigFormSkeleton,
+} from "@/components/loading/Skeleton";
 
 // Modular Sidebar
 import AdminSidebar, { AdminSection } from "@/components/admin/sections/AdminSidebar";
 
-// Sections (Lazy Loaded on Demand)
+// Sections (Lazy Loaded on Demand with matching High-Fidelity Skeletons)
 const DashboardClient = dynamic(() => import("@/app/dashboard/DashboardClient"), {
-  loading: () => <SectionSkeleton />,
+  loading: () => <DashboardSkeleton />,
 });
 const FinanzasSection = dynamic(() => import("@/components/admin/sections/FinanzasSection"), {
   loading: () => <SectionSkeleton />,
 });
 const TurnosSection = dynamic(() => import("@/components/admin/sections/TurnosSection"), {
-  loading: () => <SectionSkeleton />,
+  loading: () => <AppointmentsTableSkeleton />,
 });
 const VentasSection = dynamic(() => import("@/components/admin/sections/VentasSection"), {
-  loading: () => <SectionSkeleton />,
+  loading: () => <SalesTableSkeleton />,
 });
 const ArcaPage = dynamic(() => import("@/components/arca/ArcaPage"), {
-  loading: () => <SectionSkeleton />,
+  loading: () => <ArcaSkeleton />,
 });
 const AdminBarberosClient = dynamic(() => import("@/app/operaciones/barberos/AdminBarberosClient"), {
-  loading: () => <SectionSkeleton />,
+  loading: () => <BarbersGridSkeleton />,
 });
 const ConfigIdentidadSection = dynamic(() => import("@/components/admin/sections/ConfigIdentidadSection"), {
-  loading: () => <SectionSkeleton />,
+  loading: () => <ConfigFormSkeleton />,
 });
 const ConfigHorariosSection = dynamic(() => import("@/components/admin/sections/ConfigHorariosSection"), {
-  loading: () => <SectionSkeleton />,
+  loading: () => <ConfigFormSkeleton />,
 });
 const ConfigContactoSection = dynamic(() => import("@/components/admin/sections/ConfigContactoSection"), {
-  loading: () => <SectionSkeleton />,
+  loading: () => <ConfigFormSkeleton />,
 });
 const ConfigPagosSection = dynamic(() => import("@/components/admin/sections/ConfigPagosSection"), {
-  loading: () => <SectionSkeleton />,
+  loading: () => <ConfigFormSkeleton />,
 });
 
 export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>) {

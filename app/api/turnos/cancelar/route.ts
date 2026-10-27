@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: any;
+  let body: { action?: string; id?: number | string; phone?: string } | null = null;
   try {
     body = await request.json();
   } catch {

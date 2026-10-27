@@ -5,7 +5,7 @@ import { CalendarX, Calendar, RefreshCw } from "lucide-react";
 import { Appointment } from "@/lib/types/Appointment";
 import AdminTurnosClient from "@/app/operaciones/turnos/AdminTurnosClient";
 import BlockDateSplitPanel from "@/components/admin/BlockDateSplitPanel";
-import Spinner from "@/components/loading/Spinner";
+import { AppointmentsTableSkeleton } from "@/components/loading/Skeleton";
 
 type PeriodPreset = "week" | "today" | "month" | "last_month" | "custom" | "all";
 
@@ -254,9 +254,7 @@ export default function TurnosSection() {
 
       <div className="w-full">
         {loading ? (
-          <div className="flex justify-center py-16">
-            <Spinner />
-          </div>
+          <AppointmentsTableSkeleton />
         ) : (
           <AdminTurnosClient appointments={appointments} />
         )}

@@ -7,11 +7,10 @@ import { useBarberCutsData } from "@/lib/hooks/useBarberCutsdata";
 import { useTotalRevenueForAllSales } from "@/lib/hooks/useTotalSalesRevenue";
 import { useTotalCommissions } from "@/lib/hooks/useTotalComission";
 import dynamic from "next/dynamic";
-import Spinner from "@/components/loading/Spinner";
 
 const DateRangeCalendar = dynamic(
   () => import("@/components/dashboard/DateRangeCalendar"),
-  { ssr: false, loading: () => <div className="p-4 flex justify-center"><Spinner /></div> }
+  { ssr: false, loading: () => <div className="w-full h-72 rounded-2xl bg-slate-900/40 animate-pulse border border-white/5" /> }
 );
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import {

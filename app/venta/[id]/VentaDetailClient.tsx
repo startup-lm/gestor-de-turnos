@@ -8,7 +8,7 @@ import { getProducts } from "@/lib/repository/products";
 import BarberSelector from "@/components/turnos/BarberSelector";
 import { Barber } from "@/lib/types/Barbers";
 import { getBarbers } from "@/lib/repository/barbers";
-import Spinner from "@/components/loading/Spinner";
+import { DetailFormSkeleton } from "@/components/loading/Skeleton";
 import { updateSale, deleteSale } from "@/lib/repository/sales";
 import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
@@ -29,7 +29,6 @@ import {
   Loader2,
   Receipt,
   Calendar,
-  Hash,
 } from "lucide-react";
 
 const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
@@ -187,13 +186,8 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
 
   if (loadingProducts || loadingBarbers) {
     return (
-      <div className="w-full max-w-[1720px] mx-auto px-4 md:px-8 py-12">
-        <div className="w-full h-64 flex flex-col items-center justify-center bg-[var(--background)]/40 rounded-2xl border border-[var(--border)]">
-          <Spinner />
-          <span className="text-xs text-slate-400 mt-3 font-medium">
-            Cargando datos de la venta...
-          </span>
-        </div>
+      <div className="w-full max-w-[1720px] mx-auto px-4 md:px-8 py-8 md:py-12">
+        <DetailFormSkeleton />
       </div>
     );
   }

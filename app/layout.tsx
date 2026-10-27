@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Montserrat } from "next/font/google";
 import "@/styles/globals.css";
 import ClientProviders from "@/components/providers/ClientProviders";
+import { getCalendarConfig } from "@/lib/repository/calendar";
+
+export const revalidate = 60;
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,13 +32,33 @@ export const viewport: Viewport = {
   themeColor: "#000000",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const initialConfig = await getCalendarConfig();
+  const colors = initialConfig.businessSettings?.theme_colors;
+
   return (
     <html lang="es" className={`${inter.variable} ${montserrat.variable}`}>
+      <head>
+        {colors && (
+          <style
+            dangerouslySetInnerHTML={{
+              __html: `
+                :root {
+                  ${colors.background ? `--background: ${colors.background} !important;` : ""}
+                  ${colors.foreground ? `--foreground: ${colors.foreground} !important;` : ""}
+                  ${colors.primary ? `--primary: ${colors.primary} !important;` : ""}
+                  ${colors.secondary ? `--secondary: ${colors.secondary} !important;` : ""}
+                  ${colors.accent ? `--accent: ${colors.accent} !important;` : ""}
+                }
+              `,
+            }}
+          />
+        )}
+      </head>
       <body className="flex flex-col min-h-screen">
-        <ClientProviders>{children}</ClientProviders>
+        <ClientProviders initialConfig={initialConfig}>{children}</ClientProviders>
       </body>
     </html>
   );

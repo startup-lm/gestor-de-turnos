@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Spinner from "@/components/loading/Spinner";
+import { ConfigFormSkeleton } from "@/components/loading/Skeleton";
 import SaveButton from "@/components/buttons/SaveButton";
 import { toast } from "@/lib/store/useToastStore";
 import { getBusinessHours, upsertBusinessHours } from "@/lib/repository/businessHours";
@@ -176,11 +176,7 @@ export default function ConfigHorariosSection() {
     closedDays.some((d) => !initialData.closedDays.includes(d));
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <Spinner />
-      </div>
-    );
+    return <ConfigFormSkeleton />;
   }
 
   const criteriaOptions = [

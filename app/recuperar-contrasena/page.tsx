@@ -8,7 +8,7 @@ import { ActionButton } from "@/components/buttons/ActionButton";
 import InputPassword from "@/components/input/InputPassword";
 import Link from "next/link";
 import { Check, KeyRound } from "lucide-react";
-import Spinner from "@/components/loading/Spinner";
+import { LoginCardSkeleton } from "@/components/loading/Skeleton";
 import { toast } from "@/lib/store/useToastStore";
 
 export default function ResetPasswordPage() {
@@ -55,14 +55,7 @@ export default function ResetPasswordPage() {
   };
 
   if (loadingSession) {
-    return (
-      <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center bg-[var(--background)]">
-        <Spinner />
-        <p className="text-sm font-medium text-slate-400 mt-4 animate-pulse">
-          Cargando formulario de seguridad...
-        </p>
-      </div>
-    );
+    return <LoginCardSkeleton />;
   }
 
   return (

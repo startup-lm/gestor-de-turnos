@@ -5,7 +5,7 @@ import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { FaInstagram, FaFacebook, FaTiktok } from "react-icons/fa";
 import { MapPin, MessageCircle, Share2, Check } from "lucide-react";
-import Spinner from "@/components/loading/Spinner";
+import { ConfigFormSkeleton } from "@/components/loading/Skeleton";
 import SaveButton from "@/components/buttons/SaveButton";
 import { toast } from "@/lib/store/useToastStore";
 import { normalizePhone } from "@/utils/phone";
@@ -144,11 +144,7 @@ export default function ConfigContactoSection() {
     JSON.stringify(socials) !== JSON.stringify(initialData.socials);
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <Spinner />
-      </div>
-    );
+    return <ConfigFormSkeleton />;
   }
 
   return (

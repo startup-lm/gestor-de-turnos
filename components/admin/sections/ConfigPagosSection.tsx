@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Banknote, Wallet, ArrowRightLeft, CreditCard, Coins, Plus, X } from "lucide-react";
-import Spinner from "@/components/loading/Spinner";
+import { ConfigFormSkeleton } from "@/components/loading/Skeleton";
 import SaveButton from "@/components/buttons/SaveButton";
 import { toast } from "@/lib/store/useToastStore";
 
@@ -126,11 +126,7 @@ export default function ConfigPagosSection() {
     paymentMethods.some((m) => !initialMethods.includes(m));
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <Spinner />
-      </div>
-    );
+    return <ConfigFormSkeleton />;
   }
 
   return (

@@ -11,7 +11,7 @@ import { Barber } from "@/lib/types/Barbers";
 import DatePickerField from "../admin/DatePickerField";
 import TimeSelect from "../admin/TimeSelect";
 import { generateAllAppointments } from "@/utils/appointments";
-import Spinner from "../loading/Spinner";
+import { DetailFormSkeleton } from "../loading/Skeleton";
 import ClientAutocompleteFields from "./ClientAutocompleteFields";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { useAppointmentDetailsLogic } from "@/lib/hooks/useAppointmentDetailsLogic";
@@ -145,8 +145,8 @@ export default function AppointmentDetailsSplitPanel({
 
   if (loadingFetch) {
     return (
-      <div className="bg-[var(--bg-carousel)] border border-[var(--foreground)]/10 rounded-3xl p-6 shadow-2xl flex items-center justify-center min-h-[300px]">
-        <Spinner />
+      <div className="bg-[var(--bg-carousel)] border border-[var(--foreground)]/10 rounded-3xl p-6 shadow-2xl">
+        <DetailFormSkeleton />
       </div>
     );
   }

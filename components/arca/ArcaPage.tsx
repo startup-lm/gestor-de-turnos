@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Spinner from "@/components/loading/Spinner";
+import { ArcaSkeleton, SalesTableSkeleton } from "@/components/loading/Skeleton";
 import SaveButton from "@/components/buttons/SaveButton";
 import SendButton from "@/components/buttons/SendButton";
 import { toast } from "@/lib/store/useToastStore";
@@ -563,9 +563,7 @@ export default function ArcaPage() {
       </div>
 
       {isInitialLoading ? (
-        <div className="flex justify-center py-20">
-          <Spinner />
-        </div>
+        <ArcaSkeleton />
       ) : (
         <>
           {/* ── Selector de Período ARCA (Máx. 31 días fiscal) ───────── */}
@@ -1025,11 +1023,7 @@ export default function ArcaPage() {
               </div>
             )}
 
-            {loadingInvoices && (
-              <div className="flex justify-center py-6">
-                <Spinner />
-              </div>
-            )}
+            {loadingInvoices && <SalesTableSkeleton />}
 
             {!loadingInvoices && invoices.length === 0 && (
               <p className="text-sm text-gray-400 text-center py-6">

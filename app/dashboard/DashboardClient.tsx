@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useDashboardData, ViewMode } from "@/lib/hooks/useDashboardData";
 import DashboardToolbar from "@/components/dashboard/DashboardToolbar";
 import Metrics from "@/components/dashboard/Metrics";
-import Spinner from "@/components/loading/Spinner";
+import { ChartSkeleton, PieChartSkeleton, DashboardSkeleton } from "@/components/loading/Skeleton";
 import { Barber } from "@/lib/types/Barbers";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useBarberCutsData } from "@/lib/hooks/useBarberCutsdata";
@@ -16,11 +16,11 @@ import { useTotalCommissions } from "@/lib/hooks/useTotalComission";
 
 const ChartSection = dynamic(() => import("@/components/dashboard/ChartSection"), {
   ssr: false,
-  loading: () => <div className="p-8 flex justify-center"><Spinner /></div>,
+  loading: () => <ChartSkeleton />,
 });
 const PieChartSection = dynamic(() => import("@/components/dashboard/PieChartSection"), {
   ssr: false,
-  loading: () => <div className="p-8 flex justify-center"><Spinner /></div>,
+  loading: () => <PieChartSkeleton />,
 });
 
 interface Props {
@@ -82,20 +82,12 @@ export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
 
   if (isDataLoading) {
     return (
-      <div className="w-full space-y-6 animate-pulse">
-        <div className="border-b border-white/10 pb-4 mb-2">
+      <div className="w-full space-y-6">
+        <div className="border-b border-white/10 pb-4 mb-2 animate-pulse">
           <div className="h-7 w-64 bg-slate-800/60 rounded-lg mb-2" />
           <div className="h-4 w-96 bg-slate-800/40 rounded-lg" />
         </div>
-        <div className="h-16 w-full bg-slate-900/40 rounded-2xl border border-white/5" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-28 bg-slate-900/40 rounded-2xl border border-white/5" />
-          ))}
-        </div>
-        <div className="h-96 w-full bg-slate-900/40 rounded-2xl border border-white/5 flex items-center justify-center">
-          <Spinner />
-        </div>
+        <DashboardSkeleton />
       </div>
     );
   }

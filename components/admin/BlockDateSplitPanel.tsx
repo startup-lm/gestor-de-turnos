@@ -10,7 +10,7 @@ import TimeSelect from "./TimeSelect";
 import { generateAllAppointments } from "@/utils/appointments";
 import { createAppointment } from "@/lib/repository/appointments";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
-import Spinner from "@/components/loading/Spinner";
+import { DetailFormSkeleton } from "@/components/loading/Skeleton";
 import { toast } from "@/lib/store/useToastStore";
 import { CalendarX, Lock, Calendar, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
 
@@ -122,12 +122,7 @@ export default function BlockDateSplitPanel({
   };
 
   if (loadingBarbers) {
-    return (
-      <div className="w-full h-64 flex flex-col items-center justify-center bg-[var(--background)]/40 rounded-2xl border border-[var(--border)]">
-        <Spinner />
-        <span className="text-xs text-slate-400 mt-3 font-medium">Cargando barberos...</span>
-      </div>
-    );
+    return <DetailFormSkeleton />;
   }
 
   return (

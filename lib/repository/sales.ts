@@ -42,15 +42,45 @@ export async function getBarberSalesFromDates(barberId: number, startDate: Date,
   return res.json();
 }
 
-export async function getSalesPage( page: number = 1, pageSize: number = 10 ): Promise<{data: SaleWithRelations[]; total: number; page: number; pageSize: number;}> {
-  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), });
+export async function getSalesPage(
+  page: number = 1,
+  pageSize: number = 10,
+  startDate?: string,
+  endDate?: string
+): Promise<{ data: SaleWithRelations[]; total: number; page: number; pageSize: number; }> {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+  if (startDate) params.set("start_date", startDate);
+  if (endDate) params.set("end_date", endDate);
+
   const res = await fetch(`${BASE}/api/sales/list?${params.toString()}`, {
     next: { tags: ["sales"] },
   });
 
-  if (!res.ok) { return { data: [], total: 0, page, pageSize, }; }
+  if (!res.ok) { return { data: [], total: 0, page, pageSize }; }
   const json = await res.json();
-  return {data: (json.data ?? []) as SaleWithRelations[], total: json.total ?? 0, page: json.page ?? page, pageSize: json.pageSize ?? pageSize, };
+  return {
+    data: (json.data ?? []) as SaleWithRelations[],
+    total: json.total ?? 0,
+    page: json.page ?? page,
+    pageSize: json.pageSize ?? pageSize,
+  };
+}
+
+export async function getSales(startDate?: string, endDate?: string): Promise<SaleWithRelations[]> {
+  const params = new URLSearchParams();
+  if (startDate) params.set("start_date", startDate);
+  if (endDate) params.set("end_date", endDate);
+
+  const res = await fetch(`${BASE}/api/sales/list?${params.toString()}`, {
+    next: { tags: ["sales"] },
+  });
+
+  if (!res.ok) return [];
+  const json = await res.json();
+  return (json.data ?? []) as SaleWithRelations[];
 }
 
 export async function getSaleById(id: number): Promise<SaleWithRelations | null> {

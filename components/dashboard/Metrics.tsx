@@ -3,7 +3,7 @@
 import { useAuth } from "@/lib/auth/AuthContext";
 import React from "react";
 import CountUp from "react-countup";
-import { Scissors, ShoppingBag, Coins, TrendingUp, DollarSign, Wallet, Award } from "lucide-react";
+import { Scissors, ShoppingBag, TrendingUp, DollarSign, Wallet, Award } from "lucide-react";
 
 interface Props {
   turnos: number;

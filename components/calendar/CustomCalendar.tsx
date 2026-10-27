@@ -10,7 +10,7 @@ import '@/styles/calendar.css';
 import { Appointment } from '@/lib/types/Appointment';
 import { CalendarEvent } from '@/lib/types/CalendarEvent';
 import { Barber } from '@/lib/types/Barbers';
-import Spinner from '@/components/loading/Spinner';
+import { CalendarSkeleton } from '@/components/loading/Skeleton';
 import { formats } from '@/components/calendar/CalendarFormats';
 import { useCalendarData } from '@/lib/hooks/useCalendarData';
 import { useCalendarNavigation } from '@/lib/hooks/useCalendarNavigation';
@@ -247,7 +247,7 @@ function CustomCalendarComponent({ selectedBarberId, barbers, role, isMobile, on
   );
 
   if (!allAppointments) {
-    return <div className="flex justify-center items-center h-96"><Spinner /></div>
+    return <CalendarSkeleton />;
   }
 
   return (

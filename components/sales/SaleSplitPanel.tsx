@@ -7,7 +7,7 @@ import { getProducts } from "@/lib/repository/products";
 import BarberSelector from "../turnos/BarberSelector";
 import { Barber } from "@/lib/types/Barbers";
 import { getBarbers } from "@/lib/repository/barbers";
-import Spinner from "../loading/Spinner";
+import { DetailFormSkeleton } from "../loading/Skeleton";
 import { createSale } from "@/lib/repository/sales";
 import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
@@ -126,12 +126,7 @@ export default function SaleSplitPanel({
   };
 
   if (loadingProducts || loadingBarbers) {
-    return (
-      <div className="w-full h-64 flex flex-col items-center justify-center bg-[var(--background)]/40 rounded-2xl border border-[var(--border)]">
-        <Spinner />
-        <span className="text-xs text-slate-400 mt-3 font-medium">Cargando datos de venta...</span>
-      </div>
-    );
+    return <DetailFormSkeleton />;
   }
 
   return (
