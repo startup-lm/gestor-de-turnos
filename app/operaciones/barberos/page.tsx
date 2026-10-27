@@ -13,7 +13,7 @@ export default async function AdminBarberosPage() {
         <BackButton href="/operaciones" label="Operaciones" />
       </div>
       <h1 className="text-3xl font-extrabold mb-5 text-center bg-gradient-to-r from-[var(--foreground)] via-[var(--foreground)] to-[var(--accent)] bg-clip-text text-transparent tracking-tight">
-        Gestión de Barberos
+        Gestión de barberos
       </h1>
       <AdminBarberosClient barbers={barbers} />
     </div>

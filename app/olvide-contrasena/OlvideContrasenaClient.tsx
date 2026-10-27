@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, AlertCircle, CheckCircle, Mail } from "lucide-react";
+import { ArrowLeft, AlertCircle, CheckCircle, Mail, Loader2 } from "lucide-react";
 import { getBarberByEmail } from "@/lib/repository/barbers";
 import { resetPassword } from "@/lib/repository/auth";
 import logo from "@/public/images/logo.png";
@@ -106,7 +106,7 @@ export default function OlvideContrasenaClient() {
               Email
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                 <Mail className="w-4 h-4" />
               </div>
               <input
@@ -117,7 +117,7 @@ export default function OlvideContrasenaClient() {
                 required
                 placeholder="tumail@gmail.com"
                 autoComplete="email"
-                className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 !transition-all !rounded-xl !pl-10 !pr-4 !py-3 !w-full !block !text-sm placeholder:text-slate-500"
+                className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 !transition-all !rounded-xl !pl-11 !pr-4 !py-3 !w-full !block !text-sm placeholder:text-slate-500"
               />
             </div>
           </div>
@@ -127,9 +127,13 @@ export default function OlvideContrasenaClient() {
               id="btn-recovery-submit"
               type="submit"
               disabled={isDisabled || loading}
-              className="w-full flex items-center justify-center py-2.5 px-5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 border border-[var(--accent)]/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full h-11 min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 border border-[var(--accent)]/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              {loading ? "Enviando enlace..." : "Enviar Enlace de Recuperación"}
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-inherit" />
+              ) : (
+                <span>Enviar enlace de recuperación</span>
+              )}
             </button>
           </div>
         </form>

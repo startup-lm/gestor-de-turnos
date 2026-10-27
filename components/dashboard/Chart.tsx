@@ -1,4 +1,6 @@
-import React, { useMemo } from "react";
+"use client";
+
+import React, { useMemo, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -10,7 +12,7 @@ import {
   Legend,
 } from "recharts";
 import { DataPoint } from "@/lib/hooks/useDashboardData";
-import { CalendarOff, BarChart3 } from "lucide-react";
+import { CalendarOff, BarChart3, DollarSign, Layers } from "lucide-react";
 
 interface Props {
   data: DataPoint[];        // cortes
@@ -27,6 +29,8 @@ type CombinedPoint = {
 };
 
 export default function Chart({ data, salesData }: Readonly<Props>) {
+  const [metricType, setMetricType] = useState<"count" | "revenue">("count");
+
   const combinedData = useMemo<CombinedPoint[]>(() => {
     const map = new Map<string, CombinedPoint>();
 
@@ -66,7 +70,7 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
   }, [data, salesData]);
 
   // Verificar si existen datos reales para graficar
-  const hasData = combinedData.length > 0 && combinedData.some(p => p.cortes > 0 || p.ventas > 0);
+  const hasData = combinedData.length > 0 && combinedData.some(p => p.cortes > 0 || p.ventas > 0 || p.revenueCortes > 0 || p.revenueVentas > 0);
 
   if (!hasData) {
     return (
@@ -82,26 +86,60 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
     );
   }
 
+  const isRevenue = metricType === "revenue";
+
   return (
     <div className="w-full">
-      <h3 className="text-sm font-bold uppercase text-slate-400 mb-4 tracking-wider flex items-center gap-1.5">
-        <BarChart3 className="w-4 h-4 text-[var(--accent)]" />
-        Evolución Temporal
-      </h3>
+      {/* Cabecera del Gráfico con Toggle Volumen vs Facturación */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-white/5">
+        <h3 className="text-xs font-bold uppercase text-slate-400 tracking-wider flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-[var(--accent)]" />
+          <span>Evolución Temporal ({isRevenue ? "Facturación en $" : "Volumen en Unidades"})</span>
+        </h3>
+
+        {/* Toggle Selector */}
+        <div className="inline-flex items-center p-1 rounded-xl bg-slate-950/50 border border-white/10 text-xs self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setMetricType("count")}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+              !isRevenue
+                ? "!bg-[var(--accent)] !text-slate-950 font-bold shadow-sm"
+                : "!text-slate-400 hover:!text-white hover:!bg-white/5"
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Volumen</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMetricType("revenue")}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+              isRevenue
+                ? "!bg-[var(--accent)] !text-slate-950 font-bold shadow-sm"
+                : "!text-slate-400 hover:!text-white hover:!bg-white/5"
+            }`}
+          >
+            <DollarSign className="w-3.5 h-3.5" />
+            <span>Facturación ($)</span>
+          </button>
+        </div>
+      </div>
       
       <div className="w-full overflow-hidden">
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={combinedData} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={combinedData} margin={{ top: 10, right: 10, left: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(249, 250, 251, 0.05)" />
             <XAxis
               dataKey="label"
-              tick={{ fill: "rgba(249, 250, 251, 0.4)", fontSize: 10, fontWeight: 600 }}
+              tick={{ fill: "rgba(249, 250, 251, 0.5)", fontSize: 11, fontWeight: 600 }}
               axisLine={{ stroke: "rgba(249, 250, 251, 0.08)" }}
               tickLine={{ stroke: "rgba(249, 250, 251, 0.08)" }}
             />
             <YAxis
               allowDecimals={false}
-              tick={{ fill: "rgba(249, 250, 251, 0.4)", fontSize: 10, fontWeight: 600 }}
+              tickFormatter={(v) => (isRevenue ? `$${v.toLocaleString("es-AR")}` : String(v))}
+              tick={{ fill: "rgba(249, 250, 251, 0.5)", fontSize: 10, fontWeight: 600 }}
               axisLine={{ stroke: "rgba(249, 250, 251, 0.08)" }}
               tickLine={{ stroke: "rgba(249, 250, 251, 0.08)" }}
             />
@@ -110,26 +148,39 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
                 if (!active || !payload || payload.length === 0) return null;
                 const p = payload[0].payload as CombinedPoint;
                 return (
-                  <div className="bg-slate-950/95 border border-slate-800 rounded-xl p-3 shadow-2xl backdrop-blur-md">
-                    <div className="font-bold text-[10px] text-slate-400 uppercase tracking-wider mb-2 border-b border-slate-800 pb-1.5">
+                  <div className="bg-slate-950/95 border border-white/10 rounded-xl p-3 shadow-2xl backdrop-blur-md">
+                    <div className="font-bold text-[11px] text-[var(--accent)] uppercase tracking-wider mb-2 border-b border-white/10 pb-1.5">
                       {label}
                     </div>
-                    <div className="space-y-1.5 text-xs min-w-[150px]">
-                      <div className="flex justify-between gap-6">
-                        <span className="text-slate-400 font-medium">Turnos:</span>
-                        <span className="font-bold text-white">{p.cortes}</span>
+                    <div className="space-y-2 text-xs min-w-[170px]">
+                      {/* Cortes */}
+                      <div className="flex justify-between items-center gap-4">
+                        <span className="text-slate-300 font-medium flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[var(--accent)] inline-block" />
+                          Turnos:
+                        </span>
+                        <span className="font-bold text-white">
+                          {p.cortes} <span className="text-slate-400 font-normal">(${p.revenueCortes.toLocaleString("es-AR")})</span>
+                        </span>
                       </div>
-                      <div className="flex justify-between gap-6 text-emerald-400 font-semibold pl-2">
-                        <span>Ingresos cortes:</span>
-                        <span>${p.revenueCortes.toLocaleString("es-AR")}</span>
+
+                      {/* Ventas */}
+                      <div className="flex justify-between items-center gap-4">
+                        <span className="text-slate-300 font-medium flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-sky-400 inline-block" />
+                          Ventas:
+                        </span>
+                        <span className="font-bold text-white">
+                          {p.ventas} <span className="text-slate-400 font-normal">(${p.revenueVentas.toLocaleString("es-AR")})</span>
+                        </span>
                       </div>
-                      <div className="flex justify-between gap-6 pt-1.5 mt-1 border-t border-slate-800/60">
-                        <span className="text-slate-400 font-medium">Ventas:</span>
-                        <span className="font-bold text-white">{p.ventas}</span>
-                      </div>
-                      <div className="flex justify-between gap-6 text-sky-400 font-semibold pl-2">
-                        <span>Ingresos ventas:</span>
-                        <span>${p.revenueVentas.toLocaleString("es-AR")}</span>
+
+                      {/* Total combinado */}
+                      <div className="pt-2 border-t border-white/10 flex justify-between items-center text-xs">
+                        <span className="text-slate-400 font-semibold">Total día:</span>
+                        <span className="font-extrabold text-emerald-400">
+                          ${(p.revenueCortes + p.revenueVentas).toLocaleString("es-AR")}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -144,24 +195,24 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
               wrapperStyle={{
                 fontSize: 11,
                 fontWeight: 600,
-                color: "rgba(249, 250, 251, 0.6)",
+                color: "rgba(249, 250, 251, 0.7)",
                 textTransform: "uppercase",
                 letterSpacing: "0.05em"
               }}
             />
             <Bar
-              dataKey="cortes"
-              name="Turnos"
+              dataKey={isRevenue ? "revenueCortes" : "cortes"}
+              name={isRevenue ? "Facturación Cortes ($)" : "Turnos (Cant.)"}
               fill="var(--accent)"
-              radius={[4, 4, 0, 0]}
-              maxBarSize={40}
+              radius={[6, 6, 0, 0]}
+              maxBarSize={38}
             />
             <Bar
-              dataKey="ventas"
-              name="Ventas"
+              dataKey={isRevenue ? "revenueVentas" : "ventas"}
+              name={isRevenue ? "Facturación Ventas ($)" : "Ventas (Cant.)"}
               fill="#38bdf8"
-              radius={[4, 4, 0, 0]}
-              maxBarSize={40}
+              radius={[6, 6, 0, 0]}
+              maxBarSize={38}
             />
           </BarChart>
         </ResponsiveContainer>
@@ -169,4 +220,3 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
     </div>
   );
 }
-

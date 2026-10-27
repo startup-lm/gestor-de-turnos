@@ -33,13 +33,13 @@ const PRESET_METHODS: PresetMethod[] = [
     color: "text-purple-400 bg-purple-500/10 border-purple-500/30",
   },
   {
-    name: "Tarjeta de Débito",
+    name: "Tarjeta de débito",
     description: "Cobro con posnet débito físico",
     icon: CreditCard,
     color: "text-amber-400 bg-amber-500/10 border-amber-500/30",
   },
   {
-    name: "Tarjeta de Crédito",
+    name: "Tarjeta de crédito",
     description: "Pagos con tarjeta de crédito",
     icon: Coins,
     color: "text-pink-400 bg-pink-500/10 border-pink-500/30",
@@ -50,6 +50,7 @@ export default function ConfigPagosSection() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
+  const [initialMethods, setInitialMethods] = useState<string[]>([]);
   const [newMethod, setNewMethod] = useState("");
 
   useEffect(() => {
@@ -59,7 +60,9 @@ export default function ConfigPagosSection() {
         const res = await fetch("/api/business-settings");
         if (res.ok) {
           const data = await res.json();
-          setPaymentMethods(data.payment_methods || ["Efectivo", "Mercado Pago"]);
+          const loaded = data.payment_methods || ["Efectivo", "Mercado Pago"];
+          setPaymentMethods(loaded);
+          setInitialMethods(loaded);
         }
       } catch (err) {
         console.error("Error al cargar medios de pago:", err);
@@ -105,6 +108,7 @@ export default function ConfigPagosSection() {
       });
 
       if (res.ok) {
+        setInitialMethods([...paymentMethods]);
         toast.success("Medios de pago actualizados con éxito");
       } else {
         toast.error("Error al guardar la configuración");
@@ -117,6 +121,10 @@ export default function ConfigPagosSection() {
     }
   };
 
+  const hasChanges =
+    paymentMethods.length !== initialMethods.length ||
+    paymentMethods.some((m) => !initialMethods.includes(m));
+
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -127,19 +135,28 @@ export default function ConfigPagosSection() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-          Medios de Pago
-        </h2>
-        <p className="text-xs text-slate-400 mt-1">
-          Habilitá los métodos de pago aceptados para turnos y ventas en el local
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
+            Medios de pago
+          </h2>
+          <p className="text-xs text-slate-400 mt-1">
+            Habilitá los métodos de pago aceptados para turnos y ventas en el local
+          </p>
+        </div>
+        <SaveButton
+          type="button"
+          onClick={handleSave}
+          loading={saving}
+          disabled={!hasChanges || saving}
+          className="w-full sm:w-auto"
+        />
       </div>
 
       {/* Métodos predefinidos */}
       <div className="space-y-3">
-        <h3 className="text-sm font-bold text-[var(--foreground)] uppercase tracking-wider text-[var(--accent)]">
-          Métodos Principales (Activar o Desactivar)
+        <h3 className="text-sm font-bold tracking-wider text-[var(--accent)]">
+          Métodos principales (activar o desactivar)
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
           {PRESET_METHODS.map((preset) => {
@@ -181,8 +198,8 @@ export default function ConfigPagosSection() {
 
       {/* Métodos personalizados */}
       <div className="bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10 space-y-4">
-        <h3 className="text-sm font-bold text-[var(--foreground)] uppercase tracking-wider text-[var(--accent)]">
-          Otros Métodos Habilitados
+        <h3 className="text-sm font-bold tracking-wider text-[var(--accent)]">
+          Otros métodos habilitados
         </h3>
 
         <form onSubmit={handleAddCustom} className="flex gap-2 max-w-md">
@@ -190,7 +207,7 @@ export default function ConfigPagosSection() {
             type="text"
             value={newMethod}
             onChange={(e) => setNewMethod(e.target.value)}
-            placeholder="Agregar otro medio (ej: Cripto, Cheque)"
+            placeholder="Agregar otro medio"
             className="flex-1 p-2.5 rounded-xl border border-[var(--foreground)]/15 bg-[var(--background)] text-sm text-[var(--foreground)] focus:border-[var(--accent)] outline-none"
           />
           <button
@@ -219,10 +236,6 @@ export default function ConfigPagosSection() {
             </span>
           ))}
         </div>
-      </div>
-
-      <div className="flex justify-end pt-2">
-        <SaveButton onClick={handleSave} loading={saving} disabled={saving} />
       </div>
     </div>
   );

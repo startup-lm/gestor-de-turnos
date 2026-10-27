@@ -57,17 +57,6 @@ export const addBarber = async (values: Barber): Promise<Barber | null> => {
   return res.json();
 };
 
-export const deleteBarber = async (id: number): Promise<boolean> => {
-  const res = await fetch(`${BASE}/api/barbers`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id }),
-  });
-  if (!res.ok) return false;
-  const { success } = await res.json();
-  return success;
-};
-
 export const getBarberByEmail = async (email: string): Promise<Barber | null> => {
   try {
     const res = await fetch(`${BASE}/api/barbers?email=${encodeURIComponent(email)}`);

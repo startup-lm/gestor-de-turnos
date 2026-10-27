@@ -36,26 +36,74 @@ export default function ConfigHorariosSection() {
   const [slotStep, setSlotStep] = useState<SlotStepMinutes>(30);
   const [criteria, setCriteria] = useState<CriteriaOption>("random");
 
+  const [initialData, setInitialData] = useState<{
+    openTime: string;
+    closeTime: string;
+    lunchEnabled: boolean;
+    lunchStart: string;
+    lunchEnd: string;
+    closedDays: number[];
+    slotStep: SlotStepMinutes;
+    criteria: CriteriaOption;
+  }>({
+    openTime: "09:00",
+    closeTime: "20:00",
+    lunchEnabled: false,
+    lunchStart: "13:00",
+    lunchEnd: "14:00",
+    closedDays: [],
+    slotStep: 30,
+    criteria: "random",
+  });
+
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true);
         const [h, s] = await Promise.all([getBusinessHours(), getBusinessSettings()]);
+        let oTime = "09:00";
+        let cTime = "20:00";
+        let cDays: number[] = [];
+        let hasLunch = false;
+        let lStart = "13:00";
+        let lEnd = "14:00";
+        let sStep: SlotStepMinutes = 30;
+        let crit: CriteriaOption = "random";
+
         if (h) {
-          setOpenTime(h.open_time || "09:00");
-          setCloseTime(h.close_time || "20:00");
-          setClosedDays(h.closed_days || []);
-          const hasLunch = Boolean(h.lunch_start && h.lunch_end);
+          oTime = h.open_time || "09:00";
+          cTime = h.close_time || "20:00";
+          cDays = h.closed_days || [];
+          hasLunch = Boolean(h.lunch_start && h.lunch_end);
+          if (h.lunch_start) lStart = h.lunch_start;
+          if (h.lunch_end) lEnd = h.lunch_end;
+
+          setOpenTime(oTime);
+          setCloseTime(cTime);
+          setClosedDays(cDays);
           setLunchEnabled(hasLunch);
-          if (h.lunch_start) setLunchStart(h.lunch_start);
-          if (h.lunch_end) setLunchEnd(h.lunch_end);
+          setLunchStart(lStart);
+          setLunchEnd(lEnd);
         }
         if (s) {
-          setSlotStep(s.slot_step_minutes || 30);
+          sStep = (s.slot_step_minutes as SlotStepMinutes) || 30;
           if (s.assignment_criteria) {
-            setCriteria(s.assignment_criteria as CriteriaOption);
+            crit = s.assignment_criteria as CriteriaOption;
           }
+          setSlotStep(sStep);
+          setCriteria(crit);
         }
+
+        setInitialData({
+          openTime: oTime,
+          closeTime: cTime,
+          lunchEnabled: hasLunch,
+          lunchStart: lStart,
+          lunchEnd: lEnd,
+          closedDays: cDays,
+          slotStep: sStep,
+          criteria: crit,
+        });
       } catch (err) {
         console.error("Error al cargar horarios:", err);
         toast.error("Error al cargar configuración de horarios");
@@ -95,6 +143,16 @@ export default function ConfigHorariosSection() {
       ]);
 
       if (hoursOk && settingsOk) {
+        setInitialData({
+          openTime,
+          closeTime,
+          lunchEnabled,
+          lunchStart,
+          lunchEnd,
+          closedDays: [...closedDays],
+          slotStep,
+          criteria,
+        });
         toast.success("Horarios y reglas guardados con éxito");
       } else {
         toast.error("Error al guardar algunos ajustes");
@@ -106,6 +164,16 @@ export default function ConfigHorariosSection() {
       setSaving(false);
     }
   };
+
+  const hasChanges =
+    openTime !== initialData.openTime ||
+    closeTime !== initialData.closeTime ||
+    lunchEnabled !== initialData.lunchEnabled ||
+    (lunchEnabled && (lunchStart !== initialData.lunchStart || lunchEnd !== initialData.lunchEnd)) ||
+    slotStep !== initialData.slotStep ||
+    criteria !== initialData.criteria ||
+    closedDays.length !== initialData.closedDays.length ||
+    closedDays.some((d) => !initialData.closedDays.includes(d));
 
   if (loading) {
     return (
@@ -130,13 +198,13 @@ export default function ConfigHorariosSection() {
     },
     {
       id: "prioritize_admin" as const,
-      title: "Priorizar Dueño/Admin",
+      title: "Priorizar dueño o admin",
       desc: "Llena primero la agenda del administrador",
       icon: Crown,
     },
     {
       id: "prioritize_barber" as const,
-      title: "Priorizar Empleados",
+      title: "Priorizar empleados",
       desc: "Llena primero la agenda de los barberos",
       icon: Briefcase,
     },
@@ -144,19 +212,27 @@ export default function ConfigHorariosSection() {
 
   return (
     <form onSubmit={handleSave} className="space-y-8 animate-in fade-in duration-300">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-          Horarios y Atención
-        </h2>
-        <p className="text-xs text-slate-400 mt-1">
-          Configurá los días de apertura, franja horaria, intervalo de turnos y criterio de asignación
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
+            Horarios y atención
+          </h2>
+          <p className="text-xs text-slate-400 mt-1">
+            Configurá los días de apertura, franja horaria, intervalo de turnos y criterio de asignación
+          </p>
+        </div>
+        <SaveButton
+          type="submit"
+          loading={saving}
+          disabled={!hasChanges || saving}
+          className="w-full sm:w-auto"
+        />
       </div>
 
       {/* Días de Atención */}
       <div className="bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10 space-y-3">
-        <h3 className="text-sm font-bold text-[var(--foreground)] uppercase tracking-wider text-[var(--accent)]">
-          Días Laborales
+        <h3 className="text-sm font-bold tracking-wider text-[var(--accent)]">
+          Días laborales
         </h3>
         <p className="text-xs text-slate-400">
           Marcá los días que el local está abierto (los días desmarcados se considerarán cerrados):
@@ -185,8 +261,8 @@ export default function ConfigHorariosSection() {
       {/* Franja Horaria e Intervalos */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10 space-y-4">
-          <h3 className="text-sm font-bold text-[var(--foreground)] uppercase tracking-wider text-[var(--accent)]">
-            Horario General
+          <h3 className="text-sm font-bold tracking-wider text-[var(--accent)]">
+            Horario general
           </h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -215,7 +291,7 @@ export default function ConfigHorariosSection() {
 
           <div>
             <label htmlFor="intervalo-turnos-select" className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Duración de Franja (Slots de turno)
+              Duración de franja (slots de turno)
             </label>
             <select
               id="intervalo-turnos-select"
@@ -234,8 +310,8 @@ export default function ConfigHorariosSection() {
         {/* Pausa / Almuerzo */}
         <div className="bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-[var(--foreground)] uppercase tracking-wider text-[var(--accent)]">
-              Descanso / Almuerzo
+            <h3 className="text-sm font-bold tracking-wider text-[var(--accent)]">
+              Descanso o almuerzo
             </h3>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -282,8 +358,8 @@ export default function ConfigHorariosSection() {
       {/* Criterio de Asignación Automática */}
       <div className="bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10 space-y-4">
         <div>
-          <h3 className="text-sm font-bold text-[var(--foreground)] uppercase tracking-wider text-[var(--accent)]">
-            Criterio de Asignación de Turnos
+          <h3 className="text-sm font-bold tracking-wider text-[var(--accent)]">
+            Criterio de asignación de turnos
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
             Define a qué barbero se asigna un turno cuando el cliente no elige uno específico:
@@ -317,10 +393,6 @@ export default function ConfigHorariosSection() {
             );
           })}
         </div>
-      </div>
-
-      <div className="flex justify-end pt-2">
-        <SaveButton type="submit" loading={saving} disabled={saving} />
       </div>
     </form>
   );

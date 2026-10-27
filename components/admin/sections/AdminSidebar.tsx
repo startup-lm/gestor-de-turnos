@@ -199,7 +199,7 @@ export default function AdminSidebar({
             <h2 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
               <span>Administración</span>
             </h2>
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/20">
+            <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/20">
               {isAdmin ? "Admin" : "Barbero"}
             </span>
           </div>
@@ -212,8 +212,8 @@ export default function AdminSidebar({
         <div className="flex-1 space-y-6 overflow-y-auto pr-1">
           {/* Categoría: Resumen y Finanzas */}
           <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">
-              Resumen & Finanzas
+            <div className="text-[10px] font-bold text-slate-400 tracking-wider px-3 mb-2">
+              Resumen y finanzas
             </div>
             <div className="space-y-1">
               <button
@@ -260,7 +260,7 @@ export default function AdminSidebar({
 
           {/* Categoría: Operaciones */}
           <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">
+            <div className="text-[10px] font-bold text-slate-400 tracking-wider px-3 mb-2">
               Operaciones
             </div>
             <div className="space-y-1">
@@ -289,7 +289,7 @@ export default function AdminSidebar({
           {/* Categoría: Configuración del Local (Solo Admin) */}
           {isAdmin && (
             <div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">
+              <div className="text-[10px] font-bold text-slate-400 tracking-wider px-3 mb-2">
                 Configuración del local
               </div>
               <div className="space-y-1">
@@ -337,7 +337,7 @@ export default function AdminSidebar({
         <div className="pt-4 mt-auto border-t border-white/10 px-3">
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)]" />
-            <span className="truncate">Panel Seguro Autenticado</span>
+            <span className="truncate">Panel seguro autenticado</span>
           </div>
         </div>
       </aside>

@@ -3,8 +3,10 @@
 import { useAuth } from "@/lib/auth/AuthContext";
 import Image from "next/image";
 import React, { useState } from "react";
+import { Loader2 } from "lucide-react";
 import DeleteCardButton from "./DeleteCardButton";
 import EditCardButton from "./EditCardButton";
+import CardDeleteOverlay from "./CardDeleteOverlay";
 import logo from "@/public/images/logo.png";
 
 interface CardProps {
@@ -42,36 +44,17 @@ export default function Card({
     >
       {/* Inline Delete Confirmation Overlay */}
       {confirmDelete && (
-        <div
-          className="absolute inset-0 z-20 bg-[var(--background)]/95 backdrop-blur-md p-6 flex flex-col items-center justify-center text-center rounded-2xl border border-red-500/30 animate-in fade-in duration-200"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-          </div>
-          <h4 className="text-sm font-bold text-[var(--foreground)] mb-1">¿Eliminar este elemento?</h4>
-          <p className="text-xs text-[var(--foreground)]/60 mb-5">Esta acción no se puede deshacer.</p>
-          <div className="flex gap-2 w-full">
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(false)}
-              disabled={isDeleting}
-              className="flex-1 py-2 px-3 text-xs font-semibold rounded-lg border border-[var(--foreground)]/10 text-[var(--foreground)]/80 hover:bg-[var(--foreground)]/5 transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (onDelete) onDelete();
-              }}
-              disabled={isDeleting}
-              className="flex-1 py-2 px-3 text-xs font-semibold rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors cursor-pointer shadow-md shadow-red-500/20 disabled:opacity-50"
-            >
-              {isDeleting ? "Eliminando..." : "Eliminar"}
-            </button>
-          </div>
-        </div>
+        <CardDeleteOverlay
+          title="¿Eliminar este elemento?"
+          description="Esta acción no se puede deshacer."
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          loading={isDeleting}
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={() => {
+            if (onDelete) onDelete();
+          }}
+        />
       )}
 
       {role === "admin" && !confirmDelete && (

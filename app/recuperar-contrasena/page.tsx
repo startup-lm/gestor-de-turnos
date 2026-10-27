@@ -4,23 +4,18 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { updatePassword } from "@/lib/repository/auth";
 import { supabaseClient } from "@/lib/supabase/supabaseClient";
-import dynamic from "next/dynamic";
-import SaveButton from "@/components/buttons/SaveButton";
+import { ActionButton } from "@/components/buttons/ActionButton";
 import InputPassword from "@/components/input/InputPassword";
 import Link from "next/link";
 import { Check, KeyRound } from "lucide-react";
 import Spinner from "@/components/loading/Spinner";
-
-const PopupModal = dynamic(() => import("@/components/ui/PopupModal"), { ssr: false, loading: () => null });
+import { toast } from "@/lib/store/useToastStore";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [loadingSession, setLoadingSession] = useState(true);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPopup, setShowPopup] = useState(false);
-  const [popupMessage, setPopupMessage] = useState("");
-  const [popupSuccess, setPopupSuccess] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
   const isDisabled = !newPassword || newPassword.length < 6 || confirmPassword !== newPassword || passwordChanged;
   const [loading, setLoading] = useState(false);
@@ -38,28 +33,23 @@ export default function ResetPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 6) {
-      setPopupMessage("La contraseña debe tener al menos 6 caracteres.");
-      setPopupSuccess(false);
-      setShowPopup(true);
+      toast.error("La contraseña debe tener al menos 6 caracteres.");
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPopupMessage("Las contraseñas no coinciden.");
-      setPopupSuccess(false);
-      setShowPopup(true);
+      toast.error("Las contraseñas no coinciden.");
       return;
     }
     setLoading(true);
     const updated = await updatePassword(newPassword);
 
-    setPopupMessage(updated ? "Contraseña modificada con éxito!" : "No se pudo cambiar la contraseña");
-    setPopupSuccess(updated);
-    setShowPopup(true);
-
     if (updated) {
+      toast.success("¡Contraseña modificada con éxito!");
       setNewPassword("");
       setConfirmPassword("");
       setPasswordChanged(true);
+    } else {
+      toast.error("No se pudo cambiar la contraseña");
     }
     setLoading(false);
   };
@@ -137,19 +127,19 @@ export default function ResetPasswordPage() {
             />
 
             <div className="flex justify-center mt-10">
-              <div className="w-[200px]">
-                <SaveButton id="btn-reset-password-submit" type="submit" disabled={isDisabled} loading={loading} />
+              <div className="w-[240px]">
+                <ActionButton
+                  id="btn-reset-password-submit"
+                  type="submit"
+                  name="Restablecer contraseña"
+                  Icon={KeyRound}
+                  disabled={isDisabled}
+                  loading={loading}
+                  className="w-full"
+                />
               </div>
             </div>
           </form>
-        )}
-
-        {showPopup && (
-          <PopupModal
-            message={popupMessage}
-            success={popupSuccess}
-            onClose={() => { setShowPopup(false) }}
-          />
         )}
       </div>
     </div>

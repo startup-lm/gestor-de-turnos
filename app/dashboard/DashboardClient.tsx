@@ -3,16 +3,25 @@
 import React, { useState, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useDashboardData, ViewMode } from "@/lib/hooks/useDashboardData";
-import Sidebar from "@/components/dashboard/Sidebar";
+import DashboardToolbar from "@/components/dashboard/DashboardToolbar";
+import Metrics from "@/components/dashboard/Metrics";
 import Spinner from "@/components/loading/Spinner";
 import { Barber } from "@/lib/types/Barbers";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useBarberCutsData } from "@/lib/hooks/useBarberCutsdata";
 import { useSalesRevenueForBarber } from "@/lib/hooks/useSalesRevenueForBarber";
 import { useSalesDashboardData } from "@/lib/hooks/useSalesDashboardData";
+import { useTotalRevenueForAllSales } from "@/lib/hooks/useTotalSalesRevenue";
+import { useTotalCommissions } from "@/lib/hooks/useTotalComission";
 
-const ChartSection = dynamic(() => import("@/components/dashboard/ChartSection"), { ssr: false, loading: () => <Spinner />, });
-const PieChartSection = dynamic(() => import("@/components/dashboard/PieChartSection"), { ssr: false, loading: () => <Spinner />, });
+const ChartSection = dynamic(() => import("@/components/dashboard/ChartSection"), {
+  ssr: false,
+  loading: () => <div className="p-8 flex justify-center"><Spinner /></div>,
+});
+const PieChartSection = dynamic(() => import("@/components/dashboard/PieChartSection"), {
+  ssr: false,
+  loading: () => <div className="p-8 flex justify-center"><Spinner /></div>,
+});
 
 interface Props {
   initialBarbers: Barber[];
@@ -20,25 +29,41 @@ interface Props {
 
 export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
   const { barberId, role } = useAuth();
-  const barbers = role === "admin" ? initialBarbers : initialBarbers.filter(b => b.id === barberId);
-  const [selectedBarberId, setSelectedBarberId] = useState(role === "admin" ? 0 : barberId);
-  const today = useMemo(() => {
-    const d = new Date();
-    d.setHours(13, 0, 0, 0);
-    return { start: d, end: d };
+  const isAdmin = role === "admin";
+  const barbers = isAdmin ? initialBarbers : initialBarbers.filter((b) => b.id === barberId);
+  const [selectedBarberId, setSelectedBarberId] = useState(isAdmin ? 0 : barberId);
+
+  // Inicialización de rango de fechas: "Este Mes"
+  const initialDates = useMemo(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    return { start: startOfMonth, end: endOfMonth };
   }, []);
-  const [startDate, setStartDate] = useState<Date>(today.start);
-  const [endDate, setEndDate] = useState<Date>(today.end);
+
+  const [startDate, setStartDate] = useState<Date>(initialDates.start);
+  const [endDate, setEndDate] = useState<Date>(initialDates.end);
   const [viewMode, setViewMode] = useState<ViewMode>("day");
+
+  // Hooks de turnos y cortes
   const { total: turnosTotales, chartData } = useDashboardData(selectedBarberId, startDate, endDate, viewMode, "count");
   const { total: ingresosTotales } = useDashboardData(selectedBarberId, startDate, endDate, viewMode, "revenue");
+
+  // Hooks de ventas de productos
   const { chartData: salesChartData } = useSalesDashboardData(selectedBarberId, startDate, endDate, viewMode);
+  const { totalSalesRevenue: ingresosVentas, totalSales: ventasCount } = useSalesRevenueForBarber(selectedBarberId, startDate, endDate);
+
+  // Datos consolidados para comisiones globales
+  const { pieData, barberTotals } = useBarberCutsData(startDate, endDate, barbers);
+  const { totalSalesCommission } = useTotalRevenueForAllSales(startDate, endDate, barbers);
+  const totalCutsCommission = useTotalCommissions(barberTotals, barbers);
+  const totalCommissionsAll = totalCutsCommission + totalSalesCommission;
+
   const turnos = turnosTotales ?? 0;
   const ingresos = ingresosTotales ?? 0;
-  const comision = barbers.find(b => b.id === selectedBarberId)?.commission ?? 0;
-  const comisionVenta = barbers.find(b => b.id === selectedBarberId)?.sale_commission ?? 0;
-  const { totalSalesRevenue: ingresosVentas, totalSales: ventasCount, } = useSalesRevenueForBarber(selectedBarberId, startDate, endDate);
-  const { pieData } = useBarberCutsData(startDate, endDate);
+  const selectedBarber = barbers.find((b) => b.id === selectedBarberId);
+  const comision = selectedBarber?.commission ?? 0;
+  const comisionVenta = selectedBarber?.sale_commission ?? 0;
 
   const isDataLoading = turnosTotales === null;
 
@@ -46,13 +71,10 @@ export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
     setSelectedBarberId(id);
   }, []);
 
-  const handleDateChange = useCallback(
-    (range: { startDate: Date; endDate: Date }) => {
-      setStartDate(range.startDate);
-      setEndDate(range.endDate);
-    },
-    []
-  );
+  const handleDateChange = useCallback((range: { startDate: Date; endDate: Date }) => {
+    setStartDate(range.startDate);
+    setEndDate(range.endDate);
+  }, []);
 
   const handleViewChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
@@ -60,75 +82,75 @@ export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
 
   if (isDataLoading) {
     return (
-      <div className="w-full space-y-6">
-        <div className="border-b border-slate-800/40 pb-4 mb-2">
-          <div className="h-7 w-64 bg-slate-800/60 rounded-lg mb-2 animate-pulse" />
-          <div className="h-4 w-96 bg-slate-800/40 rounded-lg animate-pulse" />
+      <div className="w-full space-y-6 animate-pulse">
+        <div className="border-b border-white/10 pb-4 mb-2">
+          <div className="h-7 w-64 bg-slate-800/60 rounded-lg mb-2" />
+          <div className="h-4 w-96 bg-slate-800/40 rounded-lg" />
         </div>
-        <div className="flex flex-col xl:flex-row gap-6 items-stretch">
-          <div className="w-full xl:w-[280px] 2xl:w-[300px] h-[480px] bg-slate-900/40 rounded-2xl border border-slate-800/60 p-6 flex flex-col items-center justify-center">
-            <Spinner />
-            <p className="text-xs text-slate-500 mt-3 font-medium">Cargando filtros...</p>
-          </div>
-          <div className="flex-1 min-h-[480px] bg-slate-900/40 rounded-2xl border border-slate-800/60 flex flex-col items-center justify-center p-8">
-            <Spinner />
-            <p className="text-sm text-[var(--foreground)]/70 mt-3 font-medium tracking-wide">
-              Cargando métricas y estadísticas...
-            </p>
-          </div>
+        <div className="h-16 w-full bg-slate-900/40 rounded-2xl border border-white/5" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-28 bg-slate-900/40 rounded-2xl border border-white/5" />
+          ))}
+        </div>
+        <div className="h-96 w-full bg-slate-900/40 rounded-2xl border border-white/5 flex items-center justify-center">
+          <Spinner />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-6">
-      {/* Cabecera de la sección */}
-      <div className="border-b border-slate-800/40 pb-4 mb-2">
+    <div className="w-full space-y-6 animate-in fade-in duration-300">
+      {/* Cabecera Principal */}
+      <div className="border-b border-white/10 pb-4">
         <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
           Panel de Control y Métricas
         </h2>
         <p className="text-xs text-slate-400 mt-0.5">
-          {role === "admin"
-            ? "Evolución temporal de turnos, productos vendidos y distribución por barbero"
-            : "Tus turnos realizados y comisiones generadas"}
+          {isAdmin
+            ? "Rendimiento del negocio, volumen de servicios, ventas de productos y métricas por profesional"
+            : "Tus turnos realizados, ventas generadas y comisiones acumuladas"}
         </p>
       </div>
 
-      <div className="flex flex-col xl:flex-row gap-6 items-stretch">
-        <aside className="w-full xl:w-[280px] 2xl:w-[300px] flex-shrink-0">
-          <Sidebar
-            barbers={barbers}
-            selectedBarberId={selectedBarberId}
-            onBarberChange={handleBarberChange}
-            startDate={startDate}
-            endDate={endDate}
-            onDateChange={handleDateChange}
-            showAll={role === "admin"}
-          />
-        </aside>
+      {/* Toolbar Superior Unificada: Selector de Barbero + Presets Rápidos */}
+      <DashboardToolbar
+        barbers={barbers}
+        selectedBarberId={selectedBarberId}
+        onBarberChange={handleBarberChange}
+        startDate={startDate}
+        endDate={endDate}
+        onDateChange={handleDateChange}
+        showAll={isAdmin}
+      />
 
-        <div className="flex-1 min-w-0 flex flex-col justify-between">
-          <ChartSection
-            data={chartData}
-            salesData={salesChartData}
-            viewMode={viewMode}
-            onViewChange={handleViewChange}
-            turnos={turnos}
-            ventas={ventasCount}
-            ingresos={ingresos}
-            comision={comision}
-            comisionVenta={comisionVenta}
-            ingresosVentas={ingresosVentas} 
-          />
-        </div>
+      {/* 4 KPIs Ejecutivos */}
+      <Metrics
+        turnos={turnos}
+        ventas={ventasCount}
+        ingresos={ingresos}
+        comision={comision}
+        comisionVenta={comisionVenta}
+        ingresosVentas={ingresosVentas}
+        selectedBarberId={selectedBarberId}
+        totalCommissionsAll={totalCommissionsAll}
+      />
+
+      {/* Gráfico de Evolución Temporal */}
+      <div className="w-full">
+        <ChartSection
+          data={chartData}
+          salesData={salesChartData}
+          viewMode={viewMode}
+          onViewChange={handleViewChange}
+        />
       </div>
 
-      {role === "admin" && (
-        <div className="mt-4">
-          <section className="w-full">
-            <PieChartSection data={pieData} />
-          </section>
+      {/* Distribución por Barbero (Exclusivo Admin) */}
+      {isAdmin && (
+        <div className="w-full">
+          <PieChartSection data={pieData} />
         </div>
       )}
     </div>

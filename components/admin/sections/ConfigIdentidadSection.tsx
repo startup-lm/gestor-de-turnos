@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { Upload } from "lucide-react";
+import { Upload, Building2, Sparkles, Store, BookOpen, Camera, X } from "lucide-react";
 import Spinner from "@/components/loading/Spinner";
 import SaveButton from "@/components/buttons/SaveButton";
 import { uploadImage, deleteImage } from "@/lib/repository/storage";
@@ -21,10 +21,26 @@ export default function ConfigIdentidadSection() {
   const [currentLogo, setCurrentLogo] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isDraggingLogo, setIsDraggingLogo] = useState(false);
 
   const [currentPhoto, setCurrentPhoto] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
+
+  const [initialData, setInitialData] = useState<{
+    businessName: string;
+    slogan: string;
+    story: string;
+    logo: string | null;
+    photo: string | null;
+  }>({
+    businessName: "",
+    slogan: "",
+    story: "",
+    logo: null,
+    photo: null,
+  });
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -36,12 +52,26 @@ export default function ConfigIdentidadSection() {
         const res = await fetch("/api/business-settings");
         if (res.ok) {
           const data = await res.json();
-          setBusinessName(data.business_name || "");
-          setSlogan(data.slogan || "");
-          setCurrentLogo(data.business_logo || null);
-          setCurrentPhoto(data.local_photo || null);
+          const name = data.business_name || "";
+          const slog = data.slogan || "";
+          const logo = data.business_logo || null;
+          const photo = data.local_photo || null;
           const storyArray = data.our_story || [];
-          setStory(Array.isArray(storyArray) ? storyArray.join("\n\n") : "");
+          const storyStr = Array.isArray(storyArray) ? storyArray.join("\n\n") : "";
+
+          setBusinessName(name);
+          setSlogan(slog);
+          setCurrentLogo(logo);
+          setCurrentPhoto(photo);
+          setStory(storyStr);
+
+          setInitialData({
+            businessName: name,
+            slogan: slog,
+            story: storyStr,
+            logo,
+            photo,
+          });
         }
       } catch (err) {
         console.error("Error al cargar configuración de identidad:", err);
@@ -61,12 +91,24 @@ export default function ConfigIdentidadSection() {
     }
   };
 
+  const handleCancelLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+    if (logoInputRef.current) logoInputRef.current.value = "";
+  };
+
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setPhotoFile(file);
       setPhotoPreview(URL.createObjectURL(file));
     }
+  };
+
+  const handleCancelPhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    if (photoInputRef.current) photoInputRef.current.value = "";
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -109,6 +151,13 @@ export default function ConfigIdentidadSection() {
         setCurrentPhoto(updatedPhoto);
         setLogoFile(null);
         setPhotoFile(null);
+        setInitialData({
+          businessName,
+          slogan,
+          story,
+          logo: updatedLogo,
+          photo: updatedPhoto,
+        });
         toast.success("Identidad y marca actualizada con éxito");
       } else {
         toast.error("Error al guardar la configuración");
@@ -121,6 +170,13 @@ export default function ConfigIdentidadSection() {
     }
   };
 
+  const hasChanges =
+    businessName !== initialData.businessName ||
+    slogan !== initialData.slogan ||
+    story !== initialData.story ||
+    logoFile !== null ||
+    photoFile !== null;
+
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -129,26 +185,37 @@ export default function ConfigIdentidadSection() {
     );
   }
 
+  const paragraphCount = story.split("\n\n").filter((p) => p.trim().length > 0).length;
+
   return (
-    <form onSubmit={handleSave} className="space-y-8 animate-in fade-in duration-300">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-          Identidad y marca
-        </h2>
-        <p className="text-xs text-slate-400 mt-1">
-          Personalizá el nombre, slogan, logo, imagen del local y el texto de historia
-        </p>
+    <form onSubmit={handleSave} className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
+            Identidad y marca
+          </h2>
+          <p className="text-xs text-slate-400 mt-1">
+            Personalizá el nombre, slogan, logotipo, foto de fachada y la historia de tu negocio
+          </p>
+        </div>
+        <SaveButton
+          type="submit"
+          loading={saving}
+          disabled={!hasChanges || saving}
+          className="w-full sm:w-auto"
+        />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Nombre y Slogan */}
-        <div className="space-y-4 bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10">
-          <h3 className="text-sm font-bold text-[var(--foreground)] uppercase tracking-wider text-[var(--accent)]">
-            Datos principales
-          </h3>
+      {/* 1. Datos Principales (Nombre y Slogan en 2 columnas) */}
+      <div className="bg-[var(--foreground)]/5 p-5 sm:p-6 rounded-2xl border border-[var(--foreground)]/10 space-y-4">
+        <div className="flex items-center gap-2 text-[var(--accent)] font-bold text-sm tracking-wider">
+          <Building2 className="w-4 h-4" />
+          <span>Datos principales</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
             <label htmlFor="business-name-input" className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Nombre del local
+              Nombre del local <span className="text-[var(--accent)]">*</span>
             </label>
             <input
               id="business-name-input"
@@ -159,6 +226,9 @@ export default function ConfigIdentidadSection() {
               required
               className="w-full p-2.5 rounded-xl border border-[var(--foreground)]/15 bg-[var(--background)] text-sm text-[var(--foreground)] focus:border-[var(--accent)] outline-none transition-all"
             />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Nombre público visible en títulos, comprobantes y mensajes
+            </p>
           </div>
 
           <div>
@@ -173,40 +243,233 @@ export default function ConfigIdentidadSection() {
               placeholder="Ej: Corte clásico y estilo masculino"
               className="w-full p-2.5 rounded-xl border border-[var(--foreground)]/15 bg-[var(--background)] text-sm text-[var(--foreground)] focus:border-[var(--accent)] outline-none transition-all"
             />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Frase distintiva o lema que acompaña al nombre
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* Logotipo */}
-        <div className="space-y-4 bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10 flex flex-col justify-between">
+      {/* 2. Recursos Visuales (Logotipo y Foto del local en 2 columnas equilibradas) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Contenedor: Logotipo del negocio */}
+        <div
+          className={`bg-[var(--foreground)]/5 p-5 sm:p-6 rounded-2xl border transition-all duration-200 flex flex-col justify-between ${
+            isDraggingLogo
+              ? "border-[var(--accent)] bg-[var(--accent)]/5 scale-[1.005]"
+              : "border-[var(--foreground)]/10"
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDraggingLogo(true);
+          }}
+          onDragLeave={() => setIsDraggingLogo(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDraggingLogo(false);
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+              const file = e.dataTransfer.files[0];
+              setLogoFile(file);
+              setLogoPreview(URL.createObjectURL(file));
+            }
+          }}
+        >
           <div>
-            <h3 className="text-sm font-bold text-[var(--foreground)] uppercase tracking-wider text-[var(--accent)] mb-3">
-              Logotipo del negocio
-            </h3>
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[var(--accent)]/40 bg-[var(--background)] shadow-inner flex-shrink-0">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-2 text-[var(--accent)] font-bold text-sm tracking-wider">
+                <Sparkles className="w-4 h-4" />
+                <span>Logotipo del negocio</span>
+              </div>
+              <span className="text-[10px] font-medium tracking-wide px-2 py-0.5 rounded-full bg-[var(--foreground)]/10 text-slate-300 border border-[var(--foreground)]/10">
+                Navbar y marca
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mb-4">
+              Identificador gráfico principal en la barra superior, favicon y comprobantes.
+            </p>
+
+            {/* Zona de Preview y Controles */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 p-4 rounded-xl bg-[var(--background)]/60 border border-[var(--foreground)]/10">
+              {/* Preview del Logo */}
+              <div
+                onClick={() => logoInputRef.current?.click()}
+                className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-[var(--accent)]/40 bg-[linear-gradient(45deg,#1e293b_25%,transparent_25%),linear-gradient(-45deg,#1e293b_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#1e293b_75%),linear-gradient(-45deg,transparent_75%,#1e293b_75%)] bg-[size:10px_10px] bg-[#0f172a] shadow-lg flex-shrink-0 relative group cursor-pointer"
+                title="Hacé click para cambiar el logotipo"
+              >
                 <Image
                   src={logoPreview || currentLogo || logoPlaceholder}
-                  alt="Logo"
-                  width={64}
-                  height={64}
-                  className="w-full h-full object-cover"
+                  alt="Logo del negocio"
+                  width={96}
+                  height={96}
+                  className="w-full h-full object-contain p-1.5 transition-transform group-hover:scale-105 duration-200"
                 />
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[11px] font-medium gap-1">
+                  <Camera className="w-4 h-4 text-[var(--accent)]" />
+                  <span>Cambiar</span>
+                </div>
               </div>
-              <div className="flex-1">
-                <button
-                  type="button"
-                  onClick={() => logoInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg !bg-white/5 !text-slate-200 hover:!text-white !border !border-[var(--foreground)]/20 hover:!border-[var(--accent)]/50 transition-all cursor-pointer text-xs font-semibold"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  Cambiar logo
-                </button>
-                <p className="text-[10px] text-slate-400 mt-1">PNG o WEBP con fondo transparente</p>
+
+              {/* Acciones y Especificaciones */}
+              <div className="flex-1 space-y-3 w-full">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg !bg-white/5 !text-slate-200 hover:!text-white !border !border-[var(--foreground)]/20 hover:!border-[var(--accent)]/50 transition-all cursor-pointer text-xs font-semibold"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[var(--accent)]" />
+                    {logoFile ? "Cambiar archivo" : "Subir nuevo logo"}
+                  </button>
+
+                  {logoFile && (
+                    <button
+                      type="button"
+                      onClick={handleCancelLogo}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      title="Quitar archivo seleccionado"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      Quitar archivo
+                    </button>
+                  )}
+                </div>
+
+                {logoFile ? (
+                  <div className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/25 px-2.5 py-1.5 rounded-lg flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
+                    <span className="truncate max-w-[200px] font-medium">{logoFile.name}</span>
+                    <span className="text-slate-400 text-[10px]">({(logoFile.size / 1024).toFixed(0)} KB)</span>
+                  </div>
+                ) : (
+                  <div className="space-y-1 text-[11px] text-slate-400">
+                    <p className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-[var(--accent)]" />
+                      Formato PNG o WEBP con fondo transparente
+                    </p>
+                    <p className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-[var(--accent)]" />
+                      Proporción 1:1 recomendada (ej: 512×512 px)
+                    </p>
+                  </div>
+                )}
+
                 <input
                   ref={logoInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/webp,image/svg+xml,image/jpeg"
                   onChange={handleLogoChange}
+                  className="hidden"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Contenedor: Foto del local / Fachada */}
+        <div
+          className={`bg-[var(--foreground)]/5 p-5 sm:p-6 rounded-2xl border transition-all duration-200 flex flex-col justify-between ${
+            isDraggingPhoto
+              ? "border-[var(--accent)] bg-[var(--accent)]/5 scale-[1.005]"
+              : "border-[var(--foreground)]/10"
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDraggingPhoto(true);
+          }}
+          onDragLeave={() => setIsDraggingPhoto(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDraggingPhoto(false);
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+              const file = e.dataTransfer.files[0];
+              setPhotoFile(file);
+              setPhotoPreview(URL.createObjectURL(file));
+            }
+          }}
+        >
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-2 text-[var(--accent)] font-bold text-sm tracking-wider">
+                <Store className="w-4 h-4" />
+                <span>Foto del local o fachada</span>
+              </div>
+              <span className="text-[10px] font-medium tracking-wide px-2 py-0.5 rounded-full bg-[var(--foreground)]/10 text-slate-300 border border-[var(--foreground)]/10">
+                Sobre nosotros
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mb-4">
+              Imagen de las instalaciones visible en la sección Sobre Nosotros y la reserva de turnos.
+            </p>
+
+            {/* Zona de Preview y Controles */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 p-4 rounded-xl bg-[var(--background)]/60 border border-[var(--foreground)]/10">
+              {/* Preview de la Foto (aspect 16:9) */}
+              <div
+                onClick={() => photoInputRef.current?.click()}
+                className="w-full sm:w-44 h-28 rounded-xl overflow-hidden border border-[var(--foreground)]/20 bg-[var(--background)] shadow-lg flex-shrink-0 relative group cursor-pointer"
+                title="Hacé click para cambiar la foto del local"
+              >
+                <Image
+                  src={photoPreview || currentPhoto || localPlaceholder}
+                  alt="Fachada del local"
+                  fill
+                  className="object-cover transition-transform group-hover:scale-105 duration-200"
+                />
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[11px] font-medium gap-1">
+                  <Camera className="w-4 h-4 text-[var(--accent)]" />
+                  <span>Cambiar</span>
+                </div>
+              </div>
+
+              {/* Acciones y Especificaciones */}
+              <div className="flex-1 space-y-3 w-full">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg !bg-white/5 !text-slate-200 hover:!text-white !border !border-[var(--foreground)]/20 hover:!border-[var(--accent)]/50 transition-all cursor-pointer text-xs font-semibold"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[var(--accent)]" />
+                    {photoFile ? "Cambiar archivo" : "Subir nueva foto"}
+                  </button>
+
+                  {photoFile && (
+                    <button
+                      type="button"
+                      onClick={handleCancelPhoto}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      title="Quitar archivo seleccionado"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      Quitar archivo
+                    </button>
+                  )}
+                </div>
+
+                {photoFile ? (
+                  <div className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/25 px-2.5 py-1.5 rounded-lg flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
+                    <span className="truncate max-w-[200px] font-medium">{photoFile.name}</span>
+                    <span className="text-slate-400 text-[10px]">({(photoFile.size / 1024).toFixed(0)} KB)</span>
+                  </div>
+                ) : (
+                  <div className="space-y-1 text-[11px] text-slate-400">
+                    <p className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-[var(--accent)]" />
+                      Formato panorámico 16:9 recomendado
+                    </p>
+                    <p className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-[var(--accent)]" />
+                      Recomendado 1200×675 px (WEBP o JPG)
+                    </p>
+                  </div>
+                )}
+
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoChange}
                   className="hidden"
                 />
               </div>
@@ -215,63 +478,38 @@ export default function ConfigIdentidadSection() {
         </div>
       </div>
 
-      {/* Foto del Local */}
-      <div className="bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10 space-y-4">
-        <h3 className="text-sm font-bold text-[var(--foreground)] uppercase tracking-wider text-[var(--accent)]">
-          Foto del Local
-        </h3>
-        <div className="flex flex-col sm:flex-row gap-5 items-start">
-          <div className="w-full sm:w-48 h-32 rounded-xl overflow-hidden border border-[var(--foreground)]/15 bg-[var(--background)] relative flex-shrink-0">
-            <Image
-              src={photoPreview || currentPhoto || localPlaceholder}
-              alt="Fachada del local"
-              fill
-              className="object-cover"
-            />
+      {/* 3. Nuestra Historia */}
+      <div className="bg-[var(--foreground)]/5 p-5 sm:p-6 rounded-2xl border border-[var(--foreground)]/10 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[var(--accent)] font-bold text-sm tracking-wider">
+            <BookOpen className="w-4 h-4" />
+            <span>Nuestra historia</span>
           </div>
-          <div className="flex-1 space-y-2">
-            <p className="text-xs text-slate-300">
-              Esta foto se muestra en la sección de Sobre Nosotros y en la cabecera informativa de clientes.
-            </p>
-            <button
-              type="button"
-              onClick={() => photoInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl !bg-white/5 !text-slate-200 hover:!text-white !border !border-[var(--foreground)]/20 hover:!border-[var(--accent)]/50 transition-all cursor-pointer text-xs font-semibold"
-            >
-              <Upload className="w-4 h-4" />
-              Subir nueva foto
-            </button>
-            <input
-              ref={photoInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-              className="hidden"
-            />
-          </div>
+          <span className="text-[11px] text-slate-400 font-medium">
+            {paragraphCount} {paragraphCount === 1 ? "párrafo" : "párrafos"}
+          </span>
         </div>
-      </div>
-
-      {/* Nuestra Historia */}
-      <div className="bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10 space-y-3">
-        <h3 className="text-sm font-bold text-[var(--foreground)] uppercase tracking-wider text-[var(--accent)]">
-          Nuestra historia
-        </h3>
         <p className="text-xs text-slate-400">
-          Separá los párrafos dejando una línea en blanco entre ellos.
+          Contá la historia, pasión y valores de tu negocio. Separá los párrafos dejando una línea en blanco entre ellos.
         </p>
         <textarea
           rows={5}
           value={story}
           onChange={(e) => setStory(e.target.value)}
           placeholder="Escribí aquí la historia y la pasión de tu barbería..."
-          className="w-full p-3 rounded-xl border border-[var(--foreground)]/15 bg-[var(--background)] text-sm text-[var(--foreground)] focus:border-[var(--accent)] outline-none transition-all resize-y"
+          className="w-full p-3.5 rounded-xl border border-[var(--foreground)]/15 bg-[var(--background)] text-sm text-[var(--foreground)] focus:border-[var(--accent)] outline-none transition-all resize-y leading-relaxed"
         />
       </div>
 
-      <div className="flex justify-end pt-2">
-        <SaveButton type="submit" loading={saving} disabled={saving} />
-      </div>
+      {(logoFile || photoFile) && (
+        <div className="pt-2">
+          <p className="text-xs text-amber-300/90 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            Hay imágenes seleccionadas listas para guardar
+          </p>
+        </div>
+      )}
     </form>
   );
 }
+

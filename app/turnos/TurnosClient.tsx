@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import Spinner from "@/components/loading/Spinner";
 import { CalendarSkeleton } from "@/components/loading/Skeleton";
 import { Barber } from "@/lib/types/Barbers";
 import { Service } from "@/lib/types/Services";
@@ -163,9 +162,6 @@ export default function TurnosClient({ initialBarbers, initialServices }: Readon
 
   const handleAppointmentCreated = () => {
     triggerCalendarRefresh();
-    if (role !== "guest") {
-      setSelectedService(null);
-    }
   };
 
   const handleResetFlow = () => {
@@ -378,7 +374,6 @@ export default function TurnosClient({ initialBarbers, initialServices }: Readon
                       }}
                       onResetFlow={handleResetFlow}
                       onAppointmentCreated={handleAppointmentCreated}
-                      isMobileModal
                     />
                   )}
                   {isDetailOpen && selectedAppointment && (

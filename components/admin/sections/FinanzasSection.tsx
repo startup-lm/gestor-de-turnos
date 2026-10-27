@@ -13,6 +13,7 @@ const DateRangeCalendar = dynamic(
   () => import("@/components/dashboard/DateRangeCalendar"),
   { ssr: false, loading: () => <div className="p-4 flex justify-center"><Spinner /></div> }
 );
+import { useBusinessContext } from "@/lib/context/BusinessContext";
 import {
   Wallet,
   Coins,
@@ -29,6 +30,10 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Banknote,
+  ArrowRightLeft,
+  Copy,
+  Check,
 } from "lucide-react";
 
 interface Props {
@@ -46,8 +51,8 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
   const initialDates = useMemo(() => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
-    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-    return { start: startOfMonth, end: endOfDay };
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    return { start: startOfMonth, end: endOfMonth };
   }, []);
 
   const [startDate, setStartDate] = useState<Date>(initialDates.start);
@@ -70,13 +75,15 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
       const monday = new Date(now);
       monday.setDate(now.getDate() + diffToMonday);
       monday.setHours(0, 0, 0, 0);
-      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      sunday.setHours(23, 59, 59);
       setStartDate(monday);
-      setEndDate(end);
+      setEndDate(sunday);
       setShowCustomPicker(false);
     } else if (p === "month") {
       const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
-      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
       setStartDate(start);
       setEndDate(end);
       setShowCustomPicker(false);
@@ -98,9 +105,31 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
   };
 
   // Obtener datos consolidados
+  const { businessSettings } = useBusinessContext();
   const { summary, paymentTotals, barberTotals } = useBarberCutsData(startDate, endDate, barbers);
-  const { totalSalesRevenue, totalSales, totalSalesCommission } = useTotalRevenueForAllSales(startDate, endDate, barbers);
+  const { totalSalesRevenue, totalSales, totalSalesCommission, salesByBarber } = useTotalRevenueForAllSales(startDate, endDate, barbers);
   const totalCommissions = useTotalCommissions(barberTotals, barbers);
+
+  const [copiedBarberId, setCopiedBarberId] = useState<number | null>(null);
+
+  const handleCopyLiquidation = (
+    barberName: string,
+    barberId: number,
+    cortes: number,
+    facturadoCortes: number,
+    aLiquidarCortes: number,
+    facturadoVentas: number,
+    aLiquidarVentas: number,
+    total: number
+  ) => {
+    const text = `💈 *Liquidación - ${barberName}*\n📅 Período: ${formattedRange}\n\n✂️ *Cortes:* ${cortes} turnos ($${facturadoCortes.toLocaleString("es-AR")})\n💵 Comisión cortes: $${Math.round(aLiquidarCortes).toLocaleString("es-AR")}\n\n🛍️ *Ventas:* $${facturadoVentas.toLocaleString("es-AR")}\n💵 Comisión ventas: $${Math.round(aLiquidarVentas).toLocaleString("es-AR")}\n\n✅ *TOTAL A LIQUIDAR: $${Math.round(total).toLocaleString("es-AR")}*`;
+
+    if (typeof window !== "undefined" && navigator?.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedBarberId(barberId);
+      setTimeout(() => setCopiedBarberId(null), 2500);
+    }
+  };
 
   // Cálculos financieros
   const totalTurnosRevenue = summary.totalRevenue;
@@ -111,12 +140,94 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
 
   const profitMargin = combinedRevenue > 0 ? ((netProfit / combinedRevenue) * 100).toFixed(1) : "0";
 
-  // Participación de pagos
-  const efectivoAmount = paymentTotals?.Efectivo ?? 0;
-  const mercadoPagoAmount = paymentTotals?.MercadoPago ?? 0;
-  const totalPagosTurnos = efectivoAmount + mercadoPagoAmount + (paymentTotals?.Otros ?? 0);
-  const efectivoPercent = totalPagosTurnos > 0 ? Math.round((efectivoAmount / totalPagosTurnos) * 100) : 0;
-  const mpPercent = totalPagosTurnos > 0 ? Math.round((mercadoPagoAmount / totalPagosTurnos) * 100) : 0;
+  // Métodos de pago dinámicos
+  const activeMethodNames = useMemo(() => {
+    const fromSettings = businessSettings?.payment_methods || ["Efectivo", "Mercado Pago"];
+    const fromTotals = Object.keys(paymentTotals || {});
+    const combined = [...fromSettings];
+    for (const m of fromTotals) {
+      if (!combined.includes(m)) combined.push(m);
+    }
+    return combined;
+  }, [businessSettings?.payment_methods, paymentTotals]);
+
+  const totalPagosTurnos = useMemo(() => {
+    return Object.values(paymentTotals || {}).reduce((acc, curr) => acc + curr, 0);
+  }, [paymentTotals]);
+
+  const getMethodStyle = (methodName: string) => {
+    const lower = methodName.toLowerCase();
+    if (lower.includes("efectivo")) {
+      return {
+        icon: Banknote,
+        border: "border-amber-500/20",
+        bg: "bg-amber-500/5",
+        iconColor: "text-amber-400",
+        iconBg: "bg-amber-500/15 border-amber-500/30",
+        badge: "bg-amber-500/15 text-amber-300 border-amber-500/25",
+        barColor: "bg-amber-400",
+        textColor: "text-white",
+      };
+    }
+    if (lower.includes("mercado") || lower.includes("mp")) {
+      return {
+        icon: Wallet,
+        border: "border-sky-500/20",
+        bg: "bg-sky-500/5",
+        iconColor: "text-sky-400",
+        iconBg: "bg-sky-500/15 border-sky-500/30",
+        badge: "bg-sky-500/15 text-sky-300 border-sky-500/25",
+        barColor: "bg-sky-400",
+        textColor: "text-sky-400",
+      };
+    }
+    if (lower.includes("transf")) {
+      return {
+        icon: ArrowRightLeft,
+        border: "border-purple-500/20",
+        bg: "bg-purple-500/5",
+        iconColor: "text-purple-400",
+        iconBg: "bg-purple-500/15 border-purple-500/30",
+        badge: "bg-purple-500/15 text-purple-300 border-purple-500/25",
+        barColor: "bg-purple-400",
+        textColor: "text-purple-400",
+      };
+    }
+    if (lower.includes("débito") || lower.includes("debito")) {
+      return {
+        icon: CreditCard,
+        border: "border-emerald-500/20",
+        bg: "bg-emerald-500/5",
+        iconColor: "text-emerald-400",
+        iconBg: "bg-emerald-500/15 border-emerald-500/30",
+        badge: "bg-emerald-500/15 text-emerald-300 border-emerald-500/25",
+        barColor: "bg-emerald-400",
+        textColor: "text-emerald-400",
+      };
+    }
+    if (lower.includes("crédito") || lower.includes("credito")) {
+      return {
+        icon: Coins,
+        border: "border-pink-500/20",
+        bg: "bg-pink-500/5",
+        iconColor: "text-pink-400",
+        iconBg: "bg-pink-500/15 border-pink-500/30",
+        badge: "bg-pink-500/15 text-pink-300 border-pink-500/25",
+        barColor: "bg-pink-400",
+        textColor: "text-pink-400",
+      };
+    }
+    return {
+      icon: CreditCard,
+      border: "border-slate-800",
+      bg: "bg-slate-800/30",
+      iconColor: "text-slate-300",
+      iconBg: "bg-slate-800 border-slate-700",
+      badge: "bg-slate-800 text-slate-300 border-slate-700",
+      barColor: "bg-slate-500",
+      textColor: "text-slate-200",
+    };
+  };
 
   // Formato de texto de rango
   const formattedRange = useMemo(() => {
@@ -130,7 +241,6 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
         <div>
           <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-            <Wallet className="w-6 h-6 text-[var(--accent)]" />
             <span>Finanzas y balance de caja</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
@@ -161,7 +271,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                   : "!text-slate-400 hover:!text-white hover:!bg-white/5"
               }`}
             >
-              Esta Semana
+              Esta semana
             </button>
             <button
               type="button"
@@ -172,7 +282,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                   : "!text-slate-400 hover:!text-white hover:!bg-white/5"
               }`}
             >
-              Este Mes
+              Este mes
             </button>
             <button
               type="button"
@@ -183,7 +293,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                   : "!text-slate-400 hover:!text-white hover:!bg-white/5"
               }`}
             >
-              Mes Pasado
+              Mes pasado
             </button>
             <button
               type="button"
@@ -202,22 +312,11 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
         </div>
       </div>
 
-      {/* Rango Activo & Selector Calendario Desplegable */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-400 gap-2 bg-slate-900/40 p-3 rounded-xl border border-white/5">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-[var(--accent)]" />
-          <span>Período consultado:</span>
-          <span className="font-semibold text-white capitalize">{formattedRange}</span>
-        </div>
-        {preset !== "custom" && (
-          <button
-            type="button"
-            onClick={() => setShowCustomPicker(!showCustomPicker)}
-            className="text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer"
-          >
-            {showCustomPicker ? "Ocultar calendario" : "Ajustar fechas exactas"}
-          </button>
-        )}
+      {/* Rango Activo Informativo */}
+      <div className="flex items-center text-xs text-slate-400 gap-2 bg-slate-900/40 px-3.5 py-2.5 rounded-xl border border-white/5">
+        <Calendar className="w-4 h-4 text-[var(--accent)]" />
+        <span>Período consultado:</span>
+        <span className="font-semibold text-white">{formattedRange}</span>
       </div>
 
       {showCustomPicker && (
@@ -240,8 +339,8 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
         >
           <div className="flex items-start justify-between gap-2">
             <div>
-              <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1.5">
-                Ganancia Neta
+              <span className="block text-[11px] font-bold text-slate-400 tracking-wider leading-none mb-1.5">
+                Ganancia neta
               </span>
               <h3 className={`text-2xl lg:text-3xl font-extrabold ${isNegative ? "text-red-400" : "text-emerald-400"}`}>
                 <CountUp start={0} end={netProfit} duration={2} prefix="$" separator="." />
@@ -260,13 +359,13 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
 
           <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
             <span
-              className={`font-bold uppercase text-[10px] px-2 py-0.5 rounded-md border ${
+              className={`font-bold text-[10px] px-2 py-0.5 rounded-md border ${
                 isNegative
                   ? "bg-red-500/10 border-red-500/30 text-red-400"
                   : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
               }`}
             >
-              {isNegative ? "Saldo Deudor" : "Superávit"}
+              {isNegative ? "Saldo deudor" : "Superávit"}
             </span>
             <span className="text-slate-400 text-[11px] font-medium">Margen: {profitMargin}%</span>
           </div>
@@ -276,8 +375,8 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
         <div className="kpi-card kpi-card--revenue flex flex-col justify-between gap-4 p-5 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1.5">
-                Ingresos Brutos
+              <span className="block text-[11px] font-bold text-slate-400 tracking-wider leading-none mb-1.5">
+                Ingresos brutos
               </span>
               <h3 className="text-2xl lg:text-3xl font-extrabold text-white">
                 <CountUp start={0} end={combinedRevenue} duration={2} prefix="$" separator="." />
@@ -298,8 +397,8 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
         <div className="kpi-card kpi-card--negative flex flex-col justify-between gap-4 p-5 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1.5">
-                Comisiones a Pagar
+              <span className="block text-[11px] font-bold text-slate-400 tracking-wider leading-none mb-1.5">
+                Comisiones a pagar
               </span>
               <h3 className="text-2xl lg:text-3xl font-extrabold text-red-400">
                 <CountUp start={0} end={totalCommissionsAll} duration={2} prefix="$" separator="." />
@@ -311,8 +410,8 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
           </div>
 
           <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
-            <span>Por Turnos: ${Math.round(totalCommissions).toLocaleString("es-AR")}</span>
-            <span>Por Ventas: ${Math.round(totalSalesCommission).toLocaleString("es-AR")}</span>
+            <span>Por turnos: ${Math.round(totalCommissions).toLocaleString("es-AR")}</span>
+            <span>Por ventas: ${Math.round(totalSalesCommission).toLocaleString("es-AR")}</span>
           </div>
         </div>
 
@@ -320,8 +419,8 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
         <div className="kpi-card kpi-card--sales flex flex-col justify-between gap-4 p-5 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1.5">
-                Operaciones Totales
+              <span className="block text-[11px] font-bold text-slate-400 tracking-wider leading-none mb-1.5">
+                Operaciones totales
               </span>
               <h3 className="text-2xl lg:text-3xl font-extrabold text-white">
                 <CountUp start={0} end={summary.totalAppt + totalSales} duration={2} separator="." />
@@ -351,7 +450,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white tracking-tight">
-                    Recaudación por Método de Pago
+                    Recaudación por método de pago
                   </h3>
                   <p className="text-xs text-slate-400">
                     Ingresos generados por turnos según vía de cobro
@@ -363,70 +462,70 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
               </span>
             </div>
 
-            {/* Tarjetas de Medios de Pago */}
+            {/* Tarjetas de Medios de Pago Dinámicas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-              {/* Efectivo */}
-              <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 flex items-center justify-between">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-xl bg-amber-500/15 flex items-center justify-center border border-amber-500/30 text-amber-400">
-                    <Wallet className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
-                      Efectivo en Caja
-                    </span>
-                    <span className="text-xl font-extrabold text-white">
-                      ${efectivoAmount.toLocaleString("es-AR")}
-                    </span>
-                  </div>
-                </div>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25">
-                  {efectivoPercent}%
-                </span>
-              </div>
+              {activeMethodNames.map((method) => {
+                const amount = paymentTotals?.[method] ?? 0;
+                const percent = totalPagosTurnos > 0 ? Math.round((amount / totalPagosTurnos) * 100) : 0;
+                const style = getMethodStyle(method);
+                const IconComponent = style.icon;
 
-              {/* Mercado Pago */}
-              <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/20 flex items-center justify-between">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-xl bg-blue-500/15 flex items-center justify-center border border-blue-500/30 text-blue-400">
-                    <CreditCard className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
-                      Mercado Pago / Digital
+                return (
+                  <div
+                    key={method}
+                    className={`p-4 rounded-2xl ${style.bg} border ${style.border} flex items-center justify-between transition-all`}
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className={`w-11 h-11 rounded-xl ${style.iconBg} flex items-center justify-center border flex-shrink-0`}>
+                        <IconComponent className={`w-5 h-5 ${style.iconColor}`} />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[10px] font-bold text-slate-400 tracking-wider block mb-0.5 truncate">
+                          {method}
+                        </span>
+                        <span className={`text-xl font-extrabold ${style.textColor} block truncate`}>
+                          ${amount.toLocaleString("es-AR")}
+                        </span>
+                      </div>
+                    </div>
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full border flex-shrink-0 ml-2 ${style.badge}`}>
+                      {percent}%
                     </span>
-                    <span className="text-xl font-extrabold text-blue-400">
-                      ${mercadoPagoAmount.toLocaleString("es-AR")}
-                    </span>
                   </div>
-                </div>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/25">
-                  {mpPercent}%
-                </span>
-              </div>
+                );
+              })}
             </div>
 
             {/* Barra visual de distribución de pagos */}
             <div className="space-y-2">
-              <div className="flex justify-between text-xs text-slate-400">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
-                  Efectivo ({efectivoPercent}%)
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-400 inline-block" />
-                  Mercado Pago ({mpPercent}%)
-                </span>
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-slate-400">
+                {activeMethodNames.map((method) => {
+                  const amount = paymentTotals?.[method] ?? 0;
+                  const percent = totalPagosTurnos > 0 ? Math.round((amount / totalPagosTurnos) * 100) : 0;
+                  const style = getMethodStyle(method);
+                  return (
+                    <span key={method} className="flex items-center gap-1.5">
+                      <span className={`w-2.5 h-2.5 rounded-full ${style.barColor} inline-block`} />
+                      {method} ({percent}%)
+                    </span>
+                  );
+                })}
               </div>
               <div className="w-full h-3 rounded-full bg-slate-900 border border-white/5 overflow-hidden flex">
-                <div
-                  className="bg-amber-400 h-full transition-all duration-500"
-                  style={{ width: `${efectivoPercent}%` }}
-                />
-                <div
-                  className="bg-blue-500 h-full transition-all duration-500"
-                  style={{ width: `${mpPercent}%` }}
-                />
+                {activeMethodNames.map((method) => {
+                  const amount = paymentTotals?.[method] ?? 0;
+                  const percent = totalPagosTurnos > 0 ? Math.round((amount / totalPagosTurnos) * 100) : 0;
+                  const style = getMethodStyle(method);
+                  if (percent <= 0) return null;
+                  return (
+                    <div
+                      key={method}
+                      className={`${style.barColor} h-full transition-all duration-500`}
+                      style={{ width: `${percent}%` }}
+                      title={`${method}: ${percent}%`}
+                    />
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -443,7 +542,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
             <div className="border-b border-white/10 pb-4 mb-5">
               <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
                 <Percent className="w-4 h-4 text-[var(--accent)]" />
-                <span>Estructura de Ingresos</span>
+                <span>Estructura de ingresos</span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
                 Proporción de facturación neta vs. comisiones
@@ -455,7 +554,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
               <div className="p-3.5 rounded-xl bg-slate-900/50 border border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <Scissors className="w-4 h-4 text-violet-400" />
-                  <span className="text-xs font-medium text-slate-300">Turnos & Barbería</span>
+                  <span className="text-xs font-medium text-slate-300">Turnos y barbería</span>
                 </div>
                 <span className="text-sm font-bold text-white">
                   ${totalTurnosRevenue.toLocaleString("es-AR")}
@@ -466,7 +565,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
               <div className="p-3.5 rounded-xl bg-slate-900/50 border border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <ShoppingBag className="w-4 h-4 text-sky-400" />
-                  <span className="text-xs font-medium text-slate-300">Venta de Productos</span>
+                  <span className="text-xs font-medium text-slate-300">Venta de productos</span>
                 </div>
                 <span className="text-sm font-bold text-white">
                   ${totalSalesRevenue.toLocaleString("es-AR")}
@@ -477,7 +576,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
               <div className="p-3.5 rounded-xl bg-red-950/20 border border-red-500/20 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <Users className="w-4 h-4 text-red-400" />
-                  <span className="text-xs font-medium text-red-300">Liquidación Barberos</span>
+                  <span className="text-xs font-medium text-red-300">Liquidación de barberos</span>
                 </div>
                 <span className="text-sm font-bold text-red-400">
                   -${Math.round(totalCommissionsAll).toLocaleString("es-AR")}
@@ -487,8 +586,8 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
           </div>
 
           <div className="mt-6 p-4 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/20 text-center">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              Retención Negocio
+            <span className="text-[10px] font-bold text-slate-400 tracking-wider block mb-1">
+              Retención del negocio
             </span>
             <span className="text-2xl font-black text-[var(--accent)]">
               ${netProfit.toLocaleString("es-AR")}
@@ -500,7 +599,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
         </div>
       </div>
 
-      {/* Tabla de Liquidación Estimada por Barbero */}
+      {/* Tabla de Liquidación Completa por Barbero (Cortes + Ventas) */}
       <div className="dashboard-card p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/10 pb-4 mb-6">
           <div className="flex items-center gap-2.5">
@@ -509,10 +608,10 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight">
-                Liquidación Estimada por Barbero (Cortes)
+                Liquidación estimada por profesional
               </h3>
               <p className="text-xs text-slate-400">
-                Desglose individual según cortes realizados y tasa de comisión
+                Desglose individual completo según servicios, productos vendidos y porcentajes de comisión
               </p>
             </div>
           </div>
@@ -524,23 +623,36 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-white/10 text-[10px] uppercase tracking-wider text-slate-400">
-                  <th className="py-3 px-3">Barbero</th>
-                  <th className="py-3 px-3 text-center">Turnos Atendidos</th>
+                <tr className="border-b border-white/10 text-[10px] tracking-wider text-slate-400">
+                  <th className="py-3 px-3">Profesional</th>
+                  <th className="py-3 px-3 text-center">Turnos</th>
                   <th className="py-3 px-3 text-right">Facturado Cortes</th>
-                  <th className="py-3 px-3 text-center">% Comisión</th>
-                  <th className="py-3 px-3 text-right text-red-400">A Liquidar ($)</th>
-                  <th className="py-3 px-3 text-right text-emerald-400">Margen Local ($)</th>
+                  <th className="py-3 px-3 text-right">Comis. Cortes ($)</th>
+                  <th className="py-3 px-3 text-right">Facturado Ventas</th>
+                  <th className="py-3 px-3 text-right">Comis. Ventas ($)</th>
+                  <th className="py-3 px-3 text-right text-red-400 font-bold">Total a Liquidar ($)</th>
+                  <th className="py-3 px-3 text-right text-emerald-400 font-bold">Margen Local ($)</th>
+                  <th className="py-3 px-3 text-center">Detalle</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {barbers.map((barber) => {
                   const bTotals = barberTotals.find((t) => t.barberId === barber.id);
                   const cortes = bTotals?.totalAppt ?? 0;
-                  const facturado = bTotals?.totalRevenue ?? 0;
-                  const commRate = barber.commission ?? 0;
-                  const aLiquidar = facturado * commRate;
-                  const margenLocal = facturado - aLiquidar;
+                  const facturadoCortes = bTotals?.totalRevenue ?? 0;
+                  const commRateCortes = barber.commission ?? 0;
+                  const aLiquidarCortes = facturadoCortes * commRateCortes;
+
+                  const bSales = salesByBarber?.find((s) => s.barberId === barber.id);
+                  const facturadoVentas = bSales?.totalSalesRevenue ?? 0;
+                  const commRateVentas = barber.sale_commission ?? 0;
+                  const aLiquidarVentas = facturadoVentas * commRateVentas;
+
+                  const totalALiquidar = aLiquidarCortes + aLiquidarVentas;
+                  const totalFacturado = facturadoCortes + facturadoVentas;
+                  const margenLocal = totalFacturado - totalALiquidar;
+
+                  const isCopied = copiedBarberId === barber.id;
 
                   return (
                     <tr key={barber.id} className="hover:bg-white/[0.02] transition-colors">
@@ -559,18 +671,59 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                         {cortes}
                       </td>
                       <td className="py-3.5 px-3 text-right font-medium text-white">
-                        ${facturado.toLocaleString("es-AR")}
+                        ${facturadoCortes.toLocaleString("es-AR")}
+                      </td>
+                      <td className="py-3.5 px-3 text-right text-slate-300">
+                        <span className="text-[10px] text-slate-500 mr-1">({(commRateCortes * 100).toFixed(0)}%)</span>
+                        ${Math.round(aLiquidarCortes).toLocaleString("es-AR")}
+                      </td>
+                      <td className="py-3.5 px-3 text-right font-medium text-white">
+                        ${facturadoVentas.toLocaleString("es-AR")}
+                      </td>
+                      <td className="py-3.5 px-3 text-right text-slate-300">
+                        <span className="text-[10px] text-slate-500 mr-1">({(commRateVentas * 100).toFixed(0)}%)</span>
+                        ${Math.round(aLiquidarVentas).toLocaleString("es-AR")}
+                      </td>
+                      <td className="py-3.5 px-3 text-right font-extrabold text-red-400 text-sm">
+                        ${Math.round(totalALiquidar).toLocaleString("es-AR")}
+                      </td>
+                      <td className="py-3.5 px-3 text-right font-extrabold text-emerald-400 text-sm">
+                        ${Math.round(margenLocal).toLocaleString("es-AR")}
                       </td>
                       <td className="py-3.5 px-3 text-center">
-                        <span className="inline-block px-2 py-0.5 rounded-md bg-white/5 text-slate-300 font-bold text-[10px]">
-                          {(commRate * 100).toFixed(0)}%
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-3 text-right font-bold text-red-400">
-                        ${Math.round(aLiquidar).toLocaleString("es-AR")}
-                      </td>
-                      <td className="py-3.5 px-3 text-right font-bold text-emerald-400">
-                        ${Math.round(margenLocal).toLocaleString("es-AR")}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopyLiquidation(
+                              barber.name,
+                              barber.id ?? 0,
+                              cortes,
+                              facturadoCortes,
+                              aLiquidarCortes,
+                              facturadoVentas,
+                              aLiquidarVentas,
+                              totalALiquidar
+                            )
+                          }
+                          title="Copiar detalle para WhatsApp"
+                          className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer border ${
+                            isCopied
+                              ? "!bg-emerald-500/20 !border-emerald-500/40 !text-emerald-400"
+                              : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white"
+                          }`}
+                        >
+                          {isCopied ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Copiado</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Copiar</span>
+                            </>
+                          )}
+                        </button>
                       </td>
                     </tr>
                   );

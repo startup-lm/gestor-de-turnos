@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import type { Barber } from "@/lib/types/Barbers";
 import { slugify } from "@/utils/slug";
@@ -69,9 +69,6 @@ export function useSelectedBarber(
     }
     return barbersWithId.length === 1 ? barbersWithId[0].id : -1;
   });
-
-  // Mantener referencia inicial
-  const didInit = useRef(true);
 
   // Sincronizar automáticamente cuando el usuario inicia sesión como barbero/admin
   useEffect(() => {

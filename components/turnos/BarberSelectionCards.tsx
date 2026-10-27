@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { User, Scissors, Check, ArrowLeft, Instagram } from "lucide-react";
+import { Scissors, Check, ArrowLeft, Instagram } from "lucide-react";
 import { Barber } from "@/lib/types/Barbers";
 import logo from "@/public/images/logo.png";
 

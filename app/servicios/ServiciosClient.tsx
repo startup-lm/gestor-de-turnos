@@ -38,38 +38,55 @@ export default function ServiciosClient({ services }: Readonly<Props>) {
   };
 
   return (
-    <div className="flex flex-wrap gap-6 md:gap-8 justify-center w-full max-w-[1720px] mx-auto">
-      {role === "admin" && (
-        <Link
-          href="/servicios/nuevo"
-          className="flex flex-col items-center justify-center w-[320px] h-[348px] !bg-[var(--foreground)]/5 backdrop-blur-md !border-2 !border-dashed !border-[var(--accent)]/30 hover:!border-[var(--accent)]/80 rounded-2xl p-6 hover:shadow-lg hover:shadow-[var(--accent)]/5 hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
-        >
-          <div className="bg-[var(--accent)]/10 p-4 rounded-full mb-4 border border-[var(--accent)]/20 group-hover:scale-110 transition-transform duration-300 text-[var(--accent)]">
-            <Plus className="w-8 h-8" />
-          </div>
-          <span className="text-lg font-bold text-[var(--accent)] tracking-wide">
-            Agregar Servicio
-          </span>
-          <span className="text-xs text-[var(--foreground)]/40 mt-1">
-            Crear nuevo servicio en el catálogo
-          </span>
-        </Link>
-      )}
-
-      {services.map((svc) => (
-        <div key={svc.id} className="relative">
-          <Card
-            title={svc.name}
-            price={svc.price}
-            description={svc.description}
-            image={svc.image}
-            onEdit={() => router.push(`/servicios/${svc.id}`)}
-            onDelete={() => handleDelete(svc.id)}
-            onCardClick={() => router.push(`/servicios/${svc.id}`)}
-            isDeleting={deletingId === svc.id}
-          />
+    <div className="w-full flex flex-col items-center">
+      {/* Cabecera */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800/40 pb-6 mb-8 md:mb-10 w-full">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--foreground)]">
+            Nuestros Servicios
+          </h1>
+          <p className="text-sm sm:text-base text-slate-400 mt-1.5">
+            Cortes clásicos, perfilado de barba con toalla caliente y tratamientos exclusivos
+          </p>
         </div>
-      ))}
+
+        {role === "admin" && (
+          <Link
+            href="/servicios/nuevo"
+            data-testid="btn-add-service"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>Nuevo servicio</span>
+          </Link>
+        )}
+      </div>
+
+      {/* Grilla de Servicios */}
+      {services.length === 0 ? (
+        <div className="text-center py-16 px-4">
+          <p className="text-slate-400 text-sm">
+            No hay servicios cargados en el catálogo en este momento.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-6 md:gap-8 justify-center w-full max-w-[1720px] mx-auto">
+          {services.map((svc) => (
+            <div key={svc.id} className="relative">
+              <Card
+                title={svc.name}
+                price={svc.price}
+                description={svc.description}
+                image={svc.image}
+                onEdit={() => router.push(`/servicios/${svc.id}`)}
+                onDelete={() => handleDelete(svc.id)}
+                onCardClick={() => router.push(`/servicios/${svc.id}`)}
+                isDeleting={deletingId === svc.id}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

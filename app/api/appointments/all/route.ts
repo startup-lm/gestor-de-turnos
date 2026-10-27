@@ -29,11 +29,7 @@ export async function GET(request: Request) {
   const rows = (data ?? []) as RawRow[];
 
   const agg: Record< number, { totalAppt: number; totalRevenue: number } > = {};
-  const paymentMethodTotals: Record<string, number> = {
-    Efectivo: 0,
-    MercadoPago: 0,
-    Otros: 0,
-  };
+  const paymentMethodTotals: Record<string, number> = {};
 
   rows.forEach(({ barber_id, price, payment_method }) => {
     if (!agg[barber_id]) agg[barber_id] = {  totalAppt: 0, totalRevenue: 0 };
@@ -41,12 +37,9 @@ export async function GET(request: Request) {
     agg[barber_id].totalRevenue += price ?? 0;
     
     if (price) {
-      const method = payment_method || "Otros";
-      if (paymentMethodTotals[method] !== undefined) {
-        paymentMethodTotals[method] += price;
-      } else {
-        paymentMethodTotals["Otros"] += price;
-      }
+      let method = payment_method?.trim() || "Otros";
+      if (method === "MercadoPago") method = "Mercado Pago";
+      paymentMethodTotals[method] = (paymentMethodTotals[method] || 0) + price;
     }
   });
 

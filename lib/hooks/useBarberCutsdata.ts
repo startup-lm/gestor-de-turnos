@@ -19,16 +19,12 @@ export interface BarberTotals {
   totalRevenue: number;
 };
 
-export interface PaymentMethodTotals {
-  Efectivo: number;
-  MercadoPago: number;
-  Otros: number;
-}
+export type PaymentMethodTotals = Record<string, number>;
 
 export function useBarberCutsData(startDate: Date, endDate: Date, initialBarbers?: Barber[]) {
   const [pieData, setPieData] = useState<PieData[]>([]);
   const [summary, setSummary] = useState<BarberTotalData>({ totalAppt: 0, totalRevenue: 0 });
-  const [paymentTotals, setPaymentTotals] = useState<PaymentMethodTotals>({ Efectivo: 0, MercadoPago: 0, Otros: 0 });
+  const [paymentTotals, setPaymentTotals] = useState<PaymentMethodTotals>({});
   const [barberTotals, setBarberTotals] = useState<BarberTotals[]>([]);
 
   useEffect(() => {
@@ -36,7 +32,7 @@ export function useBarberCutsData(startDate: Date, endDate: Date, initialBarbers
     (async () => {
       const response = await getTotalAndRevenueForAllBarbers(startDate, endDate);
       const totals: BarberTotals[] = response.barberTotals || [];
-      const payTotals: PaymentMethodTotals = response.paymentMethodTotals || { Efectivo: 0, MercadoPago: 0, Otros: 0 };
+      const payTotals: PaymentMethodTotals = response.paymentMethodTotals || {};
       
       const barbers: Barber[] = (initialBarbers && initialBarbers.length > 0) ? initialBarbers : await getBarbers();
       if (!mounted) return;

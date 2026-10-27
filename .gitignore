@@ -48,3 +48,8 @@ next-env.d.ts
 
 # sourcemaps
 public/*.map
+
+# PWA generated service workers
+public/sw*
+public/workbox*
+public/swe-worker*

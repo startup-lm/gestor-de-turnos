@@ -37,13 +37,26 @@ export async function POST(request: Request) {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
 
-  const { email, name, image, instagram, role } = await request.json();
+  const { email, name, image, instagram, role, commission, sale_commission, active } = await request.json();
+  const insertPayload: Record<string, unknown> = {
+    email,
+    name,
+    image,
+    instagram,
+    role: role || "barber",
+  };
+  if (commission !== undefined) insertPayload.commission = commission;
+  if (sale_commission !== undefined) insertPayload.sale_commission = sale_commission;
+  if (active !== undefined) insertPayload.active = active;
+
   const { data, error } = await supabaseAdmin
     .from("barbers")
-    .insert({ email, name, image, instagram, role })
+    .insert(insertPayload)
+    .select()
     .single();
 
   if (error) return errorResponse(error.message);
+  revalidateTag("barbers");
   return NextResponse.json(data);
 }
 

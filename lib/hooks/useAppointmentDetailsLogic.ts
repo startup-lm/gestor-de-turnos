@@ -6,16 +6,15 @@ import { upsertClient } from "@/lib/repository/clients";
 import { Appointment, AppointmentUpdates } from "@/lib/types/Appointment";
 import { Barber } from "@/lib/types/Barbers";
 import { Service } from "@/lib/types/Services";
-import { usePopup } from "@/lib/hooks/usePopup";
+import { toast } from "@/lib/store/useToastStore";
+import { normalizePhone } from "@/utils/phone";
 
 export function useAppointmentDetailsLogic(appointment: Appointment, barbers: Barber[]) {
   const { data, loading: loadingFetch } = useFetchOnce<Service[]>("services", getServices);
   const services: Service[] = data ?? [];
   const [showService, setShowService] = useState(false);
-  const [confirmModal, setConfirmModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingUpdate, setLoadingUpdate] = useState(false);
-  const popup = usePopup();
 
   // Datos del turno
   const [selectedBarberId, setSelectedBarberId] = useState(appointment.barber_id);
@@ -42,14 +41,18 @@ export function useAppointmentDetailsLogic(appointment: Appointment, barbers: Ba
     setLoading(true);
     const barberName = barbers?.find((b) => b.id === selectedBarberId)?.name || "admin";
     const success = await deleteAppointment(appointment.id, barberName);
-    popup.open(success ? "Turno eliminado con éxito" : "Error al eliminar el turno", success);
-    setConfirmModal(false);
+    if (success) {
+      toast.success("Turno eliminado con éxito");
+    } else {
+      toast.error("Error al eliminar el turno");
+    }
     setLoading(false);
+    return success;
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!hasChanges) return;
+    if (!hasChanges) return false;
     setLoadingUpdate(true);
     
     const updates: AppointmentUpdates = {};
@@ -61,7 +64,16 @@ export function useAppointmentDetailsLogic(appointment: Appointment, barbers: Ba
     if (startTime !== appointment.start_time) updates.start_time = startTime;
     if (endTime !== appointment.end_time) updates.end_time = endTime;
     if (client !== appointment.client) updates.client = client;
-    if (phone !== appointment.phone) updates.phone = phone;
+
+    let finalPhone = phone;
+    if (phone && !isBlockedRange) {
+      const normPhone = normalizePhone(phone);
+      if (normPhone.isValid) {
+        finalPhone = normPhone.e164;
+      }
+    }
+
+    if (phone !== appointment.phone) updates.phone = finalPhone;
     if (selectedServiceId !== appointment.service_id) updates.service_id = selectedServiceId;
     if (price !== appointment.price) updates.price = price;
 
@@ -75,14 +87,19 @@ export function useAppointmentDetailsLogic(appointment: Appointment, barbers: Ba
       }
     }
 
-    if (!isBlockedRange && client && phone) {
-      const clientRecord = await upsertClient(client, phone);
+    if (!isBlockedRange && client && finalPhone) {
+      const clientRecord = await upsertClient(client, finalPhone);
       if (clientRecord) updates.client_id = clientRecord.id;
     }
 
     const success = await updateAppointment(appointment.id, updates);
-    popup.open(success ? "Turno editado con éxito" : "Error al editar el turno", success);
+    if (success) {
+      toast.success("Turno editado con éxito");
+    } else {
+      toast.error("Error al editar el turno");
+    }
     setLoadingUpdate(false);
+    return success;
   };
 
   return {
@@ -90,11 +107,8 @@ export function useAppointmentDetailsLogic(appointment: Appointment, barbers: Ba
     services,
     showService,
     setShowService,
-    confirmModal,
-    setConfirmModal,
     loading,
     loadingUpdate,
-    popup,
     selectedBarberId,
     setSelectedBarberId,
     date,

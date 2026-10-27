@@ -7,6 +7,7 @@ import { FaWhatsapp } from "react-icons/fa";
 import { sendWhatsAppMessage } from "@/utils/whatsapp";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
+import { formatPhoneDisplay } from "@/utils/phone";
 
 interface Props {
   name: string;
@@ -59,7 +60,6 @@ export default function ClientAutocompleteFields({
   };
 
   const handlePhoneChange = (v: string) => {
-    // With react-phone-number-input, v is already formatted (e.g. +5491123456789)
     onPhoneChange(v || "");
     onClientResolved(null);
     setActiveField("phone");
@@ -101,7 +101,7 @@ export default function ClientAutocompleteFields({
             className="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-[var(--foreground)]/5 hover:text-[var(--accent)] transition-colors"
           >
             <span className="font-medium text-sm text-[var(--foreground)]">{c.name}</span>
-            <span className="text-xs text-[var(--foreground)]/40 ml-3">{c.phone}</span>
+            <span className="text-xs text-[var(--foreground)]/50 ml-3">{formatPhoneDisplay(c.phone)}</span>
           </li>
         ))}
       </ul>

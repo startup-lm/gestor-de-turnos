@@ -15,12 +15,14 @@ import {
   CheckCircle2,
   MessageCircle,
   XCircle,
+  Loader2,
 } from "lucide-react";
 import { Product } from "@/lib/types/Product";
 import { updateProduct, deleteProduct } from "@/lib/repository/products";
 import { uploadImage, deleteImage } from "@/lib/repository/storage";
-import { useAuth } from "@/lib/auth/AuthContext";
 import { toast } from "@/lib/store/useToastStore";
+import { useAuth } from "@/lib/auth/AuthContext";
+import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
 import logo from "@/public/images/logo.png";
 
 interface Props {
@@ -162,47 +164,81 @@ export default function ProductoDetailClient({ initialProduct }: Readonly<Props>
           </Link>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-extrabold text-[var(--foreground)] tracking-tight">
-              {isAdmin ? "Editar Producto" : product.name}
+              {isAdmin ? "Editar Producto" : null}
             </h1>
-            <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20">
-              ID #{product.id}
-            </span>
           </div>
         </div>
+
+        {isAdmin && (
+          <div className="flex items-center gap-3 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setIsConfirmingDelete(true)}
+              disabled={deleting || saving}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 border border-red-500/20 text-xs md:text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Eliminar producto</span>
+            </button>
+
+            <button
+              type="submit"
+              form="product-edit-form"
+              disabled={!isDirty || saving}
+              className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 min-h-[40px] ${
+                isDirty && !saving
+                  ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
+                  : "!bg-[var(--foreground)]/5 !text-[var(--foreground)]/30 border border-[var(--foreground)]/10 cursor-not-allowed opacity-50"
+              }`}
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin text-inherit" />
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Guardar cambios</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
       {isAdmin ? (
-        <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <>
+        <form id="product-edit-form" onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           {/* Left Column: Image */}
-          <div className="lg:col-span-5 flex flex-col gap-6">
-            <div className="p-6 rounded-2xl border border-[var(--foreground)]/10 bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 backdrop-blur-md">
-              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-3">
-                Imagen del Producto
-              </label>
+          <div className="lg:col-span-5 flex flex-col h-full">
+            <div className="p-6 rounded-2xl border border-[var(--foreground)]/10 bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 backdrop-blur-md flex flex-col justify-between h-full">
+              <div className="flex flex-col flex-1 min-h-0 mb-4">
+                <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-3">
+                  Imagen del Producto
+                </label>
 
-              <div className="relative aspect-square w-full rounded-2xl overflow-hidden border border-[var(--foreground)]/10 bg-[var(--background)]/50 flex flex-col items-center justify-center group cursor-pointer shadow-inner">
-                <Image
-                  src={imagePreview || product.image || logo}
-                  alt={name}
-                  fill
-                  className={`transition-all duration-300 ${!product.image && !imagePreview ? "object-contain p-8" : "object-cover group-hover:scale-105"}`}
-                />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 text-center">
-                  <Upload className="w-8 h-8 text-[var(--accent)] mb-2" />
-                  <span className="text-xs font-semibold text-white">
-                    {selectedFile ? selectedFile.name : "Hacé clic para cambiar la foto"}
-                  </span>
+                <div className="relative w-full h-[320px] lg:h-auto lg:flex-1 min-h-[240px] rounded-2xl overflow-hidden border border-[var(--foreground)]/10 bg-[var(--background)]/50 flex flex-col items-center justify-center group cursor-pointer shadow-inner">
+                  <Image
+                    src={imagePreview || product.image || logo}
+                    alt={name}
+                    fill
+                    className={`transition-all duration-300 ${!product.image && !imagePreview ? "object-contain p-8" : "object-cover group-hover:scale-105"}`}
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 text-center">
+                    <Upload className="w-8 h-8 text-[var(--accent)] mb-2" />
+                    <span className="text-xs font-semibold text-white">
+                      {selectedFile ? selectedFile.name : "Hacé clic para cambiar la foto"}
+                    </span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
                 </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
               </div>
 
-              <div className="mt-4 flex items-center justify-between text-xs text-[var(--foreground)]/60">
+              <div className="flex-shrink-0 flex items-center justify-between text-xs text-[var(--foreground)]/60">
                 <span>Estado: <strong className={product.stock > 0 ? "text-emerald-400" : "text-amber-400"}>{product.stock > 0 ? "En Stock" : "Sin Stock"}</strong></span>
                 <span>Proporción: 1:1</span>
               </div>
@@ -210,143 +246,96 @@ export default function ProductoDetailClient({ initialProduct }: Readonly<Props>
           </div>
 
           {/* Right Column: Form Inputs */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
-            <div className="p-6 md:p-8 rounded-2xl border border-[var(--foreground)]/10 bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 backdrop-blur-md space-y-6">
-              {/* Name */}
-              <div>
-                <label htmlFor="product-name" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
-                  Nombre del Producto <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="product-name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl p-3.5 w-full block text-sm"
-                />
-              </div>
-
-              {/* Price & Stock */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="lg:col-span-7 flex flex-col h-full">
+            <div className="p-6 md:p-8 rounded-2xl border border-[var(--foreground)]/10 bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 backdrop-blur-md flex flex-col justify-between h-full space-y-6">
+              <div className="space-y-6 flex-1">
+                {/* Name */}
                 <div>
-                  <label htmlFor="product-price" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
-                    Precio ($) <span className="text-red-500">*</span>
+                  <label htmlFor="product-name" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
+                    Nombre del Producto <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <DollarSign className="w-4 h-4 text-[var(--foreground)]/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    <input
-                      id="product-price"
-                      type="number"
-                      min="0"
-                      step="100"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      required
-                      className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl py-3.5 pr-4 pl-11 w-full block text-sm"
-                    />
-                  </div>
+                  <input
+                    id="product-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl p-3.5 w-full block text-sm"
+                  />
                 </div>
 
-                <div>
-                  <label htmlFor="product-stock" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
-                    Stock Disponible <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Package className="w-4 h-4 text-[var(--foreground)]/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    <input
-                      id="product-stock"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={stock}
-                      onChange={(e) => setStock(e.target.value)}
-                      required
-                      className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl py-3.5 pr-4 pl-11 w-full block text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label htmlFor="product-description" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
-                  Descripción <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="product-description"
-                  rows={5}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  required
-                  className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl p-3.5 w-full block text-sm resize-none"
-                />
-              </div>
-
-              {/* Inline Delete Confirmation Banner */}
-              {isConfirmingDelete ? (
-                <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in duration-200">
-                  <div className="flex items-center gap-3 text-left">
-                    <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs font-bold text-red-200">¿Confirmás eliminar este producto definitivamente?</p>
-                      <p className="text-[11px] text-red-300/70">Esta acción no se puede deshacer.</p>
+                {/* Price & Stock */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="product-price" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
+                      Precio ($) <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <DollarSign className="w-4 h-4 text-[var(--foreground)]/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="product-price"
+                        type="number"
+                        min="0"
+                        step="100"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        required
+                        className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl !py-3.5 !pr-4 !pl-11 w-full block text-sm"
+                      />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <button
-                      type="button"
-                      onClick={() => setIsConfirmingDelete(false)}
-                      disabled={deleting}
-                      className="flex-1 sm:flex-none px-4 py-2 text-xs font-semibold rounded-lg border border-[var(--foreground)]/10 text-[var(--foreground)]/80 hover:bg-[var(--foreground)]/5 transition-colors cursor-pointer"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDelete}
-                      disabled={deleting}
-                      className="flex-1 sm:flex-none px-4 py-2 text-xs font-semibold rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors cursor-pointer shadow-md shadow-red-500/20 disabled:opacity-50"
-                    >
-                      {deleting ? "Eliminando..." : "Sí, Eliminar"}
-                    </button>
+
+                  <div>
+                    <label htmlFor="product-stock" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
+                      Stock Disponible <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Package className="w-4 h-4 text-[var(--foreground)]/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="product-stock"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={stock}
+                        onChange={(e) => setStock(e.target.value)}
+                        required
+                        className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl !py-3.5 !pr-4 !pl-11 w-full block text-sm"
+                      />
+                    </div>
                   </div>
                 </div>
-              ) : null}
 
-              {/* Action Bar */}
-              <div className="pt-4 border-t border-[var(--foreground)]/10 flex flex-wrap items-center justify-between gap-4">
-                {!isConfirmingDelete && (
-                  <button
-                    type="button"
-                    onClick={() => setIsConfirmingDelete(true)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 text-xs font-semibold transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Eliminar Producto
-                  </button>
-                )}
-
-                <div className="flex items-center gap-3 ml-auto">
-                  <Link
-                    href="/productos"
-                    className="px-5 py-2.5 rounded-xl border border-[var(--foreground)]/10 text-sm font-semibold text-[var(--foreground)]/80 hover:bg-[var(--foreground)]/5 transition-colors"
-                  >
-                    Cancelar
-                  </Link>
-                  <button
-                    type="submit"
-                    disabled={!isDirty || saving}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[var(--accent)] text-black font-semibold text-sm hover:opacity-90 disabled:opacity-40 transition-all shadow-lg shadow-[var(--accent)]/10 cursor-pointer"
-                  >
-                    <Save className="w-4 h-4" />
-                    {saving ? "Guardando..." : "Guardar Cambios"}
-                  </button>
+                {/* Description */}
+                <div>
+                  <label htmlFor="product-description" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
+                    Descripción <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    id="product-description"
+                    rows={5}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    required
+                    className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl p-3.5 w-full block text-sm resize-none"
+                  />
                 </div>
               </div>
             </div>
           </div>
         </form>
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={isConfirmingDelete}
+          onClose={() => setIsConfirmingDelete(false)}
+          onConfirm={handleDelete}
+          title="¿Eliminar producto definitivamente?"
+          description="Esta acción no se puede deshacer. Se eliminará del catálogo de forma permanente."
+          confirmText="Sí, Eliminar"
+          cancelText="Cancelar"
+          loading={deleting}
+        />
+        </>
       ) : (
         /* Guest Showcase View */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center">

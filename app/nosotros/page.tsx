@@ -51,33 +51,6 @@ export default async function NosotrosPage() {
           </div>
         </section>
 
-        {/* Nuestra Historia */}
-        <section className="h-full flex flex-col bg-gradient-to-b from-[var(--foreground)]/6 to-[var(--foreground)]/2 backdrop-blur-md border border-[var(--foreground)]/10 p-6 md:p-8 rounded-2xl shadow-xl hover:border-[var(--accent)]/20 transition-all duration-300">
-          <h2 className="text-2xl font-semibold text-[var(--foreground)] text-center">Nuestra historia</h2>
-          <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent mx-auto mt-2 mb-6" />
-          
-          <div className="flex-1 w-full px-2 text-left space-y-5">
-            {ourStory.map((p, i) => (
-              <p
-                key={i}
-                className={
-                  i === ourStory.length - 1
-                    ? "font-bold text-[var(--accent)] text-center border-t border-[var(--accent)]/10 pt-4 mt-6 text-sm md:text-base leading-relaxed"
-                    : `text-sm md:text-base text-[var(--foreground)]/80 leading-relaxed ${
-                        i === 0
-                          ? "first-letter:text-4xl first-letter:font-extrabold first-letter:text-[var(--accent)] first-letter:mr-2 first-letter:float-left first-letter:leading-none"
-                          : ""
-                      }`
-                }
-              >
-                <span>{p}</span>
-              </p>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full mt-10">
         {/* ¿Dónde Estamos? */}
         <section className="h-full flex flex-col bg-gradient-to-b from-[var(--foreground)]/6 to-[var(--foreground)]/2 backdrop-blur-md border border-[var(--foreground)]/10 p-6 md:p-8 rounded-2xl shadow-xl hover:border-[var(--accent)]/20 transition-all duration-300">
           <h2 className="text-2xl font-semibold text-[var(--foreground)] text-center">¿Dónde estamos?</h2>
@@ -103,6 +76,33 @@ export default async function NosotrosPage() {
                 sizes="(max-width:768px) 100vw, 400px"
               />
             </div>
+          </div>
+        </section>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full mt-10">
+        {/* Nuestra Historia */}
+        <section className="h-full flex flex-col bg-gradient-to-b from-[var(--foreground)]/6 to-[var(--foreground)]/2 backdrop-blur-md border border-[var(--foreground)]/10 p-6 md:p-8 rounded-2xl shadow-xl hover:border-[var(--accent)]/20 transition-all duration-300">
+          <h2 className="text-2xl font-semibold text-[var(--foreground)] text-center">Nuestra historia</h2>
+          <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent mx-auto mt-2 mb-6" />
+          
+          <div className="flex-1 w-full px-2 text-left space-y-5">
+            {ourStory.map((p, i) => (
+              <p
+                key={i}
+                className={
+                  i === ourStory.length - 1
+                    ? "font-bold text-[var(--accent)] text-center border-t border-[var(--accent)]/10 pt-4 mt-6 text-sm md:text-base leading-relaxed"
+                    : `text-sm md:text-base text-[var(--foreground)]/80 leading-relaxed ${
+                        i === 0
+                          ? "first-letter:text-4xl first-letter:font-extrabold first-letter:text-[var(--accent)] first-letter:mr-2 first-letter:float-left first-letter:leading-none"
+                          : ""
+                      }`
+                }
+              >
+                <span>{p}</span>
+              </p>
+            ))}
           </div>
         </section>
 

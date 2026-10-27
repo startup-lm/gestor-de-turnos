@@ -23,7 +23,7 @@ export default async function AdminTurnosPage() {
       <div className="w-full mb-4">
         <BackButton href="/operaciones" label="Operaciones" />
       </div>
-      <h1 className="text-3xl font-bold mb-5">Gestión de Turnos</h1>
+      <h1 className="text-3xl font-bold mb-5">Gestión de turnos</h1>
       <AdminTurnosClient appointments={appointments} />
     </div>
   );

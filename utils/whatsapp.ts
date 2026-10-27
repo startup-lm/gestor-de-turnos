@@ -1,8 +1,12 @@
+import { normalizePhone } from "@/utils/phone";
+
 const WHATSAPP_API_URL = 'https://api.whatsapp.com/send';
 
 export function buildWhatsAppUrl(phone: string, message: string): string {
   const encoded = encodeURIComponent(message);
-  const cleanPhone = phone.replace(/[^\d+]/g, '');
+  const norm = normalizePhone(phone);
+  // WhatsApp API requiere el número sin '+' (ej. 5491123456789)
+  const cleanPhone = norm.isValid ? norm.e164.replace(/\+/g, '') : phone.replace(/\D/g, '');
   return `${WHATSAPP_API_URL}?phone=${cleanPhone}&text=${encoded}`;
 }
 

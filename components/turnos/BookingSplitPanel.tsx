@@ -5,7 +5,7 @@ import Image from "next/image";
 import logo from "@/public/images/logo.png";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, User, Clock, Scissors, X, CheckCircle, ArrowRight, RotateCcw, AlertCircle } from "lucide-react";
+import { Calendar, Scissors, X, CheckCircle, ArrowRight, RotateCcw, AlertCircle, Loader2 } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { Service } from "@/lib/types/Services";
 import { Barber } from "@/lib/types/Barbers";
@@ -16,7 +16,6 @@ import { sendConfirmAppointment } from "@/utils/whatsapp";
 import ClientAutocompleteFields from "./ClientAutocompleteFields";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import PopupModal from "@/components/ui/PopupModal";
 
 interface Props {
   onClose: () => void;
@@ -31,7 +30,6 @@ interface Props {
   onSelectAnotherBarber?: () => void;
   onResetFlow?: () => void;
   onServiceChange?: (service: Service | null) => void;
-  isMobileModal?: boolean;
 }
 
 export default function BookingSplitPanel({
@@ -46,8 +44,6 @@ export default function BookingSplitPanel({
   onSelectAnotherService,
   onSelectAnotherBarber,
   onResetFlow,
-  onServiceChange,
-  isMobileModal = false,
 }: Readonly<Props>) {
   const {
     isGuest,
@@ -62,9 +58,9 @@ export default function BookingSplitPanel({
     showWhatsapp,
     bienvenidaName,
     isDisabled,
-    popup,
     handleReservar,
     assignedBarber,
+    confirmedService,
   } = useReservarLogic(
     selectedDate,
     selectedBarber,
@@ -79,6 +75,7 @@ export default function BookingSplitPanel({
   const safeServices = services || [];
 
   const currentService =
+    confirmedService ||
     safeServices.find((s) => s.id === selectedServiceId) ||
     selectedService ||
     null;
@@ -133,7 +130,7 @@ export default function BookingSplitPanel({
             <div className="flex items-center gap-2 text-emerald-400">
               <CheckCircle className="w-5 h-5" />
               <span className="font-extrabold text-sm tracking-wide uppercase">
-                ¡Turno Confirmado!
+                ¡Turno confirmado!
               </span>
             </div>
             <button
@@ -147,7 +144,7 @@ export default function BookingSplitPanel({
 
           <div className="text-center py-2">
             <span className="inline-block text-[11px] font-bold uppercase tracking-widest text-[var(--accent)] bg-[var(--accent)]/15 px-3 py-1 rounded-full mb-3 border border-[var(--accent)]/30">
-              Comprobante #{appointmentId}
+              Turno #{appointmentId}
             </span>
             <h3 className="text-2xl font-black text-[var(--foreground)]">
               {bienvenidaName ? `¡Te esperamos, ${bienvenidaName}!` : "¡Todo listo para tu corte!"}
@@ -176,7 +173,7 @@ export default function BookingSplitPanel({
               <span className="font-bold text-[var(--accent)]">{startTimeStr} a {endTimeStr} hs</span>
             </div>
             <div className="flex justify-between items-center text-xs">
-              <span className="text-[var(--foreground)]/50 font-medium">Precio Total</span>
+              <span className="text-[var(--foreground)]/50 font-medium">Precio total</span>
               <span className="font-extrabold text-base text-[var(--accent)]">
                 ${currentService?.price?.toLocaleString("es-AR")}
               </span>
@@ -446,6 +443,9 @@ export default function BookingSplitPanel({
                   boxShadow: "inset 0 2px 4px rgba(0,0,0,0.06)",
                 }}
               />
+              <p className="text-[10px] text-slate-400 mt-1 ml-1">
+                Ingresá los 10 dígitos (código de área + celular, ej: 11 2345 6789)
+              </p>
             </div>
           </div>
         )}
@@ -459,7 +459,7 @@ export default function BookingSplitPanel({
             className="w-full flex items-center justify-center gap-2.5 bg-[var(--accent)] hover:bg-[#E8CA8C] text-slate-950 font-extrabold py-3.5 px-5 rounded-xl shadow-lg shadow-[var(--accent)]/20 border border-[var(--accent)]/40 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed text-sm md:text-base cursor-pointer"
           >
             {loading ? (
-              <Scissors className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <>
                 <span>
@@ -467,7 +467,7 @@ export default function BookingSplitPanel({
                     ? "Seleccioná un servicio"
                     : !name
                     ? (isGuest ? "Completá tus datos" : "Ingresá el cliente")
-                    : "Confirmar Reserva"}
+                    : "Confirmar reserva"}
                 </span>
                 <ArrowRight className="w-4 h-4" />
               </>
@@ -475,19 +475,6 @@ export default function BookingSplitPanel({
           </button>
         </div>
       </form>
-
-      {popup.show && (
-        <PopupModal
-          message={popup.message}
-          success={popup.success}
-          showWhatsappButton={showWhatsapp}
-          handleWhatsappButton={handleWhatsapp}
-          onClose={() => {
-            popup.close();
-            if (popup.success) onClose();
-          }}
-        />
-      )}
     </div>
   );
 }

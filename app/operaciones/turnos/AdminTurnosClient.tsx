@@ -1,22 +1,32 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Appointment } from "@/lib/types/Appointment";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatPhoneDisplay, normalizePhone } from "@/utils/phone";
 
 interface Props {
   appointments: Appointment[];
 }
 
 export default function AdminTurnosClient({ appointments }: Readonly<Props>) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredAppointments = appointments.filter((appt) => {
-    const searchLower = searchTerm.toLowerCase();
+    const searchLower = searchTerm.toLowerCase().trim();
+    const cleanSearchDigits = searchTerm.replace(/\D/g, "");
     const clientMatch = appt.client.toLowerCase().includes(searchLower);
-    const phoneMatch = appt.phone?.includes(searchTerm);
     const barberMatch = appt.barbers?.name?.toLowerCase().includes(searchLower);
+
+    const cleanApptDigits = appt.phone?.replace(/\D/g, "") || "";
+    const apptNational = appt.phone ? normalizePhone(appt.phone).national : "";
+    const phoneMatch = cleanSearchDigits.length >= 2
+      ? cleanApptDigits.includes(cleanSearchDigits) || apptNational.includes(cleanSearchDigits)
+      : (appt.phone ? appt.phone.toLowerCase().includes(searchLower) : false);
+
     return clientMatch || phoneMatch || barberMatch;
   });
 
@@ -37,7 +47,7 @@ export default function AdminTurnosClient({ appointments }: Readonly<Props>) {
 
       <div className="overflow-x-auto rounded-xl border border-[var(--border)] shadow-md bg-[var(--background)]">
         <table className="w-full text-left text-xs md:text-sm whitespace-nowrap">
-          <thead className="bg-slate-900/80 text-slate-300 uppercase text-[11px] font-bold tracking-wider border-b border-[var(--border)]">
+          <thead className="bg-slate-900/80 text-slate-300 text-[11px] font-bold tracking-wider border-b border-[var(--border)]">
             <tr>
               <th className="px-4 py-3.5">Fecha</th>
               <th className="px-4 py-3.5">Horario</th>
@@ -57,22 +67,26 @@ export default function AdminTurnosClient({ appointments }: Readonly<Props>) {
                 const dateObj = new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2]));
 
                 return (
-                  <tr key={appt.id} className="hover:bg-white/5 transition-colors">
-                    <td className="px-4 py-3 capitalize font-medium">
+                  <tr
+                    key={appt.id}
+                    onClick={() => router.push(`/turno/${appt.id}`)}
+                    className="hover:bg-white/10 active:scale-[0.99] transition-all cursor-pointer align-middle"
+                  >
+                    <td className="px-4 py-3 capitalize font-medium text-slate-200">
                       {format(dateObj, "EEE d MMM yyyy", { locale: es })}
                     </td>
                     <td className="px-4 py-3 text-slate-300 font-semibold">
                       {appt.start_time} - {appt.end_time}
                     </td>
                     <td className="px-4 py-3 font-semibold text-[var(--foreground)]">{appt.client}</td>
-                    <td className="px-4 py-3 text-slate-400 font-mono text-xs">{appt.phone || "-"}</td>
+                    <td className="px-4 py-3 text-slate-400 font-mono text-xs">{formatPhoneDisplay(appt.phone)}</td>
                     <td className="px-4 py-3 text-slate-300">{appt.barbers?.name || "-"}</td>
                     <td className="px-4 py-3 text-slate-300">{appt.services?.name || "-"}</td>
                     <td className="px-4 py-3 font-bold text-[var(--accent)]">
                       {appt.price ? `$${appt.price.toLocaleString("es-AR")}` : "-"}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 text-[11px] rounded-full font-bold uppercase tracking-wider border ${
+                      <span className={`inline-flex items-center px-2.5 py-0.5 text-xs rounded-full font-bold border ${
                         appt.paid 
                           ? 'bg-green-500/10 text-green-400 border-green-500/20' 
                           : 'bg-red-500/10 text-red-400 border-red-500/20'

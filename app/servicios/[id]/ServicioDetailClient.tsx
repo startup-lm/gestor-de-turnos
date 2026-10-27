@@ -11,15 +11,16 @@ import {
   Upload,
   Save,
   Trash2,
-  Calendar,
   AlertTriangle,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import { Service } from "@/lib/types/Services";
 import { updateService, deleteService } from "@/lib/repository/services";
 import { uploadImage, deleteImage } from "@/lib/repository/storage";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { toast } from "@/lib/store/useToastStore";
+import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
 import logo from "@/public/images/logo.png";
 
 interface Props {
@@ -150,241 +151,206 @@ export default function ServicioDetailClient({ initialService }: Readonly<Props>
             href="/servicios"
             className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--accent)] hover:underline mb-2 transition-all"
           >
-            <ArrowLeft className="w-4 h-4" /> Volver a Servicios
+            <ArrowLeft className="w-4 h-4" /> Volver a servicios
           </Link>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-extrabold text-[var(--foreground)] tracking-tight">
-              {isAdmin ? "Editar Servicio" : service.name}
+              {isAdmin ? "Editar servicio" : null}
             </h1>
-            <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20">
-              ID #{service.id}
-            </span>
           </div>
         </div>
 
-        {/* Guest or preview direct CTA */}
-        <Link
-          href={`/turnos?service=${service.id}`}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--accent)] text-black font-semibold text-sm hover:opacity-90 transition-all shadow-lg shadow-[var(--accent)]/10 self-start sm:self-auto"
-        >
-          <Calendar className="w-4 h-4" />
-          Reservar este Servicio
-        </Link>
+        {isAdmin && (
+          <div className="flex items-center gap-3 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setIsConfirmingDelete(true)}
+              disabled={deleting || saving}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 border border-red-500/20 text-xs md:text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Eliminar servicio</span>
+            </button>
+
+            <button
+              type="submit"
+              form="service-edit-form"
+              disabled={!isDirty || saving}
+              className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 min-h-[40px] ${
+                isDirty && !saving
+                  ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
+                  : "!bg-[var(--foreground)]/5 !text-[var(--foreground)]/30 border border-[var(--foreground)]/10 cursor-not-allowed opacity-50"
+              }`}
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin text-inherit" />
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Guardar cambios</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
       {isAdmin ? (
-        <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Image & Quick Stats */}
-          <div className="lg:col-span-5 flex flex-col gap-6">
-            <div className="p-6 rounded-2xl border border-[var(--foreground)]/10 bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 backdrop-blur-md">
-              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-3">
-                Imagen del Servicio
-              </label>
+        <>
+        <form id="service-edit-form" onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          {/* Left Column: Image */}
+          <div className="lg:col-span-5 flex flex-col h-full">
+            <div className="p-6 rounded-2xl border border-[var(--foreground)]/10 bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 backdrop-blur-md flex flex-col justify-between h-full">
+              <div className="flex flex-col flex-1 min-h-0 mb-4">
+                <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-3">
+                  Imagen del Servicio
+                </label>
 
-              <div className="relative aspect-square w-full rounded-2xl overflow-hidden border border-[var(--foreground)]/10 bg-[var(--background)]/50 flex flex-col items-center justify-center group cursor-pointer shadow-inner">
-                <Image
-                  src={imagePreview || service.image || logo}
-                  alt={name}
-                  fill
-                  className={`transition-all duration-300 ${!service.image && !imagePreview ? "object-contain p-8" : "object-cover group-hover:scale-105"}`}
-                />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 text-center">
-                  <Upload className="w-8 h-8 text-[var(--accent)] mb-2" />
-                  <span className="text-xs font-semibold text-white">
-                    {selectedFile ? selectedFile.name : "Hacé clic para cambiar la foto"}
-                  </span>
+                <div className="relative w-full h-[320px] lg:h-auto lg:flex-1 min-h-[240px] rounded-2xl overflow-hidden border border-[var(--foreground)]/10 bg-[var(--background)]/50 flex flex-col items-center justify-center group cursor-pointer shadow-inner">
+                  <Image
+                    src={imagePreview || service.image || logo}
+                    alt={name}
+                    fill
+                    className={`transition-all duration-300 ${!service.image && !imagePreview ? "object-contain p-8" : "object-cover group-hover:scale-105"}`}
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 text-center">
+                    <Upload className="w-8 h-8 text-[var(--accent)] mb-2" />
+                    <span className="text-xs font-semibold text-white">
+                      {selectedFile ? selectedFile.name : "Hacé clic para cambiar la foto"}
+                    </span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
                 </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
               </div>
 
-              <div className="mt-4 flex items-center justify-between text-xs text-[var(--foreground)]/60">
+              <div className="flex-shrink-0 flex items-center justify-between text-xs text-[var(--foreground)]/60">
                 <span>Estado: <strong className="text-emerald-400">Activo</strong></span>
                 <span>Proporción: 1:1</span>
               </div>
             </div>
-
-            {/* Quick booking link card */}
-            <div className="p-5 rounded-2xl border border-[var(--foreground)]/10 bg-[var(--foreground)]/5 backdrop-blur-md flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-[var(--foreground)]">Enlace directo a reserva</p>
-                <p className="text-[11px] text-[var(--foreground)]/50 mt-0.5">Abre el calendario con este servicio elegido</p>
-              </div>
-              <Link
-                href={`/turnos?service=${service.id}`}
-                className="text-xs font-semibold text-[var(--accent)] hover:underline flex items-center gap-1"
-              >
-                Abrir <Calendar className="w-3.5 h-3.5" />
-              </Link>
-            </div>
           </div>
 
           {/* Right Column: Form Inputs */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
-            <div className="p-6 md:p-8 rounded-2xl border border-[var(--foreground)]/10 bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 backdrop-blur-md space-y-6">
-              {/* Name */}
-              <div>
-                <label htmlFor="service-name" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
-                  Nombre del Servicio <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="service-name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl p-3.5 w-full block text-sm"
-                />
-              </div>
-
-              {/* Price & Duration */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="lg:col-span-7 flex flex-col h-full">
+            <div className="p-6 md:p-8 rounded-2xl border border-[var(--foreground)]/10 bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 backdrop-blur-md flex flex-col justify-between h-full space-y-6">
+              <div className="space-y-6 flex-1">
+                {/* Name */}
                 <div>
-                  <label htmlFor="service-price" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
-                    Precio ($) <span className="text-red-500">*</span>
+                  <label htmlFor="service-name" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
+                    Nombre del Servicio <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <DollarSign className="w-4 h-4 text-[var(--foreground)]/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    <input
-                      id="service-price"
-                      type="number"
-                      min="0"
-                      step="100"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      required
-                      className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl py-3.5 pr-4 pl-11 w-full block text-sm"
-                    />
-                  </div>
+                  <input
+                    id="service-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl p-3.5 w-full block text-sm"
+                  />
                 </div>
 
-                <div>
-                  <label htmlFor="service-duration" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
-                    Duración (minutos) <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Clock className="w-4 h-4 text-[var(--foreground)]/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    <input
-                      id="service-duration"
-                      type="number"
-                      min="5"
-                      step="5"
-                      value={duration}
-                      onChange={(e) => setDuration(Number(e.target.value))}
-                      required
-                      className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl py-3.5 pr-4 pl-11 w-full block text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Duration presets */}
-              <div>
-                <span className="block text-[11px] font-semibold text-[var(--foreground)]/60 uppercase tracking-wider mb-2">
-                  Duraciones comunes
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {DURATION_PRESETS.map((mins) => (
-                    <button
-                      key={mins}
-                      type="button"
-                      onClick={() => setDuration(mins)}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all cursor-pointer ${
-                        duration === mins
-                          ? "!border-[var(--accent)] !bg-[var(--accent)]/15 !text-[var(--accent)] font-semibold"
-                          : "!border-[var(--foreground)]/10 !bg-[var(--foreground)]/5 !text-[var(--foreground)]/70 hover:!border-[var(--accent)]/40"
-                      }`}
-                    >
-                      {mins} min
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label htmlFor="service-description" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
-                  Descripción <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="service-description"
-                  rows={5}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  required
-                  className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl p-3.5 w-full block text-sm resize-none"
-                />
-              </div>
-
-              {/* Inline Delete Confirmation Banner */}
-              {isConfirmingDelete ? (
-                <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in duration-200">
-                  <div className="flex items-center gap-3 text-left">
-                    <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs font-bold text-red-200">¿Confirmás eliminar este servicio definitivamente?</p>
-                      <p className="text-[11px] text-red-300/70">Esta acción no se puede deshacer.</p>
+                {/* Price & Duration */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="service-price" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
+                      Precio ($) <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <DollarSign className="w-4 h-4 text-[var(--foreground)]/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="service-price"
+                        type="number"
+                        min="0"
+                        step="100"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        required
+                        className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl !py-3.5 !pr-4 !pl-11 w-full block text-sm"
+                      />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <button
-                      type="button"
-                      onClick={() => setIsConfirmingDelete(false)}
-                      disabled={deleting}
-                      className="flex-1 sm:flex-none px-4 py-2 text-xs font-semibold rounded-lg border border-[var(--foreground)]/10 text-[var(--foreground)]/80 hover:bg-[var(--foreground)]/5 transition-colors cursor-pointer"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDelete}
-                      disabled={deleting}
-                      className="flex-1 sm:flex-none px-4 py-2 text-xs font-semibold rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors cursor-pointer shadow-md shadow-red-500/20 disabled:opacity-50"
-                    >
-                      {deleting ? "Eliminando..." : "Sí, Eliminar"}
-                    </button>
+
+                  <div>
+                    <label htmlFor="service-duration" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
+                      Duración (minutos) <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Clock className="w-4 h-4 text-[var(--foreground)]/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="service-duration"
+                        type="number"
+                        min="5"
+                        step="5"
+                        value={duration}
+                        onChange={(e) => setDuration(Number(e.target.value))}
+                        required
+                        className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl !py-3.5 !pr-4 !pl-11 w-full block text-sm"
+                      />
+                    </div>
                   </div>
                 </div>
-              ) : null}
 
-              {/* Action Bar */}
-              <div className="pt-4 border-t border-[var(--foreground)]/10 flex flex-wrap items-center justify-between gap-4">
-                {!isConfirmingDelete && (
-                  <button
-                    type="button"
-                    onClick={() => setIsConfirmingDelete(true)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 text-xs font-semibold transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Eliminar Servicio
-                  </button>
-                )}
-
-                <div className="flex items-center gap-3 ml-auto">
-                  <Link
-                    href="/servicios"
-                    className="px-5 py-2.5 rounded-xl border border-[var(--foreground)]/10 text-sm font-semibold text-[var(--foreground)]/80 hover:bg-[var(--foreground)]/5 transition-colors"
-                  >
-                    Cancelar
-                  </Link>
-                  <button
-                    type="submit"
-                    disabled={!isDirty || saving}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[var(--accent)] text-black font-semibold text-sm hover:opacity-90 disabled:opacity-40 transition-all shadow-lg shadow-[var(--accent)]/10 cursor-pointer"
-                  >
-                    <Save className="w-4 h-4" />
-                    {saving ? "Guardando..." : "Guardar Cambios"}
-                  </button>
+                {/* Duration presets */}
+                <div>
+                  <span className="block text-[11px] font-semibold text-[var(--foreground)]/60 uppercase tracking-wider mb-2">
+                    Duraciones comunes
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {DURATION_PRESETS.map((mins) => (
+                      <button
+                        key={mins}
+                        type="button"
+                        onClick={() => setDuration(mins)}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all cursor-pointer ${
+                          duration === mins
+                            ? "!border-[var(--accent)] !bg-[var(--accent)]/15 !text-[var(--accent)] font-semibold"
+                            : "!border-[var(--foreground)]/10 !bg-[var(--foreground)]/5 !text-[var(--foreground)]/70 hover:!border-[var(--accent)]/40"
+                        }`}
+                      >
+                        {mins} min
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Description */}
+                <div>
+                  <label htmlFor="service-description" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-2">
+                    Descripción <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    id="service-description"
+                    rows={5}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    required
+                    className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl p-3.5 w-full block text-sm resize-none"
+                  />
+                </div>
+
               </div>
             </div>
           </div>
         </form>
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={isConfirmingDelete}
+          onClose={() => setIsConfirmingDelete(false)}
+          onConfirm={handleDelete}
+          title="¿Eliminar servicio?"
+          description="Esta acción no se puede deshacer. Se eliminará del menú de turnos."
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          loading={deleting}
+        />
+        </>
       ) : (
         /* Guest Showcase View */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center">
@@ -429,7 +395,7 @@ export default function ServicioDetailClient({ initialService }: Readonly<Props>
                 href={`/turnos?service=${service.id}`}
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-[var(--accent)] text-black font-bold text-base hover:opacity-90 transition-all shadow-xl shadow-[var(--accent)]/15"
               >
-                Reservar Turno con este Servicio
+                Reservar turno con este servicio
               </Link>
               <Link
                 href="/servicios"

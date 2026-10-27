@@ -4,8 +4,6 @@ import {
   Store,
   Scissors,
   Users,
-  ChartNoAxesCombined,
-  Briefcase,
   Settings,
 } from "lucide-react";
 import type { FC, SVGProps } from "react";

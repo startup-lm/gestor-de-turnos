@@ -16,10 +16,11 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Gestor de Turnos",
+  title: "Gestor de turnos",
   description: "Sistema de gestión y reserva de turnos",
   manifest: "/manifest.json",
   icons: {
+    icon: "/icon-192x192.png",
     apple: "/icon-192x192.png",
   },
 };
