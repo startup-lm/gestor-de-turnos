@@ -18,6 +18,7 @@ import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
 import { SaleWithRelations } from "@/lib/types/Sale";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import Link from "next/link";
 import {
   ShoppingBag,
   FileText,
@@ -29,6 +30,11 @@ import {
   Loader2,
   Receipt,
   Calendar,
+  AlertTriangle,
+  Copy,
+  Check,
+  ArrowUpRight,
+  CheckCircle2,
 } from "lucide-react";
 
 const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
@@ -74,6 +80,17 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
   // ARCA
   const arcaAvailable = ARCA_ENABLED && !!arcaStatus?.ready;
   const hasExistingInvoice = !!initialSale.arca_invoice_id;
+  const isLocked = hasExistingInvoice;
+  const invoice = initialSale.arca_invoices;
+  const [copiedCae, setCopiedCae] = useState(false);
+
+  const handleCopyCae = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCae(true);
+    toast.success("CAE copiado al portapapeles");
+    setTimeout(() => setCopiedCae(false), 2000);
+  };
+
   const [emitInvoice, setEmitInvoice] = useState(false);
   const [docType, setDocType] = useState<ArcaDocType>(99);
   const [docNumber, setDocNumber] = useState("");
@@ -98,11 +115,7 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
   };
 
   const handleBack = () => {
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/operaciones/ventas");
-    }
+    router.push("/admin?tab=ventas");
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -113,10 +126,14 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
     }
 
     if (!initialSale.id) return;
+    if (isLocked) {
+      toast.error("No es posible editar una venta que ya posee comprobante fiscal emitido");
+      return;
+    }
 
     setSaving(true);
     try {
-      const ok = await updateSale(initialSale.id, {
+      const res = await updateSale(initialSale.id, {
         barber_id: selectedBarberId,
         product_id: selectedProductId,
         price,
@@ -125,8 +142,8 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
         details: details.trim(),
       });
 
-      if (!ok) {
-        toast.error("No se pudo guardar la venta");
+      if (!res.success) {
+        toast.error(res.error || "No se pudo guardar la venta");
         setSaving(false);
         return;
       }
@@ -220,8 +237,13 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
           <button
             type="button"
             onClick={() => setIsConfirmingDelete(true)}
-            disabled={deleting || saving}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 border border-red-500/20 text-xs md:text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50"
+            disabled={deleting || saving || hasExistingInvoice}
+            title={
+              hasExistingInvoice
+                ? "No se puede eliminar una venta con comprobante fiscal emitido ante ARCA"
+                : undefined
+            }
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 border border-red-500/20 text-xs md:text-sm font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Trash2 className="w-4 h-4" />
             <span>Eliminar venta</span>
@@ -230,9 +252,14 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
           <button
             type="submit"
             form="sale-edit-form"
-            disabled={!isDirty || saving}
+            disabled={!isDirty || saving || isLocked}
+            title={
+              isLocked
+                ? "No se puede editar una venta con comprobante fiscal emitido ante ARCA"
+                : undefined
+            }
             className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 min-h-[40px] ${
-              isDirty && !saving
+              isDirty && !saving && !isLocked
                 ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
                 : "!bg-white/5 !text-slate-500 border border-white/10 cursor-not-allowed opacity-50"
             }`}
@@ -251,6 +278,17 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
 
       {/* Formulario en 2 Columnas idéntico a SaleSplitPanel */}
       <form id="sale-edit-form" onSubmit={handleSave} className="space-y-6">
+        {isLocked && (
+          <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-sm animate-in fade-in">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0 text-amber-400" />
+            <div>
+              <span className="font-bold block">Venta bloqueada fiscalmente</span>
+              <span className="text-xs text-amber-300/80">
+                Esta venta cuenta con comprobante fiscal emitido ante ARCA (Factura #{initialSale.arca_invoice_id}) y no puede ser modificada ni eliminada.
+              </span>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Columna Izquierda: Datos de la Venta */}
           <div className="lg:col-span-7 bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 border border-white/10 rounded-2xl p-6 backdrop-blur-md shadow-lg space-y-5">
@@ -275,9 +313,12 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
               <select
                 id="sale-edit-product"
                 required
+                disabled={isLocked}
                 value={selectedProductId}
                 onChange={(e) => handleProductChange(Number(e.target.value))}
-                className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none"
+                className={`w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none ${
+                  isLocked ? "!opacity-60 !cursor-not-allowed" : ""
+                }`}
               >
                 <option value={-1} disabled style={{ color: "black" }}>
                   Seleccioná un producto del catálogo
@@ -300,6 +341,7 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
                 barbers={barbers ?? []}
                 selectedBarberId={selectedBarberId}
                 onChange={setSelectedBarberId}
+                disabled={isLocked}
                 className="w-full"
               />
             </div>
@@ -315,9 +357,12 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
                   type="number"
                   min={0}
                   required
+                  disabled={isLocked}
                   value={price}
                   onChange={(e) => setPrice(Number(e.target.value))}
-                  className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm font-semibold transition-all outline-none"
+                  className={`w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm font-semibold transition-all outline-none ${
+                    isLocked ? "!opacity-60 !cursor-not-allowed" : ""
+                  }`}
                 />
               </div>
 
@@ -328,22 +373,31 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
+                    disabled={isLocked}
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="p-3 rounded-xl !bg-[var(--foreground)]/10 hover:!bg-[var(--foreground)]/20 !text-[var(--foreground)] transition-all cursor-pointer border border-[var(--foreground)]/10 active:scale-95"
+                    className={`p-3 rounded-xl !bg-[var(--foreground)]/10 hover:!bg-[var(--foreground)]/20 !text-[var(--foreground)] transition-all border border-[var(--foreground)]/10 active:scale-95 ${
+                      isLocked ? "!opacity-60 !cursor-not-allowed" : "cursor-pointer"
+                    }`}
                   >
                     <Minus className="w-4 h-4" />
                   </button>
                   <input
                     type="number"
                     min={1}
+                    disabled={isLocked}
                     value={quantity}
                     onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-                    className="flex-1 text-center font-bold !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none"
+                    className={`flex-1 text-center font-bold !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none ${
+                      isLocked ? "!opacity-60 !cursor-not-allowed" : ""
+                    }`}
                   />
                   <button
                     type="button"
+                    disabled={isLocked}
                     onClick={() => setQuantity((q) => q + 1)}
-                    className="p-3 rounded-xl !bg-[var(--foreground)]/10 hover:!bg-[var(--foreground)]/20 !text-[var(--foreground)] transition-all cursor-pointer border border-[var(--foreground)]/10 active:scale-95"
+                    className={`p-3 rounded-xl !bg-[var(--foreground)]/10 hover:!bg-[var(--foreground)]/20 !text-[var(--foreground)] transition-all border border-[var(--foreground)]/10 active:scale-95 ${
+                      isLocked ? "!opacity-60 !cursor-not-allowed" : "cursor-pointer"
+                    }`}
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -359,10 +413,13 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
               <textarea
                 id="sale-edit-details"
                 rows={3}
+                disabled={isLocked}
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
                 placeholder="Ej: Cliente habitual, pago combinado..."
-                className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none resize-none"
+                className={`w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none resize-none ${
+                  isLocked ? "!opacity-60 !cursor-not-allowed" : ""
+                }`}
               />
             </div>
           </div>
@@ -391,21 +448,109 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
             {ARCA_ENABLED && (
               <div className="bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 border border-white/10 rounded-2xl p-6 backdrop-blur-md shadow-lg space-y-4">
                 {hasExistingInvoice ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
                       <div className="flex items-center gap-2">
                         <Receipt className="w-4 h-4 text-green-400" />
-                        <span className="text-xs font-semibold text-slate-200">
-                          Comprobante Fiscal Emitido
+                        <span className="text-xs font-bold text-slate-200">
+                          Comprobante Fiscal ARCA
                         </span>
                       </div>
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold">
-                        Factura C
+                        {invoice?.voucher_type === 6 ? "Factura B" : "Factura C"}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400">
-                      Esta venta cuenta con comprobante fiscal asociado en los registros de ARCA.
-                    </p>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">
+                          Nro. Comprobante
+                        </span>
+                        <span className="font-mono font-bold text-slate-200">
+                          {invoice?.point_of_sale != null && invoice?.voucher_number != null
+                            ? `${String(invoice.point_of_sale).padStart(4, "0")}-${String(invoice.voucher_number).padStart(8, "0")}`
+                            : `#${initialSale.arca_invoice_id}`}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">
+                          Estado fiscal
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                          <CheckCircle2 className="w-3 h-3" />
+                          {invoice?.status === "mock" ? "Demo" : "Aprobado"}
+                        </span>
+                      </div>
+
+                      <div className="col-span-2 bg-[var(--background)]/60 rounded-xl p-3 border border-white/5 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+                            Código CAE
+                          </span>
+                          {invoice?.cae && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopyCae(invoice.cae!)}
+                              className="text-[10px] font-semibold text-[var(--accent)] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              {copiedCae ? (
+                                <>
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                  <span className="text-emerald-400">Copiado</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>Copiar</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                        <p className="font-mono text-sm font-bold text-emerald-400">
+                          {invoice?.cae || "—"}
+                        </p>
+                        {invoice?.cae_due_date && (
+                          <span className="text-[10px] text-slate-500 block">
+                            Vto: {invoice.cae_due_date}
+                          </span>
+                        )}
+                      </div>
+
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">
+                          Receptor
+                        </span>
+                        <span className="font-medium text-slate-200 truncate block">
+                          {invoice?.customer_name || "Consumidor Final"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">
+                          Documento
+                        </span>
+                        <span className="font-medium text-slate-200 truncate block">
+                          {invoice?.doc_number ? `${invoice.doc_number}` : "Sin doc."}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                      <span className="text-[11px] text-slate-400">
+                        {invoice?.created_at
+                          ? new Date(invoice.created_at).toLocaleDateString("es-AR")
+                          : "Comprobante registrado"}
+                      </span>
+                      <Link
+                        href="/admin?tab=facturas"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-[var(--accent)] hover:text-white transition-colors group cursor-pointer"
+                      >
+                        <span>Ver en Facturación</span>
+                        <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                      </Link>
+                    </div>
                   </div>
                 ) : arcaAvailable ? (
                   <>

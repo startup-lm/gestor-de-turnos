@@ -143,6 +143,9 @@ export default function AppointmentDetailsSplitPanel({
     handleUpdate,
   } = useAppointmentDetailsLogic(appointment, barbers);
 
+  const isDeleteDisabled = !isBlockedRange && (appointment.paid || !!appointment.arca_invoice_id);
+  const isLocked = !isBlockedRange && !!appointment.arca_invoice_id;
+
   if (loadingFetch) {
     return (
       <div className="bg-[var(--bg-carousel)] border border-[var(--foreground)]/10 rounded-3xl p-6 shadow-2xl">
@@ -210,14 +213,14 @@ export default function AppointmentDetailsSplitPanel({
     if (checkoutLoading) return;
     setCheckoutLoading(true);
 
-    const success = await updateAppointment(appointment.id, {
+    const res = await updateAppointment(appointment.id, {
       paid: true,
       price: checkoutPrice,
       payment_method: selectedPaymentMethod,
     });
 
-    if (!success) {
-      toast.error("Error al marcar como pagado");
+    if (!res.success) {
+      toast.error(res.error || "Error al marcar como pagado");
       setCheckoutLoading(false);
       return;
     }
@@ -634,7 +637,7 @@ export default function AppointmentDetailsSplitPanel({
                 </div>
               </div>
 
-              {!isEditingService && (
+              {!isEditingService && !isLocked && (
                 <button
                   type="button"
                   onClick={() => setIsEditingService(true)}
@@ -703,7 +706,7 @@ export default function AppointmentDetailsSplitPanel({
               </div>
             </div>
 
-            {!isEditingBarber && (
+            {!isEditingBarber && !isLocked && (
               <button
                 type="button"
                 onClick={() => setIsEditingBarber(true)}
@@ -789,7 +792,7 @@ export default function AppointmentDetailsSplitPanel({
               </div>
             </div>
 
-            {!isEditingDateTime && (
+            {!isEditingDateTime && !isLocked && (
               <button
                 type="button"
                 onClick={() => setIsEditingDateTime(true)}
@@ -847,6 +850,7 @@ export default function AppointmentDetailsSplitPanel({
                 onPhoneChange={setPhone}
                 onClientResolved={() => {}}
                 showWhatsapp
+                disabled={isLocked}
               />
 
               {/* Si ya está pagado, campo de monto cobrado con padding forzado */}
@@ -865,9 +869,12 @@ export default function AppointmentDetailsSplitPanel({
                     <input
                       id="appt-price"
                       type="number"
+                      disabled={isLocked}
                       value={price}
                       onChange={(e) => setPrice(Number(e.target.value))}
-                      className="!bg-[var(--background)] !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl !py-2.5 !pr-3 !pl-8 w-full block text-xs shadow-inner font-bold"
+                      className={`!bg-[var(--background)] !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl !py-2.5 !pr-3 !pl-8 w-full block text-xs shadow-inner font-bold ${
+                        isLocked ? "opacity-60 cursor-not-allowed" : ""
+                      }`}
                     />
                   </div>
                 </div>
@@ -919,8 +926,15 @@ export default function AppointmentDetailsSplitPanel({
               type="button"
               id="btn-appt-delete"
               aria-label="Eliminar"
-              disabled={appointment.paid || loading}
+              disabled={isDeleteDisabled || loading}
               onClick={() => setConfirmDelete(true)}
+              title={
+                appointment.arca_invoice_id
+                  ? "No se puede eliminar un turno que ya posee comprobante fiscal emitido ante ARCA"
+                  : appointment.paid
+                  ? "No se puede eliminar un turno que ya fue cobrado"
+                  : undefined
+              }
               className="w-full flex items-center justify-center gap-2 border border-red-500/30 hover:border-red-500/60 text-red-400 hover:bg-red-500/10 disabled:opacity-40 disabled:cursor-not-allowed font-bold py-2.5 px-3 rounded-xl transition-all text-xs active:scale-95 cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
@@ -931,9 +945,14 @@ export default function AppointmentDetailsSplitPanel({
                 type="submit"
                 id="btn-appt-save"
                 aria-label="Guardar cambios"
-                disabled={!hasChanges || loadingUpdate}
+                disabled={!hasChanges || loadingUpdate || isLocked}
+                title={
+                  isLocked
+                    ? "No se puede editar un turno que ya posee comprobante fiscal emitido ante ARCA"
+                    : undefined
+                }
                 className={`w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl transition-all text-xs font-black active:scale-95 ${
-                  hasChanges && !loadingUpdate
+                  hasChanges && !loadingUpdate && !isLocked
                     ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-md shadow-[var(--accent)]/20 cursor-pointer animate-pulse"
                     : "!bg-[var(--foreground)]/5 !text-[var(--foreground)]/30 border border-[var(--foreground)]/10 cursor-not-allowed"
                 }`}
@@ -948,6 +967,13 @@ export default function AppointmentDetailsSplitPanel({
                 )}
               </button>
             </div>
+            {(isDeleteDisabled || isLocked) && (
+              <p className="text-[11px] text-amber-400/90 text-center font-medium mt-2">
+                {isLocked
+                  ? "Este turno ya cuenta con comprobante fiscal emitido ante ARCA y no puede ser modificado ni eliminado."
+                  : "Este turno ya fue cobrado y no puede ser eliminado."}
+              </p>
+            )}
         </div>
       </form>
 

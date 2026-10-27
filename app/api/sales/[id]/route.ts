@@ -26,6 +26,24 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   const resolvedParams = await params;
   const id = Number(resolvedParams.id);
   if (Number.isNaN(id)) { return errorResponse("ID inválido", 400); }
+
+  // Validar si la venta ya posee comprobante fiscal emitido
+  const { data: sale, error: findError } = await supabaseAdmin
+    .from("sales")
+    .select("arca_invoice_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (findError) return errorResponse(findError.message, 500);
+  if (!sale) return errorResponse("Venta no encontrada", 404);
+
+  if (sale.arca_invoice_id) {
+    return errorResponse(
+      `No es posible modificar una venta que ya cuenta con comprobante fiscal emitido ante ARCA (Factura #${sale.arca_invoice_id})`,
+      400
+    );
+  }
+
   const body = await request.json();
   const { barber_id, product_id, price, quantity, total, details } = body as {
     barber_id?: number;
@@ -63,6 +81,20 @@ export async function DELETE(request: Request, { params }: RouteParams) {
   const resolvedParams = await params;
   const id = Number(resolvedParams.id);
   if (Number.isNaN(id)) { return errorResponse("ID inválido", 400); }
+
+  const { data: sale } = await supabaseAdmin
+    .from("sales")
+    .select("arca_invoice_id")
+    .eq("id", id)
+    .single();
+
+  if (sale?.arca_invoice_id) {
+    return errorResponse(
+      "No es posible eliminar una venta que ya cuenta con comprobante fiscal emitido ante ARCA",
+      400
+    );
+  }
+
   const { error } = await supabaseAdmin
     .from("sales")
     .delete()

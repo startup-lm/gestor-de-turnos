@@ -51,6 +51,10 @@ export async function POST(request: Request) {
     return errorResponse("No existe ningún turno activo con ese número", 404);
   }
 
+  if (appt.arca_invoice_id) {
+    return errorResponse("Este turno posee comprobante fiscal emitido y no puede cancelarse online", 400);
+  }
+
   if (appt.paid) {
     return errorResponse("Este turno ya fue cobrado y no es posible cancelarlo online", 400);
   }

@@ -21,7 +21,7 @@ export default async function TurnoDetailPage({ params }: Props) {
           El turno que estás buscando no existe o fue cancelado/eliminado del sistema.
         </p>
         <Link
-          href="/operaciones/turnos"
+          href="/admin?tab=turnos"
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-sm shadow-md transition-all cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" /> Volver a Turnos

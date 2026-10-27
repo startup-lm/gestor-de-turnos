@@ -40,14 +40,14 @@ export function useAppointmentDetailsLogic(appointment: Appointment, barbers: Ba
   const handleDelete = async () => {
     setLoading(true);
     const barberName = barbers?.find((b) => b.id === selectedBarberId)?.name || "admin";
-    const success = await deleteAppointment(appointment.id, barberName);
-    if (success) {
+    const res = await deleteAppointment(appointment.id, barberName);
+    if (res.success) {
       toast.success("Turno eliminado con éxito");
     } else {
-      toast.error("Error al eliminar el turno");
+      toast.error(res.error || "Error al eliminar el turno");
     }
     setLoading(false);
-    return success;
+    return res.success;
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -92,14 +92,20 @@ export function useAppointmentDetailsLogic(appointment: Appointment, barbers: Ba
       if (clientRecord) updates.client_id = clientRecord.id;
     }
 
-    const success = await updateAppointment(appointment.id, updates);
-    if (success) {
+    if (appointment.arca_invoice_id) {
+      toast.error("No se puede editar un turno que ya posee comprobante fiscal emitido");
+      setLoadingUpdate(false);
+      return false;
+    }
+
+    const res = await updateAppointment(appointment.id, updates);
+    if (res.success) {
       toast.success("Turno editado con éxito");
     } else {
-      toast.error("Error al editar el turno");
+      toast.error(res.error || "Error al editar el turno");
     }
     setLoadingUpdate(false);
-    return success;
+    return res.success;
   };
 
   return {

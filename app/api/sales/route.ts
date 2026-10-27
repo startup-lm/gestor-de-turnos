@@ -39,6 +39,24 @@ export async function PUT(request: Request) {
   if (!staff) return errorResponse("No autorizado", 401);
 
   const { id, barber_id, product_id, price, quantity, details } = await request.json();
+
+  // Validar si la venta ya posee comprobante fiscal emitido
+  const { data: sale, error: findError } = await supabaseAdmin
+    .from("sales")
+    .select("arca_invoice_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (findError) return errorResponse(findError.message, 500);
+  if (!sale) return errorResponse("Venta no encontrada", 404);
+
+  if (sale.arca_invoice_id) {
+    return errorResponse(
+      `No es posible modificar una venta que ya cuenta con comprobante fiscal emitido ante ARCA (Factura #${sale.arca_invoice_id})`,
+      400
+    );
+  }
+
   const { data, error } = await supabaseAdmin
     .from("sales")
     .update({
@@ -63,6 +81,24 @@ export async function DELETE(request: Request) {
   if (!staff) return errorResponse("No autorizado", 401);
 
   const { id } = await request.json();
+
+  // Validar si la venta ya posee comprobante fiscal emitido
+  const { data: sale, error: findError } = await supabaseAdmin
+    .from("sales")
+    .select("arca_invoice_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (findError) return errorResponse(findError.message, 500);
+  if (!sale) return errorResponse("Venta no encontrada", 404);
+
+  if (sale.arca_invoice_id) {
+    return errorResponse(
+      `No es posible eliminar una venta que ya cuenta con comprobante fiscal emitido ante ARCA (Factura #${sale.arca_invoice_id})`,
+      400
+    );
+  }
+
   const { data, error } = await supabaseAdmin.from("sales").delete().eq("id", id).select("id");
   if (error) return errorResponse(error.message);
   if (!data || data.length === 0) return errorResponse("Venta no encontrada", 404);

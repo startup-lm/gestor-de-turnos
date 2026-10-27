@@ -1,3 +1,5 @@
+import { ArcaInvoiceRecord } from "./Arca";
+
 export interface Appointment {
   id: number;
   client: string;
@@ -24,6 +26,7 @@ export interface Appointment {
   deleted_by?: string;
   updated_at?: string | null;
   arca_invoice_id?: number | null;
+  arca_invoices?: ArcaInvoiceRecord | null;
 }
 
 export interface AppointmentUpdates {

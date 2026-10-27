@@ -6,6 +6,8 @@ import { Appointment } from "@/lib/types/Appointment";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { formatPhoneDisplay, normalizePhone } from "@/utils/phone";
+import { Receipt } from "lucide-react";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
 
 interface Props {
   appointments: Appointment[];
@@ -13,6 +15,8 @@ interface Props {
 
 export default function AdminTurnosClient({ appointments }: Readonly<Props>) {
   const router = useRouter();
+  const { isEnabled } = useBusinessContext();
+  const ARCA_ENABLED = isEnabled("arca");
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredAppointments = appointments.filter((appt) => {
@@ -57,6 +61,7 @@ export default function AdminTurnosClient({ appointments }: Readonly<Props>) {
               <th className="px-4 py-3.5">Servicio</th>
               <th className="px-4 py-3.5">Precio</th>
               <th className="px-4 py-3.5 text-center">Estado</th>
+              {ARCA_ENABLED && <th className="px-4 py-3.5 text-center">Factura</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border)]/60 text-[var(--foreground)]">
@@ -94,12 +99,24 @@ export default function AdminTurnosClient({ appointments }: Readonly<Props>) {
                         {appt.paid ? "Pagado" : "Pendiente"}
                       </span>
                     </td>
+                    {ARCA_ENABLED && (
+                      <td className="px-4 py-3 text-center">
+                        {appt.arca_invoice_id ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-medium whitespace-nowrap">
+                            <Receipt className="w-3 h-3" />
+                            Emitida
+                          </span>
+                        ) : (
+                          <span className="text-[var(--foreground)]/30 text-xs">—</span>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 );
               })
             ) : (
               <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-slate-400">
+                <td colSpan={ARCA_ENABLED ? 9 : 8} className="px-4 py-10 text-center text-slate-400">
                   No se encontraron turnos con los criterios de búsqueda.
                 </td>
               </tr>

@@ -27,24 +27,38 @@ export async function createAppointment(input: {client: string;barber_id: number
   return res.json();
 }
 
-export async function deleteAppointment(id: number, deletedBy?: string): Promise<boolean> {
+export async function deleteAppointment(
+  id: number,
+  deletedBy?: string
+): Promise<{ success: boolean; error?: string }> {
   const res = await fetch(`${BASE}/api/appointments`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id, deleted_by: deletedBy }),
     next: { tags: ["appointments"] },
   });
-  return res.ok;
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    return { success: false, error: json?.error ?? "Error al eliminar el turno" };
+  }
+  return { success: true };
 }
 
-export async function updateAppointment(appointmentId: number, updates: AppointmentUpdates): Promise<boolean> {
+export async function updateAppointment(
+  appointmentId: number,
+  updates: AppointmentUpdates
+): Promise<{ success: boolean; error?: string }> {
   const res = await fetch(`${BASE}/api/appointments`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ appointmentId, updates }),
     next: { tags: ["appointments"] },
   });
-  return res.ok;
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    return { success: false, error: json?.error ?? "Error al editar el turno" };
+  }
+  return { success: true };
 }
 
 export async function getBarbersAppointmentsFromDates(barber_id: number,start_date: Date,end_date: Date): Promise<Appointment[]> {
@@ -105,7 +119,7 @@ export async function getAppointmentById(id: number): Promise<Appointment | null
       const { supabaseAdmin } = await import("@/lib/supabase/supabaseAdmin");
       const { data, error } = await supabaseAdmin
         .from("appointments")
-        .select("*, barbers(name), services(name)")
+        .select("*, barbers(name), services(name), arca_invoices(*)")
         .eq("id", id)
         .is("deleted_at", null)
         .single();

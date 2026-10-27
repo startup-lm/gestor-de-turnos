@@ -33,8 +33,11 @@ const TurnosSection = dynamic(() => import("@/components/admin/sections/TurnosSe
 const VentasSection = dynamic(() => import("@/components/admin/sections/VentasSection"), {
   loading: () => <SalesTableSkeleton />,
 });
-const ArcaPage = dynamic(() => import("@/components/arca/ArcaPage"), {
+const FacturasSection = dynamic(() => import("@/components/admin/sections/FacturasSection"), {
   loading: () => <ArcaSkeleton />,
+});
+const ArcaConfigSection = dynamic(() => import("@/components/admin/sections/ArcaConfigSection"), {
+  loading: () => <ConfigFormSkeleton />,
 });
 const AdminBarberosClient = dynamic(() => import("@/app/operaciones/barberos/AdminBarberosClient"), {
   loading: () => <BarbersGridSkeleton />,
@@ -60,15 +63,18 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
   const isAdmin = role === "admin";
   const arcaEnabled = isEnabled("arca");
 
-  const [activeSection, setActiveSection] = useState<AdminSection>("metricas");
+  const tabParam = searchParams.get("tab") as AdminSection | null;
+  const initialTab = tabParam === "facturacion" ? "facturas" : tabParam || "metricas";
+  const [activeSection, setActiveSection] = useState<AdminSection>(initialTab);
 
-  // Sincronizar sección desde query param (ej: ?tab=turnos)
+  // Sincronizar sección si cambia el query param (ej: navegación adelante/atrás del navegador)
   useEffect(() => {
-    const tabParam = searchParams.get("tab") as AdminSection | null;
-    if (tabParam) {
-      setActiveSection(tabParam);
+    const rawTab = (searchParams.get("tab") as AdminSection | null) || "metricas";
+    const currentTab = rawTab === "facturacion" ? "facturas" : rawTab;
+    if (currentTab !== activeSection) {
+      setActiveSection(currentTab);
     }
-  }, [searchParams]);
+  }, [searchParams, activeSection]);
 
   // Protección de rol: redirigir a inicio si no es usuario autenticado
   useEffect(() => {
@@ -78,7 +84,9 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
   }, [role, user, isLoadingAuth, router]);
 
   const handleSelectSection = (section: AdminSection) => {
-    setActiveSection(section);
+    const targetSection = section === "facturacion" ? "facturas" : section;
+    setActiveSection(targetSection);
+    router.replace(`/admin?tab=${targetSection}`, { scroll: false });
   };
 
   return (
@@ -100,7 +108,12 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
           {activeSection === "finanzas" && isAdmin && <FinanzasSection barbers={barbers} />}
           {activeSection === "turnos" && <TurnosSection />}
           {activeSection === "ventas" && <VentasSection />}
-          {activeSection === "facturacion" && arcaEnabled && isAdmin && <ArcaPage />}
+          {(activeSection === "facturas" || activeSection === "facturacion") && arcaEnabled && isAdmin && (
+            <FacturasSection />
+          )}
+          {activeSection === "facturacion-config" && arcaEnabled && isAdmin && (
+            <ArcaConfigSection />
+          )}
           {activeSection === "barberos" && isAdmin && <AdminBarberosClient barbers={barbers} />}
 
           {/* Secciones de Configuración Directas en Pantalla */}

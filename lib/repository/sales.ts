@@ -113,16 +113,19 @@ export async function getSaleById(id: number): Promise<SaleWithRelations | null>
 export async function updateSale(
   id: number,
   payload: Partial<Pick<Sale, "barber_id" | "product_id" | "price" | "quantity" | "total" | "details">>
-): Promise<boolean> {
+): Promise<{ success: boolean; error?: string }> {
   const res = await fetch(`${BASE}/api/sales/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
-  if (!res.ok) return false;
-  const { success } = await res.json();
-  return success;
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    return { success: false, error: json?.error ?? "Error al actualizar la venta" };
+  }
+  const json = await res.json().catch(() => ({}));
+  return { success: json?.success ?? true };
 }
 
 export async function deleteSale(id: number): Promise<boolean> {

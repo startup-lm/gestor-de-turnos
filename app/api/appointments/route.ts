@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   let query = supabaseAdmin
     .from("appointments")
-    .select(`*, barbers(name), services(name)`)
+    .select(`*, barbers(name), services(name), arca_invoices(*)`)
     .is("deleted_at", null);
   for (const [key, value] of searchParams.entries()) {
     if (key === "start_date") {
@@ -166,6 +166,25 @@ export async function PUT(request: Request) {
   const { appointmentId, isPaid, price, payment_method } = parsed.data;
 
   const supabase = await createSupabaseServerClient();
+
+  // Validar si el turno ya cuenta con comprobante fiscal emitido
+  const { data: existingAppt, error: findError } = await supabase
+    .from("appointments")
+    .select("id, arca_invoice_id")
+    .eq("id", appointmentId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (findError) return errorResponse(findError.message, 500);
+  if (!existingAppt) return errorResponse("No existe ese número de turno o ya fue eliminado", 404);
+
+  if (existingAppt.arca_invoice_id) {
+    return errorResponse(
+      `No es posible modificar un turno que ya posee comprobante fiscal emitido ante ARCA (Factura #${existingAppt.arca_invoice_id}).`,
+      400
+    );
+  }
+
   const { data, error } = await supabase
     .from("appointments")
     .update({ paid: isPaid, price, payment_method })
@@ -196,10 +215,40 @@ export async function DELETE(request: Request) {
   }
 
   const { id, deleted_by } = parsed.data;
+
+  const supabase = await createSupabaseServerClient();
+
+  // Validar existencia y estado del turno antes de eliminar
+  const { data: appt, error: findError } = await supabase
+    .from("appointments")
+    .select("id, paid, arca_invoice_id, type")
+    .eq("id", id)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (findError) return errorResponse(findError.message, 500);
+  if (!appt) return errorResponse("No existe ese número de turno o ya fue eliminado", 404);
+
+  // Un bloqueo de horario no es un turno de cliente, se puede desbloquear normalmente
+  if (appt.type !== "block") {
+    if (appt.arca_invoice_id) {
+      return errorResponse(
+        `No es posible eliminar un turno que ya posee comprobante fiscal emitido ante ARCA (Factura #${appt.arca_invoice_id}).`,
+        400
+      );
+    }
+
+    if (appt.paid) {
+      return errorResponse(
+        "No es posible eliminar un turno que ya fue cobrado. Primero debés revertir el cobro si corresponde.",
+        400
+      );
+    }
+  }
+
   const updatePayload: any = { deleted_at: new Date().toISOString() };
   if (deleted_by) updatePayload.deleted_by = deleted_by;
 
-  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("appointments")
     .update(updatePayload)
@@ -230,6 +279,25 @@ export async function PATCH(request: Request) {
 
   const { appointmentId, updates } = parsed.data;
   const supabase = await createSupabaseServerClient();
+
+  // Validar si el turno ya cuenta con comprobante fiscal emitido
+  const { data: existingAppt, error: findError } = await supabase
+    .from("appointments")
+    .select("id, arca_invoice_id")
+    .eq("id", appointmentId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (findError) return errorResponse(findError.message, 500);
+  if (!existingAppt) return errorResponse("No existe ese número de turno o ya fue eliminado", 404);
+
+  if (existingAppt.arca_invoice_id) {
+    return errorResponse(
+      `No es posible editar un turno que ya posee comprobante fiscal emitido ante ARCA (Factura #${existingAppt.arca_invoice_id}).`,
+      400
+    );
+  }
+
   const { data, error } = await supabase
     .from("appointments")
     .update(updates)

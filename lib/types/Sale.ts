@@ -1,3 +1,5 @@
+import { ArcaInvoiceRecord } from "./Arca";
+
 export interface Sale {
   id?: number;
   product_id: number;
@@ -13,4 +15,5 @@ export interface Sale {
 export interface SaleWithRelations extends Sale {
   barbers?: { name: string } | null;
   products?: { name: string } | null;
+  arca_invoices?: ArcaInvoiceRecord | null;
 }
