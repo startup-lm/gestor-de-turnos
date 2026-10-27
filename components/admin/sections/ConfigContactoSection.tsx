@@ -8,7 +8,7 @@ import { MapPin, MessageCircle, Share2, Check } from "lucide-react";
 import { ConfigFormSkeleton } from "@/components/loading/Skeleton";
 import SaveButton from "@/components/buttons/SaveButton";
 import { toast } from "@/lib/store/useToastStore";
-import { normalizePhone } from "@/utils/phone";
+import { normalizePhone, formatPhoneDisplay } from "@/utils/phone";
 
 type SocialItem = { name: string; url: string; active: boolean };
 
@@ -57,7 +57,8 @@ export default function ConfigContactoSection() {
         const res = await fetch("/api/business-settings");
         if (res.ok) {
           const data = await res.json();
-          const p = data.phone || "";
+          const norm = normalizePhone(data.phone);
+          const p = norm.isValid ? norm.e164 : (data.phone || "");
           const addr = data.location_address || "";
           const s = Array.isArray(data.social_media) && data.social_media.length > 0
             ? data.social_media
@@ -84,6 +85,14 @@ export default function ConfigContactoSection() {
     }
     loadData();
   }, []);
+
+  const handlePhoneBlur = () => {
+    if (!phone) return;
+    const norm = normalizePhone(phone);
+    if (norm.isValid) {
+      setPhone(norm.e164);
+    }
+  };
 
   const handleSocialUrlChange = (index: number, val: string) => {
     const updated = [...socials];
@@ -182,9 +191,21 @@ export default function ConfigContactoSection() {
               defaultCountry="AR"
               value={phone}
               onChange={(val) => setPhone(val || "")}
+              onBlur={handlePhoneBlur}
+              placeholder="+54 9 11 2345 6789"
               className="phone-input-custom !bg-[var(--background)] p-2.5 rounded-xl border border-[var(--foreground)]/15 text-sm text-[var(--foreground)] w-full"
             />
           </div>
+          {phone && (
+            <div className="flex items-center justify-between text-xs px-1">
+              <span className="text-slate-400">
+                Visualización: <span className="font-mono text-slate-200">{formatPhoneDisplay(phone)}</span>
+              </span>
+              {normalizePhone(phone).isValid && (
+                <span className="text-emerald-400 font-medium text-[11px]">Válido para WhatsApp</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Ubicación */}

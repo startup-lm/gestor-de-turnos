@@ -12,14 +12,18 @@ import {
   MessageCircle,
   CreditCard,
   ShieldCheck,
+  Settings,
 } from "lucide-react";
+import { APP_VERSION } from "@/lib/version";
 
 export type AdminSection =
   | "metricas"
   | "finanzas"
   | "turnos"
   | "ventas"
+  | "facturas"
   | "facturacion"
+  | "facturacion-config"
   | "barberos"
   | "config-identidad"
   | "config-horarios"
@@ -40,7 +44,10 @@ export default function AdminSidebar({
   arcaEnabled,
 }: Readonly<Props>) {
   const navItemClass = (section: AdminSection) => {
-    const isActive = activeSection === section;
+    const isActive =
+      activeSection === section ||
+      (section === "facturas" && activeSection === "facturacion") ||
+      (section === "facturacion" && activeSection === "facturas");
     return `w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-all text-left cursor-pointer ${
       isActive
         ? "!bg-[var(--accent)]/15 !text-[var(--accent)] !border !border-[var(--accent)]/30 font-semibold shadow-sm"
@@ -51,7 +58,10 @@ export default function AdminSidebar({
   return (
     <>
       {/* VERSIÓN MOBILE: Barra de pestañas horizontal deslizable */}
-      <div className="lg:hidden w-full overflow-x-auto py-3 px-4 border-b border-white/10 bg-[#0B132B]/60 backdrop-blur-md sticky top-[64px] z-30 flex gap-2 no-scrollbar">
+      <div className="lg:hidden w-full overflow-x-auto py-3 px-4 border-b border-white/10 bg-[#0B132B]/60 backdrop-blur-md sticky top-[64px] z-30 flex items-center gap-2 no-scrollbar">
+        <span className="text-[10px] font-mono text-slate-400 bg-white/5 px-2 py-1 rounded border border-white/10 flex-shrink-0">
+          v{APP_VERSION}
+        </span>
         <button
           type="button"
           onClick={() => onSelectSection("metricas")}
@@ -107,18 +117,33 @@ export default function AdminSidebar({
         </button>
 
         {arcaEnabled && isAdmin && (
-          <button
-            type="button"
-            onClick={() => onSelectSection("facturacion")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
-              activeSection === "facturacion"
-                ? "!bg-[var(--accent)] !text-slate-950 font-bold"
-                : "!bg-white/5 !text-slate-300"
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Facturación</span>
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => onSelectSection("facturas")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
+                activeSection === "facturas" || activeSection === "facturacion"
+                  ? "!bg-[var(--accent)] !text-slate-950 font-bold"
+                  : "!bg-white/5 !text-slate-300"
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Comprobantes</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onSelectSection("facturacion-config")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
+                activeSection === "facturacion-config"
+                  ? "!bg-[var(--accent)] !text-slate-950 font-bold"
+                  : "!bg-white/5 !text-slate-300"
+              }`}
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>Config. ARCA</span>
+            </button>
+          </>
         )}
 
         {isAdmin && (
@@ -244,19 +269,36 @@ export default function AdminSidebar({
                 <ShoppingBag className="w-4 h-4 flex-shrink-0" />
                 <span>Ventas</span>
               </button>
-
-              {arcaEnabled && isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => onSelectSection("facturacion")}
-                  className={navItemClass("facturacion")}
-                >
-                  <FileText className="w-4 h-4 flex-shrink-0" />
-                  <span>Facturación ARCA</span>
-                </button>
-              )}
             </div>
           </div>
+
+          {/* Categoría: Facturación (Solo Admin & Si ARCA está activo) */}
+          {arcaEnabled && isAdmin && (
+            <div>
+              <div className="text-[10px] font-bold text-slate-400 tracking-wider px-3 mb-2">
+                Facturación
+              </div>
+              <div className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => onSelectSection("facturas")}
+                  className={navItemClass("facturas")}
+                >
+                  <FileText className="w-4 h-4 flex-shrink-0" />
+                  <span>Comprobantes</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onSelectSection("facturacion-config")}
+                  className={navItemClass("facturacion-config")}
+                >
+                  <Settings className="w-4 h-4 flex-shrink-0" />
+                  <span>Configuración ARCA</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Categoría: Operaciones */}
           <div>
@@ -333,12 +375,15 @@ export default function AdminSidebar({
           )}
         </div>
 
-        {/* Footer sutil en la parte inferior del sidebar */}
-        <div className="pt-4 mt-auto border-t border-white/10 px-3">
+        {/* Footer en la parte inferior del sidebar de /admin */}
+        <div className="pt-4 mt-auto border-t border-white/10 px-3 flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)]" />
-            <span className="truncate">Panel seguro autenticado</span>
+            <span className="truncate">Gestor de Turnos</span>
           </div>
+          <span className="text-[11px] font-mono font-medium text-slate-400 bg-white/5 px-2 py-0.5 rounded border border-white/10" title="Versión del gestor">
+            v{APP_VERSION}
+          </span>
         </div>
       </aside>
     </>

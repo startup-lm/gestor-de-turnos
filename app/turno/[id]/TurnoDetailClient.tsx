@@ -19,6 +19,7 @@ import { Appointment } from "@/lib/types/Appointment";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { normalizePhone } from "@/utils/phone";
+import Link from "next/link";
 import {
   Calendar,
   Clock,
@@ -33,6 +34,10 @@ import {
   MessageCircle,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
+  Copy,
+  Check,
+  ArrowUpRight,
 } from "lucide-react";
 
 const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
@@ -96,6 +101,17 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
   // ARCA
   const arcaAvailable = ARCA_ENABLED && !!arcaStatus?.ready;
   const hasExistingInvoice = !!initialAppointment.arca_invoice_id;
+  const isLocked = initialAppointment.type !== "block" && hasExistingInvoice;
+  const invoice = initialAppointment.arca_invoices;
+  const [copiedCae, setCopiedCae] = useState(false);
+
+  const handleCopyCae = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCae(true);
+    toast.success("CAE copiado al portapapeles");
+    setTimeout(() => setCopiedCae(false), 2000);
+  };
+
   const [emitInvoice, setEmitInvoice] = useState(false);
   const [docType, setDocType] = useState<ArcaDocType>(99);
   const [docNumber, setDocNumber] = useState("");
@@ -148,11 +164,7 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
   };
 
   const handleBack = () => {
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/operaciones/turnos");
-    }
+    router.push("/admin?tab=turnos");
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -170,9 +182,14 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
       return;
     }
 
+    if (isLocked) {
+      toast.error("No es posible editar un turno que ya posee comprobante fiscal emitido");
+      return;
+    }
+
     setSaving(true);
     try {
-      const ok = await updateAppointment(initialAppointment.id, {
+      const res = await updateAppointment(initialAppointment.id, {
         client: client.trim(),
         phone: phone.trim() ? normalizePhone(phone.trim()).e164 : "",
         service_id: serviceId,
@@ -185,8 +202,8 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
         payment_method: paymentMethod,
       });
 
-      if (!ok) {
-        toast.error("No se pudo actualizar el turno");
+      if (!res.success) {
+        toast.error(res.error || "No se pudo actualizar el turno");
         setSaving(false);
         return;
       }
@@ -219,15 +236,19 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
     }
   };
 
+  const isDeleteDisabled =
+    initialAppointment.type !== "block" &&
+    (initialAppointment.paid || !!initialAppointment.arca_invoice_id);
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      const ok = await deleteAppointment(initialAppointment.id);
-      if (ok) {
+      const res = await deleteAppointment(initialAppointment.id);
+      if (res.success) {
         toast.success("Turno eliminado con éxito");
         handleBack();
       } else {
-        toast.error("Error al eliminar el turno");
+        toast.error(res.error || "Error al eliminar el turno");
         setIsConfirmingDelete(false);
       }
     } catch (err) {
@@ -291,8 +312,15 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
           <button
             type="button"
             onClick={() => setIsConfirmingDelete(true)}
-            disabled={deleting || saving}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 border border-red-500/20 text-xs md:text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50"
+            disabled={deleting || saving || isDeleteDisabled}
+            title={
+              initialAppointment.arca_invoice_id
+                ? "No se puede eliminar un turno que ya posee comprobante fiscal emitido ante ARCA"
+                : initialAppointment.paid
+                ? "No se puede eliminar un turno que ya fue cobrado"
+                : undefined
+            }
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 border border-red-500/20 text-xs md:text-sm font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Trash2 className="w-4 h-4" />
             <span>Eliminar turno</span>
@@ -301,9 +329,14 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
           <button
             type="submit"
             form="appointment-edit-form"
-            disabled={!isDirty || saving}
+            disabled={!isDirty || saving || isLocked}
+            title={
+              isLocked
+                ? "No se puede editar un turno que ya posee comprobante fiscal emitido ante ARCA"
+                : undefined
+            }
             className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 min-h-[40px] ${
-              isDirty && !saving
+              isDirty && !saving && !isLocked
                 ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
                 : "!bg-white/5 !text-slate-500 border border-white/10 cursor-not-allowed opacity-50"
             }`}
@@ -322,6 +355,17 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
 
       {/* Formulario en 2 Columnas idéntico a SaleSplitPanel */}
       <form id="appointment-edit-form" onSubmit={handleSave} className="space-y-6">
+        {isLocked && (
+          <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-sm animate-in fade-in">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0 text-amber-400" />
+            <div>
+              <span className="font-bold block">Turno bloqueado fiscalmente</span>
+              <span className="text-xs text-amber-300/80">
+                Este turno cuenta con comprobante fiscal emitido ante ARCA (Factura #{initialAppointment.arca_invoice_id}) y no puede ser modificado ni eliminado.
+              </span>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Columna Izquierda: Datos del Turno y Horario */}
           <div className="lg:col-span-7 space-y-6">
@@ -349,10 +393,13 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
                   id="appt-client"
                   type="text"
                   required
+                  disabled={isLocked}
                   value={client}
                   onChange={(e) => setClient(e.target.value)}
                   placeholder="Ej: Juan Pérez"
-                  className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none"
+                  className={`w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none ${
+                    isLocked ? "!opacity-60 !cursor-not-allowed" : ""
+                  }`}
                 />
               </div>
 
@@ -365,10 +412,13 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
                   <input
                     id="appt-phone"
                     type="text"
+                    disabled={isLocked}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Ej: +54 9 11 1234-5678"
-                    className="flex-1 !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none font-mono"
+                    className={`flex-1 !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none font-mono ${
+                      isLocked ? "!opacity-60 !cursor-not-allowed" : ""
+                    }`}
                   />
                   {whatsappUrl && (
                     <a
@@ -393,9 +443,12 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
                 <select
                   id="appt-service"
                   required
+                  disabled={isLocked}
                   value={serviceId}
                   onChange={(e) => handleServiceChange(Number(e.target.value))}
-                  className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none"
+                  className={`w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none ${
+                    isLocked ? "!opacity-60 !cursor-not-allowed" : ""
+                  }`}
                 >
                   <option value={-1} disabled style={{ color: "black" }}>
                     Seleccioná un servicio
@@ -418,6 +471,7 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
                   barbers={barbers ?? []}
                   selectedBarberId={barberId}
                   onChange={setBarberId}
+                  disabled={isLocked}
                   className="w-full"
                 />
               </div>
@@ -440,9 +494,12 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
                     id="appt-date"
                     type="date"
                     required
+                    disabled={isLocked}
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none"
+                    className={`w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none ${
+                      isLocked ? "!opacity-60 !cursor-not-allowed" : ""
+                    }`}
                   />
                 </div>
 
@@ -455,9 +512,12 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
                     id="appt-start"
                     type="time"
                     required
+                    disabled={isLocked}
                     value={startTime}
                     onChange={(e) => handleStartTimeChange(e.target.value)}
-                    className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm font-mono transition-all outline-none"
+                    className={`w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm font-mono transition-all outline-none ${
+                      isLocked ? "!opacity-60 !cursor-not-allowed" : ""
+                    }`}
                   />
                 </div>
 
@@ -470,9 +530,12 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
                     id="appt-end"
                     type="time"
                     required
+                    disabled={isLocked}
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm font-mono transition-all outline-none"
+                    className={`w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm font-mono transition-all outline-none ${
+                      isLocked ? "!opacity-60 !cursor-not-allowed" : ""
+                    }`}
                   />
                 </div>
               </div>
@@ -496,8 +559,11 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
+                  disabled={isLocked}
                   onClick={() => setPaid(true)}
-                  className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer border ${
+                  className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all border ${
+                    isLocked ? "cursor-not-allowed opacity-70" : "cursor-pointer"
+                  } ${
                     paid
                       ? "bg-green-500/20 text-green-400 border-green-500/40 shadow-sm"
                       : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10"
@@ -508,8 +574,11 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
                 </button>
                 <button
                   type="button"
+                  disabled={isLocked}
                   onClick={() => setPaid(false)}
-                  className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer border ${
+                  className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all border ${
+                    isLocked ? "cursor-not-allowed opacity-70" : "cursor-pointer"
+                  } ${
                     !paid
                       ? "bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-sm"
                       : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10"
@@ -530,9 +599,12 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
                   type="number"
                   min={0}
                   required
+                  disabled={isLocked}
                   value={price}
                   onChange={(e) => setPrice(Number(e.target.value))}
-                  className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-lg font-bold transition-all outline-none"
+                  className={`w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-lg font-bold transition-all outline-none ${
+                    isLocked ? "!opacity-60 !cursor-not-allowed" : ""
+                  }`}
                 />
               </div>
 
@@ -543,9 +615,12 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
                 </label>
                 <select
                   id="appt-payment-method"
+                  disabled={isLocked}
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none"
+                  className={`w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none ${
+                    isLocked ? "!opacity-60 !cursor-not-allowed" : ""
+                  }`}
                 >
                   {availablePaymentMethods.map((method) => (
                     <option key={method} value={method} style={{ color: "black" }}>
@@ -567,21 +642,109 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
             {ARCA_ENABLED && (
               <div className="bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 border border-white/10 rounded-2xl p-6 backdrop-blur-md shadow-lg space-y-4">
                 {hasExistingInvoice ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
                       <div className="flex items-center gap-2">
                         <Receipt className="w-4 h-4 text-green-400" />
-                        <span className="text-xs font-semibold text-slate-200">
-                          Comprobante Fiscal Emitido
+                        <span className="text-xs font-bold text-slate-200">
+                          Comprobante Fiscal ARCA
                         </span>
                       </div>
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold">
-                        Factura C
+                        {invoice?.voucher_type === 6 ? "Factura B" : "Factura C"}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400">
-                      Este turno cuenta con comprobante fiscal asociado en los registros de ARCA.
-                    </p>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">
+                          Nro. Comprobante
+                        </span>
+                        <span className="font-mono font-bold text-slate-200">
+                          {invoice?.point_of_sale != null && invoice?.voucher_number != null
+                            ? `${String(invoice.point_of_sale).padStart(4, "0")}-${String(invoice.voucher_number).padStart(8, "0")}`
+                            : `#${initialAppointment.arca_invoice_id}`}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">
+                          Estado fiscal
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                          <CheckCircle2 className="w-3 h-3" />
+                          {invoice?.status === "mock" ? "Demo" : "Aprobado"}
+                        </span>
+                      </div>
+
+                      <div className="col-span-2 bg-[var(--background)]/60 rounded-xl p-3 border border-white/5 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+                            Código CAE
+                          </span>
+                          {invoice?.cae && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopyCae(invoice.cae!)}
+                              className="text-[10px] font-semibold text-[var(--accent)] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              {copiedCae ? (
+                                <>
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                  <span className="text-emerald-400">Copiado</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>Copiar</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                        <p className="font-mono text-sm font-bold text-emerald-400">
+                          {invoice?.cae || "—"}
+                        </p>
+                        {invoice?.cae_due_date && (
+                          <span className="text-[10px] text-slate-500 block">
+                            Vto: {invoice.cae_due_date}
+                          </span>
+                        )}
+                      </div>
+
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">
+                          Receptor
+                        </span>
+                        <span className="font-medium text-slate-200 truncate block">
+                          {invoice?.customer_name || client || "Consumidor Final"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">
+                          Documento
+                        </span>
+                        <span className="font-medium text-slate-200 truncate block">
+                          {invoice?.doc_number ? `${invoice.doc_number}` : "Sin doc."}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                      <span className="text-[11px] text-slate-400">
+                        {invoice?.created_at
+                          ? new Date(invoice.created_at).toLocaleDateString("es-AR")
+                          : "Comprobante registrado"}
+                      </span>
+                      <Link
+                        href="/admin?tab=facturas"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-[var(--accent)] hover:text-white transition-colors group cursor-pointer"
+                      >
+                        <span>Ver en Facturación</span>
+                        <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                      </Link>
+                    </div>
                   </div>
                 ) : arcaAvailable && paid ? (
                   <>

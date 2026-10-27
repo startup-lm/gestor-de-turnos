@@ -129,9 +129,9 @@ export default function CancelarTurnoPage() {
   };
 
   return (
-    <div className="py-8 md:py-16 px-4 md:px-8 w-full max-w-[1720px] mx-auto flex flex-col items-center text-center">
+    <div className="min-h-screen py-8 md:py-12 px-4 md:px-8 w-full max-w-[1720px] mx-auto flex flex-col items-center text-center">
       {/* Cabecera Principal */}
-      <div className="mb-8 w-full max-w-2xl text-center">
+      <div className="mb-8 md:mb-10 w-full max-w-2xl text-center mx-auto flex flex-col items-center">
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[var(--foreground)]">
           Cancelar turno
         </h1>

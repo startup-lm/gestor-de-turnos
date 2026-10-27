@@ -39,26 +39,28 @@ export default function ProductosClient({ products }: Readonly<Props>) {
 
   return (
     <div className="w-full flex flex-col items-center">
-      {/* Cabecera */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800/40 pb-6 mb-8 md:mb-10 w-full">
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--foreground)]">
+      {/* Cabecera Principal */}
+      <div className="mb-8 md:mb-10 w-full relative flex flex-col items-center text-center">
+        <div className="w-full max-w-2xl text-center mx-auto">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[var(--foreground)]">
             Nuestros Productos
           </h1>
-          <p className="text-sm sm:text-base text-slate-400 mt-1.5">
+          <p className="text-sm md:text-base text-slate-400 mt-2 px-2">
             Línea exclusiva de pomadas, ceras y cuidado capilar seleccionados por nuestros barberos
           </p>
         </div>
 
         {role === "admin" && (
-          <Link
-            href="/productos/nuevo"
-            data-testid="btn-add-product"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 self-start sm:self-auto"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>Nuevo producto</span>
-          </Link>
+          <div className="mt-4 md:mt-0 md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2">
+            <Link
+              href="/productos/nuevo"
+              data-testid="btn-add-product"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>Nuevo producto</span>
+            </Link>
+          </div>
         )}
       </div>
 

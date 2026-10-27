@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
 import bundleAnalyzer from "@next/bundle-analyzer";
 import { withSentryConfig } from "@sentry/nextjs/config";
+import packageJson from "./package.json";
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
@@ -11,6 +12,9 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const host = supabaseUrl ? new URL(supabaseUrl).hostname : "localhost";
 
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: packageJson.version,
+  },
   images: {
     // 1) Limita exactamente qué URLs se optimizan (solo Storage)
     remotePatterns: [

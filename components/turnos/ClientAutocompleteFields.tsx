@@ -16,6 +16,7 @@ interface Props {
   onPhoneChange: (v: string) => void;
   onClientResolved: (clientId: number | null) => void;
   showWhatsapp?: boolean;
+  disabled?: boolean;
 }
 
 /**
@@ -32,6 +33,7 @@ export default function ClientAutocompleteFields({
   onPhoneChange,
   onClientResolved,
   showWhatsapp = false,
+  disabled = false,
 }: Readonly<Props>) {
   const [suggestions, setSuggestions] = useState<Client[]>([]);
   const [activeField, setActiveField] = useState<"name" | "phone" | null>(null);
@@ -117,16 +119,20 @@ export default function ClientAutocompleteFields({
             id="client-name"
             type="text"
             value={name}
+            disabled={disabled}
             onChange={(e) => handleNameChange(e.target.value)}
             onFocus={() => {
+              if (disabled) return;
               setActiveField("name");
               if (name.length >= 2) fetchSuggestions(name);
             }}
             placeholder="Nombre y Apellido"
             autoComplete="off"
-            className="!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm"
+            className={`!bg-[var(--foreground)]/5 !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-lg p-2.5 w-full block text-sm ${
+              disabled ? "opacity-60 cursor-not-allowed" : ""
+            }`}
           />
-          <Dropdown field="name" />
+          {!disabled && <Dropdown field="name" />}
         </div>
       </div>
 
@@ -139,16 +145,19 @@ export default function ClientAutocompleteFields({
               id="client-phone"
               defaultCountry="AR"
               value={phone}
+              disabled={disabled}
               onChange={(value) => handlePhoneChange(value || "")}
               onFocus={() => {
+                if (disabled) return;
                 setActiveField("phone");
                 if (phone.length >= 2) fetchSuggestions(phone);
               }}
               placeholder="1123456789"
               autoComplete="off"
-              className="w-full"
+              className={`w-full ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
               numberInputProps={{
                 className: "w-full border-none focus:outline-none p-0 bg-transparent text-[var(--foreground)] text-sm",
+                disabled,
               }}
               style={{
                 display: 'flex',
@@ -159,7 +168,7 @@ export default function ClientAutocompleteFields({
                 backgroundColor: 'rgba(249, 250, 251, 0.05)',
               }}
             />
-            <Dropdown field="phone" />
+            {!disabled && <Dropdown field="phone" />}
           </div>
           {showWhatsapp && (
             <button
