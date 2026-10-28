@@ -73,6 +73,7 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
   const tabParam = searchParams.get("tab") as AdminSection | null;
   const initialTab = tabParam === "facturacion" ? "facturas" : tabParam || "metricas";
   const [activeSection, setActiveSection] = useState<AdminSection>(initialTab);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Sincronizar sección si cambia el query param (ej: navegación adelante/atrás del navegador)
   useEffect(() => {
@@ -98,14 +99,20 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
 
   return (
     <div className="w-full min-h-[calc(100vh-64px)] flex flex-col lg:flex-row bg-[var(--background)]">
-      {/* Columna Izquierda: Menú Lateral estilo Supabase */}
-      <aside className="w-full lg:w-64 xl:w-72 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-white/10 bg-[#0B132B]/40 lg:min-h-[calc(100vh-64px)] lg:sticky lg:top-[64px] lg:self-start lg:h-[calc(100vh-64px)] overflow-y-auto z-20">
+      {/* Columna Izquierda: Menú Lateral con scroll independiente y colapso */}
+      <aside
+        className={`w-full flex-shrink-0 border-b lg:border-b-0 lg:border-r border-white/10 bg-[#0B132B]/40 lg:sticky lg:top-[64px] lg:self-start lg:h-[calc(100vh-64px)] z-20 transition-all duration-300 ease-in-out flex flex-col overflow-hidden ${
+          isSidebarCollapsed ? "lg:w-16" : "lg:w-64 xl:w-72"
+        }`}
+      >
         <AdminSidebar
           activeSection={activeSection}
           onSelectSection={handleSelectSection}
           isAdmin={isAdmin}
           arcaEnabled={arcaEnabled}
           cashManagementEnabled={cashManagementEnabled}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
         />
       </aside>
 

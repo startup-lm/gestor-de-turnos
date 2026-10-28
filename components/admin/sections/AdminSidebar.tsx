@@ -18,6 +18,8 @@ import {
   Coins,
   Receipt,
   TrendingDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { APP_VERSION } from "@/lib/version";
 
@@ -50,6 +52,8 @@ interface Props {
   isAdmin: boolean;
   arcaEnabled: boolean;
   cashManagementEnabled?: boolean;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export default function AdminSidebar({
@@ -58,8 +62,10 @@ export default function AdminSidebar({
   isAdmin,
   arcaEnabled,
   cashManagementEnabled = false,
+  isCollapsed = false,
+  onToggleCollapse,
 }: Readonly<Props>) {
-  // Estado para colapsar/desplegar categorías. Por defecto: TODOS VISIBLES (false = no colapsado)
+  // Estado para colapsar/desplegar categorías internas. Por defecto: TODOS VISIBLES (false = no colapsado)
   const [collapsedCategories, setCollapsedCategories] = useState<Record<ModuleCategory, boolean>>({
     principal: false,
     finanzas: false,
@@ -80,6 +86,15 @@ export default function AdminSidebar({
       activeSection === section ||
       (section === "facturas" && activeSection === "facturacion") ||
       (section === "facturacion" && activeSection === "facturas");
+
+    if (isCollapsed) {
+      return `w-full flex items-center justify-center p-2 rounded-xl transition-all cursor-pointer ${
+        isActive
+          ? "!bg-[var(--accent)]/20 !text-[var(--accent)] !border !border-[var(--accent)]/40 shadow-sm"
+          : "!bg-transparent !text-slate-400 hover:!text-white hover:!bg-white/5 !border !border-transparent"
+      }`;
+    }
+
     return `w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all text-left cursor-pointer ${
       isActive
         ? "!bg-[var(--accent)]/15 !text-[var(--accent)] !border !border-[var(--accent)]/30 font-semibold shadow-sm"
@@ -290,49 +305,83 @@ export default function AdminSidebar({
         )}
       </div>
 
-      {/* VERSIÓN DESKTOP: Menú lateral compacto y colapsable */}
-      <aside className="hidden lg:flex flex-col w-full h-full py-4 px-3">
-        {/* Cabecera del Sidebar */}
-        <div className="px-2 pb-3 mb-2 border-b border-white/10">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-white tracking-tight flex items-center gap-1.5">
-              <span>Administración</span>
-            </h2>
-            <span className="text-[10px] font-bold tracking-wider px-1.5 py-0.5 rounded bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/20">
-              {isAdmin ? "Admin" : "Barbero"}
-            </span>
-          </div>
-          <p className="text-[10px] text-slate-400 mt-0.5">
-            {isAdmin ? "Configuración y control global" : "Tus turnos y balance"}
-          </p>
+      {/* VERSIÓN DESKTOP: Menú lateral con footer fijo y scroll independiente */}
+      <div className={`hidden lg:flex flex-col w-full h-full min-h-0 py-3.5 ${isCollapsed ? "px-1.5" : "px-3"} overflow-hidden select-none`}>
+        {/* Cabecera del Sidebar (Fija superior) */}
+        <div className={`flex-shrink-0 pb-3 mb-2 border-b border-white/10 ${isCollapsed ? "px-1 flex flex-col items-center" : "px-2"}`}>
+          {!isCollapsed ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <h2 className="text-xs font-bold text-white tracking-tight truncate">
+                  Administración
+                </h2>
+                <span className="text-[10px] font-bold tracking-wider px-1.5 py-0.5 rounded bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/20 flex-shrink-0">
+                  {isAdmin ? "Admin" : "Barbero"}
+                </span>
+              </div>
+              {onToggleCollapse && (
+                <button
+                  type="button"
+                  onClick={onToggleCollapse}
+                  className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
+                  title="Colapsar menú"
+                  aria-label="Colapsar menú"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          ) : (
+            onToggleCollapse && (
+              <button
+                type="button"
+                onClick={onToggleCollapse}
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-center w-full"
+                title="Expandir menú"
+                aria-label="Expandir menú"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            )
+          )}
+          {!isCollapsed && (
+            <p className="text-[10px] text-slate-400 mt-0.5 truncate">
+              {isAdmin ? "Configuración y control global" : "Tus turnos y balance"}
+            </p>
+          )}
         </div>
 
-        {/* Lista de navegación categorizada y colapsable */}
-        <div className="flex-1 space-y-3 overflow-y-auto pr-0.5">
+        {/* Lista de navegación (Única parte scrolleable si crece) */}
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-0.5 no-scrollbar">
           {/* Módulo 1: Panel Principal */}
           <div>
-            <button
-              type="button"
-              onClick={() => toggleCategory("principal")}
-              className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-slate-200 uppercase tracking-wider rounded transition-colors group cursor-pointer select-none"
-            >
-              <span>Panel principal</span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 transition-transform duration-200 ${
-                  collapsedCategories.principal ? "-rotate-90" : "rotate-0"
-                }`}
-              />
-            </button>
+            {!isCollapsed ? (
+              <button
+                type="button"
+                onClick={() => toggleCategory("principal")}
+                className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-slate-200 uppercase tracking-wider rounded transition-colors group cursor-pointer select-none"
+              >
+                <span>Panel principal</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 transition-transform duration-200 ${
+                    collapsedCategories.principal ? "-rotate-90" : "rotate-0"
+                  }`}
+                />
+              </button>
+            ) : (
+              <div className="h-px bg-white/5 my-1 mx-1" />
+            )}
 
-            {!collapsedCategories.principal && (
+            {(!collapsedCategories.principal || isCollapsed) && (
               <div className="space-y-0.5 mt-0.5">
                 <button
                   type="button"
                   onClick={() => onSelectSection("metricas")}
                   className={navItemClass("metricas")}
+                  title="Panel de control"
                 >
                   <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>Panel de control</span>
+                  {!isCollapsed && <span>Panel de control</span>}
                 </button>
               </div>
             )}
@@ -341,20 +390,24 @@ export default function AdminSidebar({
           {/* Módulo 2: Finanzas y Caja (Solo Admin) */}
           {isAdmin && (
             <div>
-              <button
-                type="button"
-                onClick={() => toggleCategory("finanzas")}
-                className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-slate-200 uppercase tracking-wider rounded transition-colors group cursor-pointer select-none"
-              >
-                <span>Finanzas y caja</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 transition-transform duration-200 ${
-                    collapsedCategories.finanzas ? "-rotate-90" : "rotate-0"
-                  }`}
-                />
-              </button>
+              {!isCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => toggleCategory("finanzas")}
+                  className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-slate-200 uppercase tracking-wider rounded transition-colors group cursor-pointer select-none"
+                >
+                  <span>Finanzas y caja</span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 transition-transform duration-200 ${
+                      collapsedCategories.finanzas ? "-rotate-90" : "rotate-0"
+                    }`}
+                  />
+                </button>
+              ) : (
+                <div className="h-px bg-white/5 my-1 mx-1" />
+              )}
 
-              {!collapsedCategories.finanzas && (
+              {(!collapsedCategories.finanzas || isCollapsed) && (
                 <div className="space-y-0.5 mt-0.5">
                   {cashManagementEnabled ? (
                     <>
@@ -362,27 +415,30 @@ export default function AdminSidebar({
                         type="button"
                         onClick={() => onSelectSection("finanzas")}
                         className={navItemClass("finanzas")}
+                        title="Balance y liquidaciones"
                       >
                         <Coins className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span>Balance y liquidaciones</span>
+                        {!isCollapsed && <span>Balance y liquidaciones</span>}
                       </button>
 
                       <button
                         type="button"
                         onClick={() => onSelectSection("finanzas-liquidaciones")}
                         className={navItemClass("finanzas-liquidaciones")}
+                        title="Historial de pagos"
                       >
                         <Receipt className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span>Historial de pagos</span>
+                        {!isCollapsed && <span>Historial de pagos</span>}
                       </button>
 
                       <button
                         type="button"
                         onClick={() => onSelectSection("finanzas-gastos")}
                         className={navItemClass("finanzas-gastos")}
+                        title="Gastos del local"
                       >
                         <TrendingDown className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span>Gastos del local</span>
+                        {!isCollapsed && <span>Gastos del local</span>}
                       </button>
                     </>
                   ) : (
@@ -390,9 +446,10 @@ export default function AdminSidebar({
                       type="button"
                       onClick={() => onSelectSection("finanzas")}
                       className={navItemClass("finanzas")}
+                      title="Finanzas"
                     >
                       <Wallet className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span>Finanzas</span>
+                      {!isCollapsed && <span>Finanzas</span>}
                     </button>
                   )}
                 </div>
@@ -402,37 +459,43 @@ export default function AdminSidebar({
 
           {/* Módulo 3: Operaciones */}
           <div>
-            <button
-              type="button"
-              onClick={() => toggleCategory("operaciones")}
-              className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-slate-200 uppercase tracking-wider rounded transition-colors group cursor-pointer select-none"
-            >
-              <span>Operaciones</span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 transition-transform duration-200 ${
-                  collapsedCategories.operaciones ? "-rotate-90" : "rotate-0"
-                }`}
-              />
-            </button>
+            {!isCollapsed ? (
+              <button
+                type="button"
+                onClick={() => toggleCategory("operaciones")}
+                className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-slate-200 uppercase tracking-wider rounded transition-colors group cursor-pointer select-none"
+              >
+                <span>Operaciones</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 transition-transform duration-200 ${
+                    collapsedCategories.operaciones ? "-rotate-90" : "rotate-0"
+                  }`}
+                />
+              </button>
+            ) : (
+              <div className="h-px bg-white/5 my-1 mx-1" />
+            )}
 
-            {!collapsedCategories.operaciones && (
+            {(!collapsedCategories.operaciones || isCollapsed) && (
               <div className="space-y-0.5 mt-0.5">
                 <button
                   type="button"
                   onClick={() => onSelectSection("turnos")}
                   className={navItemClass("turnos")}
+                  title="Gestión de turnos"
                 >
                   <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>Gestión de turnos</span>
+                  {!isCollapsed && <span>Gestión de turnos</span>}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => onSelectSection("ventas")}
                   className={navItemClass("ventas")}
+                  title="Gestión de ventas"
                 >
                   <ShoppingBag className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>Gestión de ventas</span>
+                  {!isCollapsed && <span>Gestión de ventas</span>}
                 </button>
 
                 {isAdmin && (
@@ -440,9 +503,10 @@ export default function AdminSidebar({
                     type="button"
                     onClick={() => onSelectSection("barberos")}
                     className={navItemClass("barberos")}
+                    title="Gestión de barberos"
                   >
                     <Users className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>Gestión de barberos</span>
+                    {!isCollapsed && <span>Gestión de barberos</span>}
                   </button>
                 )}
               </div>
@@ -452,37 +516,43 @@ export default function AdminSidebar({
           {/* Módulo 4: Facturación ARCA (Solo Admin & Si ARCA está activo) */}
           {arcaEnabled && isAdmin && (
             <div>
-              <button
-                type="button"
-                onClick={() => toggleCategory("facturacion")}
-                className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-slate-200 uppercase tracking-wider rounded transition-colors group cursor-pointer select-none"
-              >
-                <span>Facturación ARCA</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 transition-transform duration-200 ${
-                    collapsedCategories.facturacion ? "-rotate-90" : "rotate-0"
-                  }`}
-                />
-              </button>
+              {!isCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => toggleCategory("facturacion")}
+                  className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-slate-200 uppercase tracking-wider rounded transition-colors group cursor-pointer select-none"
+                >
+                  <span>Facturación ARCA</span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 transition-transform duration-200 ${
+                      collapsedCategories.facturacion ? "-rotate-90" : "rotate-0"
+                    }`}
+                  />
+                </button>
+              ) : (
+                <div className="h-px bg-white/5 my-1 mx-1" />
+              )}
 
-              {!collapsedCategories.facturacion && (
+              {(!collapsedCategories.facturacion || isCollapsed) && (
                 <div className="space-y-0.5 mt-0.5">
                   <button
                     type="button"
                     onClick={() => onSelectSection("facturas")}
                     className={navItemClass("facturas")}
+                    title="Comprobantes"
                   >
                     <FileText className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>Comprobantes</span>
+                    {!isCollapsed && <span>Comprobantes</span>}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => onSelectSection("facturacion-config")}
                     className={navItemClass("facturacion-config")}
+                    title="Configuración ARCA"
                   >
                     <Settings className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>Configuración ARCA</span>
+                    {!isCollapsed && <span>Configuración ARCA</span>}
                   </button>
                 </div>
               )}
@@ -492,55 +562,63 @@ export default function AdminSidebar({
           {/* Módulo 5: Configuración del Local (Solo Admin) */}
           {isAdmin && (
             <div>
-              <button
-                type="button"
-                onClick={() => toggleCategory("configuracion")}
-                className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-slate-200 uppercase tracking-wider rounded transition-colors group cursor-pointer select-none"
-              >
-                <span>Configuración</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 transition-transform duration-200 ${
-                    collapsedCategories.configuracion ? "-rotate-90" : "rotate-0"
-                  }`}
-                />
-              </button>
+              {!isCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => toggleCategory("configuracion")}
+                  className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-slate-200 uppercase tracking-wider rounded transition-colors group cursor-pointer select-none"
+                >
+                  <span>Configuración</span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 transition-transform duration-200 ${
+                      collapsedCategories.configuracion ? "-rotate-90" : "rotate-0"
+                    }`}
+                  />
+                </button>
+              ) : (
+                <div className="h-px bg-white/5 my-1 mx-1" />
+              )}
 
-              {!collapsedCategories.configuracion && (
+              {(!collapsedCategories.configuracion || isCollapsed) && (
                 <div className="space-y-0.5 mt-0.5">
                   <button
                     type="button"
                     onClick={() => onSelectSection("config-identidad")}
                     className={navItemClass("config-identidad")}
+                    title="Identidad y marca"
                   >
                     <Store className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>Identidad y marca</span>
+                    {!isCollapsed && <span>Identidad y marca</span>}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => onSelectSection("config-horarios")}
                     className={navItemClass("config-horarios")}
+                    title="Horarios y atención"
                   >
                     <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>Horarios y atención</span>
+                    {!isCollapsed && <span>Horarios y atención</span>}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => onSelectSection("config-contacto")}
                     className={navItemClass("config-contacto")}
+                    title="Contacto y canales"
                   >
                     <MessageCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>Contacto y canales</span>
+                    {!isCollapsed && <span>Contacto y canales</span>}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => onSelectSection("config-pagos")}
                     className={navItemClass("config-pagos")}
+                    title="Medios de pago"
                   >
                     <CreditCard className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>Medios de pago</span>
+                    {!isCollapsed && <span>Medios de pago</span>}
                   </button>
                 </div>
               )}
@@ -548,17 +626,25 @@ export default function AdminSidebar({
           )}
         </div>
 
-        {/* Footer en la parte inferior del sidebar de /admin */}
-        <div className="pt-3 mt-auto border-t border-white/10 px-2 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-            <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)]" />
-            <span className="truncate text-[11px]">Gestor de Turnos</span>
-          </div>
-          <span className="text-[10px] font-mono font-medium text-slate-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/10" title="Versión del gestor">
-            v{APP_VERSION}
-          </span>
+        {/* Footer fijo al fondo de la pantalla del navegador */}
+        <div className={`flex-shrink-0 pt-3 mt-auto border-t border-white/10 ${isCollapsed ? "px-1 flex flex-col items-center justify-center gap-1.5" : "px-2 flex items-center justify-between"}`}>
+          {!isCollapsed ? (
+            <>
+              <div className="flex items-center gap-1.5 text-xs text-slate-400 min-w-0">
+                <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)] flex-shrink-0" />
+                <span className="truncate text-[11px]">Gestor de Turnos</span>
+              </div>
+              <span className="text-[10px] font-mono font-medium text-slate-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 flex-shrink-0" title="Versión del gestor">
+                v{APP_VERSION}
+              </span>
+            </>
+          ) : (
+            <span className="text-[9px] font-mono font-bold text-slate-400 bg-white/5 px-1 py-0.5 rounded border border-white/10 text-center" title={`Versión ${APP_VERSION}`}>
+              v{APP_VERSION}
+            </span>
+          )}
         </div>
-      </aside>
+      </div>
     </>
   );
 }
