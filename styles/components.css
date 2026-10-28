@@ -26,3 +26,29 @@
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
+
+/* Sidebar y barra de navegación de administración responsiva */
+.admin-sidebar-aside {
+  position: sticky;
+  top: var(--navbar-height, 65px);
+  z-index: 30;
+  height: auto;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(11, 19, 43, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@media (min-width: 1024px) {
+  .admin-sidebar-aside {
+    top: var(--navbar-height, 105px);
+    z-index: 20;
+    height: calc(100vh - var(--navbar-height, 105px));
+    border-bottom: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(11, 19, 43, 0.4);
+    overflow: hidden;
+    align-self: flex-start;
+  }
+}
+

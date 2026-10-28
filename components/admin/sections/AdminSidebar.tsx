@@ -105,14 +105,7 @@ export default function AdminSidebar({
   return (
     <>
       {/* VERSIÓN MOBILE: Barra de pestañas horizontal deslizable */}
-      <div
-        style={{ top: "var(--navbar-height, 105px)" }}
-        className="lg:hidden w-full overflow-x-auto py-2.5 px-3 border-b border-white/10 bg-[#0B132B]/60 backdrop-blur-md sticky z-30 flex items-center gap-1.5 no-scrollbar"
-      >
-        <span className="text-[10px] font-mono text-slate-400 bg-white/5 px-2 py-1 rounded border border-white/10 flex-shrink-0">
-          v{APP_VERSION}
-        </span>
-
+      <div className="lg:hidden w-full overflow-x-auto py-2.5 px-3 flex items-center gap-1.5 no-scrollbar">
         <button
           type="button"
           onClick={() => onSelectSection("metricas")}
@@ -123,7 +116,7 @@ export default function AdminSidebar({
           }`}
         >
           <TrendingUp className="w-3.5 h-3.5" />
-          <span>Panel</span>
+          <span>Panel de control</span>
         </button>
 
         {isAdmin && !cashManagementEnabled && (
@@ -153,7 +146,7 @@ export default function AdminSidebar({
               }`}
             >
               <Coins className="w-3.5 h-3.5" />
-              <span>Balance</span>
+              <span>Balance y liquidaciones</span>
             </button>
             <button
               type="button"
@@ -165,7 +158,7 @@ export default function AdminSidebar({
               }`}
             >
               <Receipt className="w-3.5 h-3.5" />
-              <span>Pagos</span>
+              <span>Historial de pagos</span>
             </button>
             <button
               type="button"
@@ -177,7 +170,7 @@ export default function AdminSidebar({
               }`}
             >
               <TrendingDown className="w-3.5 h-3.5" />
-              <span>Gastos</span>
+              <span>Gastos del local</span>
             </button>
           </>
         )}
@@ -192,7 +185,7 @@ export default function AdminSidebar({
           }`}
         >
           <Calendar className="w-3.5 h-3.5" />
-          <span>Turnos</span>
+          <span>Gestión de turnos</span>
         </button>
 
         <button
@@ -205,7 +198,7 @@ export default function AdminSidebar({
           }`}
         >
           <ShoppingBag className="w-3.5 h-3.5" />
-          <span>Ventas</span>
+          <span>Gestión de ventas</span>
         </button>
 
         {arcaEnabled && isAdmin && (
@@ -233,7 +226,7 @@ export default function AdminSidebar({
               }`}
             >
               <Settings className="w-3.5 h-3.5" />
-              <span>Config. ARCA</span>
+              <span>Configuración ARCA</span>
             </button>
           </>
         )}
@@ -250,7 +243,7 @@ export default function AdminSidebar({
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              <span>Barberos</span>
+              <span>Gestión de barberos</span>
             </button>
 
             <button
@@ -263,7 +256,7 @@ export default function AdminSidebar({
               }`}
             >
               <Store className="w-3.5 h-3.5" />
-              <span>Identidad</span>
+              <span>Identidad y marca</span>
             </button>
 
             <button
@@ -276,7 +269,7 @@ export default function AdminSidebar({
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
-              <span>Horarios</span>
+              <span>Horarios y atención</span>
             </button>
 
             <button
@@ -289,7 +282,7 @@ export default function AdminSidebar({
               }`}
             >
               <MessageCircle className="w-3.5 h-3.5" />
-              <span>Contacto</span>
+              <span>Contacto y canales</span>
             </button>
 
             <button
@@ -302,7 +295,7 @@ export default function AdminSidebar({
               }`}
             >
               <CreditCard className="w-3.5 h-3.5" />
-              <span>Pagos</span>
+              <span>Medios de pago</span>
             </button>
           </>
         )}
@@ -635,7 +628,7 @@ export default function AdminSidebar({
             <>
               <div className="flex items-center gap-1.5 text-xs text-slate-400 min-w-0">
                 <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)] flex-shrink-0" />
-                <span className="truncate text-[11px]">Gestor de Turnos</span>
+                <span className="truncate text-[11px]">Gestor de turnos</span>
               </div>
               <span className="text-[10px] font-mono font-medium text-slate-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 flex-shrink-0" title="Versión del gestor">
                 v{APP_VERSION}

@@ -19,6 +19,7 @@ import {
 
 // Modular Sidebar
 import AdminSidebar, { AdminSection } from "@/components/admin/sections/AdminSidebar";
+import { APP_VERSION } from "@/lib/version";
 
 // Sections (Lazy Loaded on Demand with matching High-Fidelity Skeletons)
 const DashboardClient = dynamic(() => import("@/app/dashboard/DashboardClient"), {
@@ -102,13 +103,9 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
       style={{ minHeight: "calc(100vh - var(--navbar-height, 105px))" }}
       className="w-full flex flex-col lg:flex-row bg-[var(--background)]"
     >
-      {/* Columna Izquierda: Menú Lateral con scroll independiente y colapso */}
+      {/* Columna Izquierda / Barra de pestañas mobile: Menú lateral con scroll independiente en desktop y barra fija en mobile */}
       <aside
-        style={{
-          top: "var(--navbar-height, 105px)",
-          height: "calc(100vh - var(--navbar-height, 105px))",
-        }}
-        className={`w-full flex-shrink-0 border-b lg:border-b-0 lg:border-r border-white/10 bg-[#0B132B]/40 lg:sticky lg:self-start z-20 transition-all duration-300 ease-in-out flex flex-col overflow-hidden ${
+        className={`admin-sidebar-aside w-full flex-shrink-0 transition-all duration-300 ease-in-out flex flex-col ${
           isSidebarCollapsed ? "lg:w-16" : "lg:w-64 xl:w-72"
         }`}
       >
@@ -152,6 +149,13 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
           {activeSection === "config-horarios" && isAdmin && <ConfigHorariosSection />}
           {activeSection === "config-contacto" && isAdmin && <ConfigContactoSection />}
           {activeSection === "config-pagos" && isAdmin && <ConfigPagosSection />}
+
+          {/* Footer mobile visible solo en pantallas pequeñas */}
+          <div className="lg:hidden flex items-center justify-center gap-2 pt-8 pb-4 border-t border-white/5 text-[11px] text-slate-500 font-mono">
+            <span>Gestor de turnos</span>
+            <span>•</span>
+            <span>v{APP_VERSION}</span>
+          </div>
         </div>
       </section>
     </div>

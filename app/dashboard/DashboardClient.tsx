@@ -97,7 +97,7 @@ export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
       {/* Cabecera Principal */}
       <div className="border-b border-white/10 pb-4">
         <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
-          Panel de Control y Métricas
+          Panel de control y métricas
         </h2>
         <p className="text-xs text-slate-400 mt-0.5">
           {isAdmin
