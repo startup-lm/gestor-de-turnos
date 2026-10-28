@@ -300,13 +300,8 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
       {/* Cabecera Principal */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-5">
         <div>
-          <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-            <span>Finanzas y balance de caja</span>
-            {isCashManagementEnabled && (
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                Módulo Activo
-              </span>
-            )}
+          <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
+            Finanzas y balance de caja
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Estado de resultados, comisiones por liquidar, ganancia real y medios de pago
