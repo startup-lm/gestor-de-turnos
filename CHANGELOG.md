@@ -6,6 +6,20 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.2.1] - 2026-10-28
+
+### Corregido
+- **Layout y Contención en Vista Mobile de Administración (`AdminClient.tsx` & `components.css`)**:
+  - Eliminación de la altura rígida forzada `height: calc(100vh - 105px)` en el contenedor `<aside>` en mobile, la cual provocaba un espacio vacío residual de más de 650px expulsando el contenido hacia abajo.
+  - Implementación de la clase responsiva `.admin-sidebar-aside` que establece `height: auto` y fijación pegada al borde inferior del navbar (`top: var(--navbar-height, 65px)`) en mobile, preservando el scroll independiente y altura 100vh únicamente en desktop (`lg:`).
+- **Barra de Navegación Mobile en Administración (`AdminSidebar.tsx`)**:
+  - Remoción del badge `v1.2.0` del primer puesto en las pastillas de navegación deslizable móvil, ubicándolo como footer unificado al pie del panel de administración.
+  - Unificación completa de los nombres de módulos y secciones entre la vista mobile y web, resolviendo la duplicación del término "Pagos" y asegurando concordancia exacta 1:1 en Sentence case ("Panel de control", "Balance y liquidaciones", "Historial de pagos", "Gastos del local", "Gestión de turnos", "Gestión de ventas", "Comprobantes", "Configuración ARCA", "Gestión de barberos", "Identidad y marca", "Horarios y atención", "Contacto y canales", "Medios de pago").
+- **Alineación de Redacción en Sentence Case (`DashboardClient.tsx` & `AdminSidebar.tsx`)**:
+  - Corrección de "Panel de Control y Métricas" a "Panel de control y métricas" y de "Gestor de Turnos" a "Gestor de turnos" en conformidad con la Regla 8 de `AGENTS.md`.
+
+---
+
 ## [1.2.0] - 2026-10-28
 
 ### Agregado
