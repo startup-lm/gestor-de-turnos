@@ -219,7 +219,7 @@ export default function LiquidationModal({
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight">
-                {completedPayout ? "Recibo Oficial de Liquidación" : "Liquidar y pagar comisiones"}
+                {completedPayout ? "Recibo oficial de liquidación" : "Liquidar y pagar comisiones"}
               </h3>
               <p className="text-xs text-slate-400">
                 {barber.name} • {formattedPeriod}
@@ -244,7 +244,7 @@ export default function LiquidationModal({
                 <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-2 border border-emerald-500/30">
                   <FileCheck className="w-6 h-6" />
                 </div>
-                <h4 className="text-lg font-extrabold text-white">¡Liquidación Registrada!</h4>
+                <h4 className="text-lg font-extrabold text-white">¡Liquidación registrada!</h4>
                 <p className="text-xs text-slate-300">
                   El pago fue asentado correctamente y registrado en el historial oficial del sistema.
                 </p>
@@ -310,12 +310,12 @@ export default function LiquidationModal({
                 {copiedReceipt ? (
                   <>
                     <Check className="w-4 h-4 stroke-[3]" />
-                    <span>¡Recibo Copiado para WhatsApp!</span>
+                    <span>¡Recibo copiado para WhatsApp!</span>
                   </>
                 ) : (
                   <>
                     <Copy className="w-4 h-4" />
-                    <span>Copiar Recibo para WhatsApp</span>
+                    <span>Copiar recibo para WhatsApp</span>
                   </>
                 )}
               </button>
@@ -526,7 +526,7 @@ export default function LiquidationModal({
                   className="px-5 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-xs shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 disabled:scale-100 flex items-center gap-2"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{isSubmitting ? "Registrando..." : "Confirmar Pago"}</span>
+                  <span>{isSubmitting ? "Registrando..." : "Confirmar pago"}</span>
                 </button>
               </div>
             </>

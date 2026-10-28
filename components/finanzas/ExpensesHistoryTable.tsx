@@ -75,7 +75,7 @@ export default function ExpensesHistoryTable({
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-bold">
           <HandCoins className="w-3 h-3" />
-          <span>Adelanto Barbero</span>
+          <span>Adelanto a barbero</span>
         </span>
       );
     }
@@ -83,7 +83,7 @@ export default function ExpensesHistoryTable({
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-500/15 border border-violet-500/30 text-violet-300 text-[10px] font-bold">
           <Receipt className="w-3 h-3" />
-          <span>Pago Comisión</span>
+          <span>Pago de comisión</span>
         </span>
       );
     }
@@ -129,7 +129,7 @@ export default function ExpensesHistoryTable({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg !bg-red-500 hover:!bg-red-600 !text-white text-xs font-bold shadow-md shadow-red-500/15 transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>Nuevo Gasto</span>
+            <span>Nuevo gasto</span>
           </button>
         </div>
       </div>
@@ -153,11 +153,11 @@ export default function ExpensesHistoryTable({
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.02] text-[10px] tracking-wider text-slate-400">
-                  <th className="py-3 px-4">Fecha y Hora</th>
-                  <th className="py-3 px-4">Tipo / Categoría</th>
-                  <th className="py-3 px-4">Concepto / Descripción</th>
-                  <th className="py-3 px-4">Destinatario / Barbero</th>
-                  <th className="py-3 px-4">Medio de Pago</th>
+                  <th className="py-3 px-4">Fecha y hora</th>
+                  <th className="py-3 px-4">Tipo / categoría</th>
+                  <th className="py-3 px-4">Concepto / descripción</th>
+                  <th className="py-3 px-4">Destinatario / profesional</th>
+                  <th className="py-3 px-4">Medio de pago</th>
                   <th className="py-3 px-4 text-right font-bold text-red-400">Importe ($)</th>
                 </tr>
               </thead>

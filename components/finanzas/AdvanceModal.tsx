@@ -86,7 +86,7 @@ export default function AdvanceModal({
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight">
-                Registrar Adelanto a Profesional
+                Registrar adelanto a profesional
               </h3>
               <p className="text-xs text-slate-400">
                 Se deducirá automáticamente en su próxima liquidación
@@ -227,7 +227,7 @@ export default function AdvanceModal({
               className="px-5 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-xs shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 disabled:scale-100 flex items-center gap-1.5"
             >
               <Check className="w-4 h-4 stroke-[3]" />
-              <span>{isSubmitting ? "Registrando..." : "Guardar Adelanto"}</span>
+              <span>{isSubmitting ? "Registrando..." : "Guardar adelanto"}</span>
             </button>
           </div>
         </form>

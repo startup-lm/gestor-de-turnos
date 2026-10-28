@@ -327,7 +327,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 hover:bg-amber-500/20 text-xs font-semibold transition-all cursor-pointer shadow-sm flex-1 sm:flex-none justify-center"
               >
                 <HandCoins className="w-3.5 h-3.5" />
-                <span>Dar Adelanto</span>
+                <span>Dar adelanto</span>
               </button>
 
               <button
@@ -336,7 +336,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl !bg-red-500/15 hover:!bg-red-500/25 border border-red-500/30 !text-red-300 text-xs font-bold transition-all cursor-pointer shadow-sm flex-1 sm:flex-none justify-center"
               >
                 <TrendingDown className="w-3.5 h-3.5" />
-                <span>Registrar Gasto</span>
+                <span>Registrar gasto</span>
               </button>
             </div>
           )}
@@ -684,7 +684,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                     <div className="p-3.5 rounded-xl bg-amber-950/20 border border-amber-500/20 flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <TrendingDown className="w-4 h-4 text-amber-400" />
-                        <span className="text-xs font-medium text-amber-300">Gastos del salón</span>
+                        <span className="text-xs font-medium text-amber-300">Gastos del local</span>
                       </div>
                       <span className="text-sm font-bold text-amber-400">
                         -${Math.round(operatingExpenses).toLocaleString("es-AR")}

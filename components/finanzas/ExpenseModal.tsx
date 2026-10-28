@@ -92,7 +92,7 @@ export default function ExpenseModal({ isOpen, onClose, onSuccess }: Readonly<Pr
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight">
-                Registrar Gasto del Local
+                Registrar gasto del local
               </h3>
               <p className="text-xs text-slate-400">
                 Egresos operativos que impactan en la ganancia real
@@ -228,7 +228,7 @@ export default function ExpenseModal({ isOpen, onClose, onSuccess }: Readonly<Pr
               className="px-5 py-2.5 rounded-xl !bg-red-500 hover:!bg-red-600 !text-white font-bold text-xs shadow-md shadow-red-500/15 transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 disabled:scale-100 flex items-center gap-1.5"
             >
               <Check className="w-4 h-4 stroke-[3]" />
-              <span>{isSubmitting ? "Guardando..." : "Guardar Gasto"}</span>
+              <span>{isSubmitting ? "Guardando..." : "Guardar gasto"}</span>
             </button>
           </div>
         </form>

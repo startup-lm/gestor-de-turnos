@@ -117,13 +117,13 @@ export default function PayoutsHistoryTable({ barbers, refreshKey }: Readonly<Pr
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.02] text-[10px] tracking-wider text-slate-400">
                   <th className="py-3 px-4">Comprobante</th>
-                  <th className="py-3 px-4">Fecha Pago</th>
+                  <th className="py-3 px-4">Fecha de pago</th>
                   <th className="py-3 px-4">Profesional</th>
-                  <th className="py-3 px-4">Período Liquidado</th>
-                  <th className="py-3 px-4 text-center">Cortes / Ventas</th>
+                  <th className="py-3 px-4">Período liquidado</th>
+                  <th className="py-3 px-4 text-center">Cortes / ventas</th>
                   <th className="py-3 px-4 text-right">Adelantos</th>
-                  <th className="py-3 px-4 text-right font-bold text-emerald-400">Total Abonado</th>
-                  <th className="py-3 px-4">Medio de Pago</th>
+                  <th className="py-3 px-4 text-right font-bold text-emerald-400">Total abonado</th>
+                  <th className="py-3 px-4">Medio de pago</th>
                   <th className="py-3 px-4 text-center">Recibo</th>
                 </tr>
               </thead>

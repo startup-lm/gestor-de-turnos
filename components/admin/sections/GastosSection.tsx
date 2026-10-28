@@ -104,7 +104,7 @@ export default function GastosSection({ barbers }: Readonly<Props>) {
               <TrendingDown className="w-4 h-4" />
             </div>
             <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
-              Gastos y egresos del salón
+              Gastos y egresos del local
             </h2>
           </div>
           <p className="text-xs text-slate-400">
@@ -121,7 +121,7 @@ export default function GastosSection({ barbers }: Readonly<Props>) {
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 hover:bg-amber-500/20 text-xs font-semibold transition-all cursor-pointer shadow-sm flex-1 sm:flex-none justify-center"
             >
               <HandCoins className="w-3.5 h-3.5" />
-              <span>Dar Adelanto</span>
+              <span>Dar adelanto</span>
             </button>
 
             <button
@@ -130,7 +130,7 @@ export default function GastosSection({ barbers }: Readonly<Props>) {
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl !bg-red-500 hover:!bg-red-600 !text-white text-xs font-bold transition-all cursor-pointer shadow-md shadow-red-500/15 flex-1 sm:flex-none justify-center"
             >
               <Plus className="w-3.5 h-3.5 stroke-[3]" />
-              <span>Nuevo Gasto</span>
+              <span>Nuevo gasto</span>
             </button>
           </div>
 

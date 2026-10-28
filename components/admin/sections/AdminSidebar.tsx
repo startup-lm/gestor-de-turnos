@@ -382,7 +382,7 @@ export default function AdminSidebar({
                         className={navItemClass("finanzas-gastos")}
                       >
                         <TrendingDown className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span>Gastos del salón</span>
+                        <span>Gastos del local</span>
                       </button>
                     </>
                   ) : (

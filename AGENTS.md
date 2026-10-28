@@ -94,3 +94,14 @@ Antes de finalizar una tarea, crear un Pull Request o mergear a `main` o a `rele
 
 1. **"Si algo no está claro, revisá el código y lo que conversamos. Si seguís con dudas, preguntame. No inventes requisitos ni hagas cambios fuera de lo que te pedí."**
 2. **Alcance Estricto:** Toda tarea debe ceñirse con precisión quirúrgica a lo solicitado. No inventar funcionalidades secundarias, controles no pedidos ni alterar estilos existentes que no formen parte del requerimiento puntual.
+
+---
+
+## 8. Redacción de Textos en la UI (Uso Estricto de Minúsculas / Sentence case)
+
+1. **Prohibición de Title Case en español:**
+   - **NO** escribir títulos, botones, badges, opciones de menú ni oraciones con mayúscula en cada palabra (estilo anglosajón o Title Case).
+   - Únicamente debe llevar mayúscula la **primera letra** del texto o de la oración (Sentence case), salvo que contenga nombres propios, marcas o palabras/siglas reservadas (ej: ARCA, WhatsApp, UI, DNI, CUIT, etc.).
+   - *Ejemplos correctos:* "Balance y liquidaciones", "Historial de pagos", "Gastos del local", "Gestión de turnos", "Medios de pago", "Dar adelanto", "Registrar gasto", "Confirmar pago".
+   - *Ejemplos incorrectos:* "Balance y Liquidaciones", "Historial de Pagos", "Gastos del Salon", "Gestión de Turnos", "Medios de Pago", "Dar Adelanto", "Registrar Gasto", "Confirmar Pago".
+
