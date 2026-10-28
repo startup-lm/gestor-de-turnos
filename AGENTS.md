@@ -105,3 +105,16 @@ Antes de finalizar una tarea, crear un Pull Request o mergear a `main` o a `rele
    - *Ejemplos correctos:* "Balance y liquidaciones", "Historial de pagos", "Gastos del local", "Gestión de turnos", "Medios de pago", "Dar adelanto", "Registrar gasto", "Confirmar pago".
    - *Ejemplos incorrectos:* "Balance y Liquidaciones", "Historial de Pagos", "Gastos del Salon", "Gestión de Turnos", "Medios de Pago", "Dar Adelanto", "Registrar Gasto", "Confirmar Pago".
 
+---
+
+## 9. Prohibición de Modales (No Popups / No Dialogs Flotantes)
+
+1. **NO usar modales flotantes (`fixed inset-0`, popups, dialogs con backdrop oscuro):**
+   - La arquitectura de la interfaz en `gestor-de-turnos` no utiliza modales emergentes para flujos de creación, edición o registro.
+   - En su lugar, se debe utilizar el patrón estándar de vistas en pantalla/panel con botón de retorno (`viewMode: 'list' | 'create'`), tal como se implementa en `VentasSection` y `SaleSplitPanel`:
+     - El componente cambia de estado (`viewMode === 'new-...'`) y muestra el formulario ocupando el área de contenido principal.
+     - En la cabecera del formulario se incluye un botón de navegación con `<ArrowLeft className="w-4 h-4" />` y texto "Volver" para cancelar o regresar al listado.
+     - Al completar exitosamente la acción, se regresa automáticamente a la vista de lista y se refrescan los datos.
+   - Esto evita problemas de contexto de apilamiento (`z-index`), desbordes en dispositivos móviles y bloqueos de scroll.
+
+

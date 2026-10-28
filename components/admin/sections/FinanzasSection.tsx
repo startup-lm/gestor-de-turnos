@@ -14,9 +14,6 @@ const DateRangeCalendar = dynamic(
 );
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { getCashMovements } from "@/lib/repository/cash";
-import LiquidationModal from "@/components/finanzas/LiquidationModal";
-import AdvanceModal from "@/components/finanzas/AdvanceModal";
-import ExpenseModal from "@/components/finanzas/ExpenseModal";
 import {
   Wallet,
   Coins,
@@ -37,8 +34,6 @@ import {
   ArrowRightLeft,
   Copy,
   Check,
-  Receipt,
-  HandCoins,
   TrendingDown,
 } from "lucide-react";
 
@@ -126,23 +121,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
   const totalCommissions = useTotalCommissions(barberTotals, barbers);
 
   const [copiedBarberId, setCopiedBarberId] = useState<number | null>(null);
-
-  // Estados de Modales y Claves de Refresco
-  const [refreshKey, setRefreshKey] = useState<number>(0);
   const [operatingExpenses, setOperatingExpenses] = useState<number>(0);
-  const [liquidationData, setLiquidationData] = useState<{
-    barber: Barber;
-    cortes: number;
-    facturadoCortes: number;
-    aLiquidarCortes: number;
-    facturadoVentas: number;
-    aLiquidarVentas: number;
-    totalVentasCount: number;
-  } | null>(null);
-
-  const [isAdvanceModalOpen, setIsAdvanceModalOpen] = useState(false);
-  const [advanceInitialBarberId, setAdvanceInitialBarberId] = useState<number | undefined>(undefined);
-  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
 
   // Cargar gastos operativos del período si el módulo de caja está activo
   useEffect(() => {
@@ -166,7 +145,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
     return () => {
       isMounted = false;
     };
-  }, [startDate, endDate, refreshKey, isCashManagementEnabled]);
+  }, [startDate, endDate, isCashManagementEnabled]);
 
   const handleCopyLiquidation = (
     barberName: string,
@@ -308,35 +287,8 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
           </p>
         </div>
 
-        {/* Acciones Rápidas y Selector de Presets de Fecha */}
+        {/* Selector de Presets de Fecha */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Botones de acción rápida si el módulo de caja está activo */}
-          {isCashManagementEnabled && (
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={() => {
-                  setAdvanceInitialBarberId(barbers[0]?.id);
-                  setIsAdvanceModalOpen(true);
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 hover:bg-amber-500/20 text-xs font-semibold transition-all cursor-pointer shadow-sm flex-1 sm:flex-none justify-center"
-              >
-                <HandCoins className="w-3.5 h-3.5" />
-                <span>Dar adelanto</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsExpenseModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl !bg-red-500/15 hover:!bg-red-500/25 border border-red-500/30 !text-red-300 text-xs font-bold transition-all cursor-pointer shadow-sm flex-1 sm:flex-none justify-center"
-              >
-                <TrendingDown className="w-3.5 h-3.5" />
-                <span>Registrar gasto</span>
-              </button>
-            </div>
-          )}
-
-          {/* Selector de Presets de Fecha */}
           <div className="inline-flex items-center p-1 rounded-xl bg-slate-900/60 border border-white/10 text-xs">
             <button
               type="button"
@@ -795,30 +747,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                             ${Math.round(margenLocal).toLocaleString("es-AR")}
                           </td>
                           <td className="py-3.5 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                              {/* Botón de Liquidar (solo si cash_management está activo) */}
-                              {isCashManagementEnabled && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setLiquidationData({
-                                      barber,
-                                      cortes,
-                                      facturadoCortes,
-                                      aLiquidarCortes,
-                                      facturadoVentas,
-                                      aLiquidarVentas,
-                                      totalVentasCount: bSales?.totalSales ?? 0,
-                                    })
-                                  }
-                                  title="Liquidar comisiones de este período"
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95"
-                                >
-                                  <Receipt className="w-3.5 h-3.5" />
-                                  <span>Liquidar</span>
-                                </button>
-                              )}
-
+                            <div className="flex items-center justify-center">
                               {/* Botón Copiar WhatsApp */}
                               <button
                                 type="button"
@@ -863,46 +792,6 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
               </div>
             )}
           </div>
-
-      {/* MODAL DE LIQUIDACIÓN DE COMISIONES */}
-      {liquidationData && (
-        <LiquidationModal
-          isOpen={Boolean(liquidationData)}
-          onClose={() => setLiquidationData(null)}
-          onSuccess={() => {
-            setRefreshKey((k) => k + 1);
-          }}
-          barber={liquidationData.barber}
-          startDate={startDate}
-          endDate={endDate}
-          cutsCount={liquidationData.cortes}
-          cutsRevenue={liquidationData.facturadoCortes}
-          cutsCommission={liquidationData.aLiquidarCortes}
-          salesCount={liquidationData.totalVentasCount}
-          salesRevenue={liquidationData.facturadoVentas}
-          salesCommission={liquidationData.aLiquidarVentas}
-        />
-      )}
-
-      {/* MODAL DE REGISTRO DE ADELANTO */}
-      {isAdvanceModalOpen && (
-        <AdvanceModal
-          isOpen={isAdvanceModalOpen}
-          onClose={() => setIsAdvanceModalOpen(false)}
-          onSuccess={() => setRefreshKey((k) => k + 1)}
-          barbers={barbers}
-          initialBarberId={advanceInitialBarberId}
-        />
-      )}
-
-      {/* MODAL DE REGISTRO DE GASTO */}
-      {isExpenseModalOpen && (
-        <ExpenseModal
-          isOpen={isExpenseModalOpen}
-          onClose={() => setIsExpenseModalOpen(false)}
-          onSuccess={() => setRefreshKey((k) => k + 1)}
-        />
-      )}
     </div>
   );
 }

@@ -11,18 +11,23 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 ### Agregado
 - **Módulo de Caja Diaria, Gastos y Liquidación Efectiva de Comisiones (Fase 1)**:
   - **Feature Flag `cash_management`**: Protección de la funcionalidad bajo `cash_management: false` por defecto en `lib/flags/index.ts`, configurable por cada cliente desde su base de datos Supabase.
-  - **Liquidación Efectiva de Comisiones (`LiquidationModal`)**:
-    - Registro formal de pago de liquidaciones a profesionales con selección de período, desglose de cortes y ventas de productos.
-    - Detección y deducción automática de adelantos otorgados en el período.
+  - **Liquidación Efectiva de Comisiones (`LiquidationPanel`)**:
+    - Registro formal de pago de liquidaciones a profesionales con selección de período, desglose de cortes y ventas de productos en panel dentro de la página con botón "Volver" (sin modales).
+    - Detección y deducción automática de adelantos otorgados en el período mediante checkboxes seleccionables.
     - Soporte para pagos en Efectivo (con egreso automático registrado en la caja diaria) y Transferencia bancaria (con número de comprobante/referencia opcional).
     - Emisión instantánea de **Recibo Digital de Liquidación** interno y botón de un clic para copiar el recibo formateado a WhatsApp.
-  - **Gestión de Adelantos a Barberos (`AdvanceModal`)**:
-    - Modal express para registrar adelantos de comisión a profesionales que se descuentan automáticamente en la liquidación final.
-  - **Control de Gastos y Egresos del Salón (`ExpenseModal` & `ExpensesHistoryTable`)**:
-    - Registro categorizado de egresos del negocio (insumos, servicios públicos, alquiler, limpieza, retiros de dueño).
-    - Deducción de gastos operativos para el cálculo de la **Ganancia Neta Real** en los KPIs financieros de Finanzas.
-  - **Historial de Liquidaciones (`PayoutsHistoryTable`)**:
-    - Pestaña dedicada con auditoría de todos los pagos realizados a profesionales, detalle de comprobante, importes abonados y copia del recibo a WhatsApp.
+  - **Gestión de Adelantos a Barberos (`AdvancePanel`)**:
+    - Panel integrado en la sección de Gastos del local para registrar adelantos de comisión a profesionales que se descuentan automáticamente en la liquidación final.
+  - **Control de Gastos y Egresos del Local (`ExpensePanel` & `ExpensesHistoryTable`)**:
+    - Registro categorizado de egresos del negocio en panel dentro de la página (insumos, servicios públicos, alquiler, limpieza, retiros de dueño).
+    - Eliminación de botones duplicados en la barra de herramientas de la tabla de egresos.
+    - Deducción de gastos operativos para el cálculo de la **Ganancia Neta Real** en los KPIs financieros.
+  - **Historial de Liquidaciones (`LiquidacionesSection` & `PayoutsHistoryTable`)**:
+    - Sección dedicada con botón accionable para iniciar nueva liquidación y auditoría de todos los pagos realizados a profesionales, detalle de comprobante, importes abonados y copia del recibo a WhatsApp.
+  - **Finanzas y Balance de Caja como Sección Informativa**:
+    - Conversión a pantalla puramente analítica de métricas y copia de balances para WhatsApp, retirando botones de acción y modales.
+  - **Regla 9 en `AGENTS.md` (Prohibición Estricta de Modales)**:
+    - Adopción mandatoria del patrón de paneles en pantalla (`viewMode: "list" | "new-..."`) con botón `<ArrowLeft /> Volver` para todos los flujos de creación y edición.
   - **Frecuencia de Cierre de Caja Configurable (`ConfigPagosSection`)**:
     - Selector en panel de administración para definir la frecuencia de cierre de caja según la operativa de cada barbería: Diario (al final del día), Semanal (al finalizar la semana) o Personalizado/Manual.
   - **Migración Supabase Versionada (`20261028000000_cash_management_and_payouts.sql`)**:

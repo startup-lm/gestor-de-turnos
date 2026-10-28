@@ -8,15 +8,12 @@ import {
   HandCoins,
   Receipt,
   Filter,
-  Plus,
 } from "lucide-react";
 
 interface Props {
   startDate: Date;
   endDate: Date;
   refreshKey?: number;
-  onOpenNewExpense: () => void;
-  onOpenNewAdvance: () => void;
 }
 
 const formatLocalDate = (d: Date): string => {
@@ -30,8 +27,6 @@ export default function ExpensesHistoryTable({
   startDate,
   endDate,
   refreshKey,
-  onOpenNewExpense,
-  onOpenNewAdvance,
 }: Readonly<Props>) {
   const [movements, setMovements] = useState<CashMovement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +92,7 @@ export default function ExpensesHistoryTable({
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
-      {/* Barra de Filtros y Botones */}
+      {/* Barra de Filtros */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-900/40 p-3.5 rounded-xl border border-white/5">
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-[var(--accent)]" />
@@ -112,25 +107,6 @@ export default function ExpensesHistoryTable({
             <option value="advance">Solo adelantos a barberos</option>
             <option value="commission_payout">Solo pagos de liquidaciones</option>
           </select>
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <button
-            type="button"
-            onClick={onOpenNewAdvance}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-300 hover:bg-amber-500/20 text-xs font-semibold transition-all cursor-pointer"
-          >
-            <HandCoins className="w-3.5 h-3.5" />
-            <span>Adelanto</span>
-          </button>
-          <button
-            type="button"
-            onClick={onOpenNewExpense}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg !bg-red-500 hover:!bg-red-600 !text-white text-xs font-bold shadow-md shadow-red-500/15 transition-all cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>Nuevo gasto</span>
-          </button>
         </div>
       </div>
 

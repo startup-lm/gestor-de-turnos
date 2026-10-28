@@ -4,8 +4,8 @@ import React, { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { Barber } from "@/lib/types/Barbers";
 import ExpensesHistoryTable from "@/components/finanzas/ExpensesHistoryTable";
-import ExpenseModal from "@/components/finanzas/ExpenseModal";
-import AdvanceModal from "@/components/finanzas/AdvanceModal";
+import ExpensePanel from "@/components/finanzas/ExpensePanel";
+import AdvancePanel from "@/components/finanzas/AdvancePanel";
 import {
   TrendingDown,
   HandCoins,
@@ -25,14 +25,13 @@ interface Props {
 }
 
 type DatePreset = "today" | "week" | "month" | "last_month" | "custom";
+type ViewMode = "list" | "new-expense" | "new-advance";
 
 export default function GastosSection({ barbers }: Readonly<Props>) {
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [preset, setPreset] = useState<DatePreset>("month");
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-
-  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-  const [isAdvanceModalOpen, setIsAdvanceModalOpen] = useState(false);
 
   const initialDates = useMemo(() => {
     const now = new Date();
@@ -94,6 +93,31 @@ export default function GastosSection({ barbers }: Readonly<Props>) {
     return `${startDate.toLocaleDateString("es-AR", opts)} — ${endDate.toLocaleDateString("es-AR", opts)}`;
   }, [startDate, endDate]);
 
+  if (viewMode === "new-expense") {
+    return (
+      <ExpensePanel
+        onClose={() => setViewMode("list")}
+        onSuccess={() => {
+          setViewMode("list");
+          setRefreshKey((k) => k + 1);
+        }}
+      />
+    );
+  }
+
+  if (viewMode === "new-advance") {
+    return (
+      <AdvancePanel
+        barbers={barbers}
+        onClose={() => setViewMode("list")}
+        onSuccess={() => {
+          setViewMode("list");
+          setRefreshKey((k) => k + 1);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300 w-full">
       {/* Cabecera */}
@@ -117,7 +141,7 @@ export default function GastosSection({ barbers }: Readonly<Props>) {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
-              onClick={() => setIsAdvanceModalOpen(true)}
+              onClick={() => setViewMode("new-advance")}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 hover:bg-amber-500/20 text-xs font-semibold transition-all cursor-pointer shadow-sm flex-1 sm:flex-none justify-center"
             >
               <HandCoins className="w-3.5 h-3.5" />
@@ -126,7 +150,7 @@ export default function GastosSection({ barbers }: Readonly<Props>) {
 
             <button
               type="button"
-              onClick={() => setIsExpenseModalOpen(true)}
+              onClick={() => setViewMode("new-expense")}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl !bg-red-500 hover:!bg-red-600 !text-white text-xs font-bold transition-all cursor-pointer shadow-md shadow-red-500/15 flex-1 sm:flex-none justify-center"
             >
               <Plus className="w-3.5 h-3.5 stroke-[3]" />
@@ -219,27 +243,7 @@ export default function GastosSection({ barbers }: Readonly<Props>) {
         startDate={startDate}
         endDate={endDate}
         refreshKey={refreshKey}
-        onOpenNewExpense={() => setIsExpenseModalOpen(true)}
-        onOpenNewAdvance={() => setIsAdvanceModalOpen(true)}
       />
-
-      {/* Modales */}
-      {isExpenseModalOpen && (
-        <ExpenseModal
-          isOpen={isExpenseModalOpen}
-          onClose={() => setIsExpenseModalOpen(false)}
-          onSuccess={() => setRefreshKey((k) => k + 1)}
-        />
-      )}
-
-      {isAdvanceModalOpen && (
-        <AdvanceModal
-          isOpen={isAdvanceModalOpen}
-          onClose={() => setIsAdvanceModalOpen(false)}
-          onSuccess={() => setRefreshKey((k) => k + 1)}
-          barbers={barbers}
-        />
-      )}
     </div>
   );
 }
