@@ -27,6 +27,12 @@ const DashboardClient = dynamic(() => import("@/app/dashboard/DashboardClient"),
 const FinanzasSection = dynamic(() => import("@/components/admin/sections/FinanzasSection"), {
   loading: () => <SectionSkeleton />,
 });
+const LiquidacionesSection = dynamic(() => import("@/components/admin/sections/LiquidacionesSection"), {
+  loading: () => <SectionSkeleton />,
+});
+const GastosSection = dynamic(() => import("@/components/admin/sections/GastosSection"), {
+  loading: () => <SectionSkeleton />,
+});
 const TurnosSection = dynamic(() => import("@/components/admin/sections/TurnosSection"), {
   loading: () => <AppointmentsTableSkeleton />,
 });
@@ -62,6 +68,7 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
   const { isEnabled } = useBusinessContext();
   const isAdmin = role === "admin";
   const arcaEnabled = isEnabled("arca");
+  const cashManagementEnabled = isEnabled("cash_management");
 
   const tabParam = searchParams.get("tab") as AdminSection | null;
   const initialTab = tabParam === "facturacion" ? "facturas" : tabParam || "metricas";
@@ -98,6 +105,7 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
           onSelectSection={handleSelectSection}
           isAdmin={isAdmin}
           arcaEnabled={arcaEnabled}
+          cashManagementEnabled={cashManagementEnabled}
         />
       </aside>
 
@@ -106,6 +114,12 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
         <div className="w-full max-w-[1720px] mx-auto">
           {activeSection === "metricas" && <DashboardClient initialBarbers={barbers} />}
           {activeSection === "finanzas" && isAdmin && <FinanzasSection barbers={barbers} />}
+          {activeSection === "finanzas-liquidaciones" && isAdmin && (
+            <LiquidacionesSection barbers={barbers} />
+          )}
+          {activeSection === "finanzas-gastos" && isAdmin && (
+            <GastosSection barbers={barbers} />
+          )}
           {activeSection === "turnos" && <TurnosSection />}
           {activeSection === "ventas" && <VentasSection />}
           {(activeSection === "facturas" || activeSection === "facturacion") && arcaEnabled && isAdmin && (

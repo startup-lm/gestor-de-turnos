@@ -17,8 +17,6 @@ import { getCashMovements } from "@/lib/repository/cash";
 import LiquidationModal from "@/components/finanzas/LiquidationModal";
 import AdvanceModal from "@/components/finanzas/AdvanceModal";
 import ExpenseModal from "@/components/finanzas/ExpenseModal";
-import PayoutsHistoryTable from "@/components/finanzas/PayoutsHistoryTable";
-import ExpensesHistoryTable from "@/components/finanzas/ExpensesHistoryTable";
 import {
   Wallet,
   Coins,
@@ -42,7 +40,6 @@ import {
   Receipt,
   HandCoins,
   TrendingDown,
-  History,
 } from "lucide-react";
 
 interface Props {
@@ -50,7 +47,6 @@ interface Props {
 }
 
 type DatePreset = "today" | "week" | "month" | "last_month" | "custom";
-type FinanzasSubTab = "resumen" | "liquidaciones" | "gastos";
 
 const formatLocalDate = (d: Date): string => {
   const year = d.getFullYear();
@@ -63,7 +59,6 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
   // Preset inicial: "Este Mes"
   const [preset, setPreset] = useState<DatePreset>("month");
   const [showCustomPicker, setShowCustomPicker] = useState(false);
-  const [activeSubTab, setActiveSubTab] = useState<FinanzasSubTab>("resumen");
 
   // Rangos de fecha
   const initialDates = useMemo(() => {
@@ -426,55 +421,8 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
         </div>
       )}
 
-      {/* Pestañas de Sub-Navegación si el módulo de caja está activo */}
-      {isCashManagementEnabled && (
-        <div className="flex items-center gap-2 border-b border-white/10 pb-2 overflow-x-auto no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setActiveSubTab("resumen")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeSubTab === "resumen"
-                ? "!bg-[var(--accent)] !text-slate-950 shadow-sm"
-                : "!bg-white/5 !text-slate-300 hover:!bg-white/10 hover:!text-white"
-            }`}
-          >
-            <Percent className="w-3.5 h-3.5" />
-            <span>Balance & Liquidaciones</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSubTab("liquidaciones")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeSubTab === "liquidaciones"
-                ? "!bg-[var(--accent)] !text-slate-950 shadow-sm"
-                : "!bg-white/5 !text-slate-300 hover:!bg-white/10 hover:!text-white"
-            }`}
-          >
-            <History className="w-3.5 h-3.5" />
-            <span>Historial de Pagos</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSubTab("gastos")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeSubTab === "gastos"
-                ? "!bg-[var(--accent)] !text-slate-950 shadow-sm"
-                : "!bg-white/5 !text-slate-300 hover:!bg-white/10 hover:!text-white"
-            }`}
-          >
-            <TrendingDown className="w-3.5 h-3.5" />
-            <span>Gastos del Salón</span>
-          </button>
-        </div>
-      )}
-
-      {/* VISTA 1: RESUMEN Y BALANCE */}
-      {activeSubTab === "resumen" && (
-        <>
-          {/* 4 KPIs Financieros Clave */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 4 KPIs Financieros Clave */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* KPI 1: Ganancia Neta */}
             <div
               className={`kpi-card ${
@@ -920,27 +868,6 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
               </div>
             )}
           </div>
-        </>
-      )}
-
-      {/* VISTA 2: HISTORIAL DE LIQUIDACIONES PAGADAS */}
-      {activeSubTab === "liquidaciones" && isCashManagementEnabled && (
-        <PayoutsHistoryTable barbers={barbers} refreshKey={refreshKey} />
-      )}
-
-      {/* VISTA 3: HISTORIAL DE GASTOS DEL SALÓN */}
-      {activeSubTab === "gastos" && isCashManagementEnabled && (
-        <ExpensesHistoryTable
-          startDate={startDate}
-          endDate={endDate}
-          refreshKey={refreshKey}
-          onOpenNewExpense={() => setIsExpenseModalOpen(true)}
-          onOpenNewAdvance={() => {
-            setAdvanceInitialBarberId(barbers[0]?.id);
-            setIsAdvanceModalOpen(true);
-          }}
-        />
-      )}
 
       {/* MODAL DE LIQUIDACIÓN DE COMISIONES */}
       {liquidationData && (
