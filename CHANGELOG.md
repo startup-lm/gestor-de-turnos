@@ -6,6 +6,30 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.3.0] - 2026-10-28
+
+### Agregado
+- **Suite de pruebas automatizadas y arquitectura de testing**:
+  - Incorporación de **Vitest** con `@testing-library/react` y entorno liviano `happy-dom`.
+  - Creación de 60 tests automatizados distribuidos en 11 suites de prueba:
+    - **Lógica pura y utilidades**: generación de intervalos de turnos (`generateAllAppointments`), enmascaramiento para calendario (`transformAppointmentsToEvents`), normalización estricta de números telefónicos de Argentina (`normalizePhone`) y algoritmo de control de tasa (`rateLimit`).
+    - **Validación de contratos y schemas (Zod)**: verificación de integridad para inserción, cobro y cancelación de turnos y sincronización de clientes.
+    - **Seguridad y endpoints de API**: verificación de enmascaramiento de privacidad de turnos para usuarios anónimos (`guest`), bloqueo de modificaciones a turnos con comprobante fiscal ARCA, validación de permisos de administrador para movimientos de caja y registro cruzado automático de egresos al liquidar comisiones en efectivo.
+    - **Hooks y stores reactivos**: pruebas de estado global en Zustand (`useTurnosStore`, `useToastStore`) y cálculo de comisiones acumuladas por profesional (`useTotalComissions`).
+  - Creación de suite E2E moderna con **Playwright** para verificación de navegación pública y cancelación de turnos sin modales.
+  - **Integración continua de doble etapa en GitHub Actions (`ci.yml`)**:
+    - En cada PR o push a `main`: ejecución de `lint`, `type-check` y tests unitarios e integrados con Vitest (< 15 segundos).
+    - En cada PR o merge hacia `release`: ejecución de la suite completa más smoke tests E2E con Playwright antes del despliegue a clientes.
+- **Validaciones de backend en API de turnos (`app/api/appointments/route.ts`)**:
+  - Detección y rechazo con error 400 de intentos de reserva en horarios pasados por parte de clientes anónimos.
+  - Detección y rechazo con error 400 de solapamientos entre turnos o servicios largos y slots previamente agendados para un mismo profesional.
+
+### Eliminado
+- **Suite obsoleta de Playwright (`tests/`)**:
+  - Eliminación de 7 archivos de prueba antiguos que apuntaban de forma insegura a URLs de producción y dependían de modales flotantes en desuso.
+
+---
+
 ## [1.2.1] - 2026-10-28
 
 ### Corregido

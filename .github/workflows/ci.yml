@@ -2,13 +2,13 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, release ]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [ main, release ]
 
 jobs:
-  build:
-    name: Build & Verify
+  verify:
+    name: Lint, Type Check & Unit Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -22,10 +22,42 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Run ESLint
         run: npm run lint
 
       - name: Run Type Checking
         run: npm run type-check
+
+      - name: Run Unit & Integration Tests (Vitest)
+        run: npm run test
+
+  e2e:
+    name: E2E Smoke Tests (Playwright)
+    needs: verify
+    if: github.base_ref == 'release' || github.ref == 'refs/heads/release'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E Tests
+        run: npm run test:e2e
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

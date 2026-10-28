@@ -128,12 +128,43 @@ export async function POST(request: Request) {
     }
   }
 
+  const appointmentDate = date.split("T")[0];
+  const newStart = `${start_time}:00`;
+  const newEnd = `${end_time}:00`;
+
+  // Validar que clientes anónimos no puedan reservar turnos en el pasado
+  if (!isStaff) {
+    const apptDateTime = new Date(`${appointmentDate}T${newStart}`);
+    if (apptDateTime.getTime() < Date.now()) {
+      return errorResponse("No es posible reservar turnos en fechas u horarios pasados.", 400);
+    }
+  }
+
+  // Validar que no se solape con otro turno activo del mismo barbero
+  const { data: overlapping, error: overlapError } = await supabaseAdmin
+    .from("appointments")
+    .select("id")
+    .eq("barber_id", barber_id)
+    .eq("date", appointmentDate)
+    .is("deleted_at", null)
+    .lt("start_time", newEnd)
+    .gt("end_time", newStart)
+    .limit(1);
+
+  if (overlapError) {
+    return errorResponse(overlapError.message, 500);
+  }
+
+  if (overlapping && overlapping.length > 0) {
+    return errorResponse("El horario seleccionado coincide o se solapa con otro turno ya agendado.", 400);
+  }
+
   const insertPayload: Record<string, unknown> = {
     client,
     barber_id,
-    date: date.split("T")[0],
-    start_time: `${start_time}:00`,
-    end_time: `${end_time}:00`,
+    date: appointmentDate,
+    start_time: newStart,
+    end_time: newEnd,
     phone: canonicalPhone,
     service_id,
     type,
