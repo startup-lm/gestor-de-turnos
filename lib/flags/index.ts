@@ -12,34 +12,17 @@ export const DEFAULT_FEATURES: Record<string, boolean> = {
 /**
  * Evalúa si una feature flag está habilitada para el cliente actual.
  * Función pura y segura para ejecutar en navegador y cliente.
- *
- * Jerarquía de resolución:
- * 1. Valor explícito en base de datos del cliente (`features[flag]`).
- * 2. Default definido en código (`DEFAULT_FEATURES[flag]`).
- * 3. Fallback seguro: `false`.
+ * 
+ * Regla de Oro SaaS: La base de datos (business_settings.features) es la ÚNICA
+ * fuente de verdad. El dueño del SaaS activa o desactiva features por plan
+ * directamente en la base de datos de cada cliente.
  */
 export function isFeatureEnabled(
   flag: FeatureFlagName,
   features?: Record<string, boolean> | null
 ): boolean {
-  // 1. Valor explícito en base de datos del cliente (activado por el administrador del SaaS)
   if (features && typeof features[flag] === "boolean") {
     return features[flag];
   }
-
-  // 2. Activación por Variable de Entorno (Vercel / .env.local por deploy de cliente)
-  if (flag === "cash_management") {
-    const envVal = process.env.NEXT_PUBLIC_ENABLE_CASH_MANAGEMENT;
-    if (envVal === "true") return true;
-    if (envVal === "false") return false;
-  }
-
-  if (flag === "arca") {
-    const envVal = process.env.NEXT_PUBLIC_ENABLE_ARCA;
-    if (envVal === "true") return true;
-    if (envVal === "false") return false;
-  }
-
-  // 3. Default en código (apagado por defecto)
   return DEFAULT_FEATURES[flag] ?? false;
 }
