@@ -1,6 +1,8 @@
 # Reglas y Guía para Agentes de IA en `gestor-de-turnos`
 
 > **IMPORTANTE**: Todo agente que trabaje en este repositorio DEBE leer y respetar estas reglas antes de proponer cambios, fusionar ramas o desplegar código.
+> 
+> ⚠️ **Regla de Oro:** *"Si algo no está claro, revisá el código y lo que conversamos. Si seguís con dudas, preguntame. No inventes requisitos ni hagas cambios fuera de lo que te pedí."*
 
 ---
 
@@ -64,3 +66,31 @@ Antes de finalizar una tarea, crear un Pull Request o mergear a `main` o a `rele
 
 1. Nunca ejecutar DDL o mutaciones directas sin crear el archivo de migración versionado en `supabase/migrations/` (generado vía Supabase CLI).
 2. **Principio de Retrocompatibilidad:** Las migraciones deben ser aditivas (añadir columnas o tablas con valores por defecto seguros). Nunca renombrar o eliminar columnas en el mismo paso en que el código aún las requiere.
+
+---
+
+## 5. Pruebas y Uso del Navegador (Chrome / Subagentes)
+
+1. **Prohibición de tests exploratorios automáticos con Chrome:**
+   - Los agentes **NO deben levantar instancias de Chrome ni ejecutar subagentes de navegador** para pruebas exploratorias o validaciones visuales por iniciativa propia.
+   - Solo está permitido abrir el navegador o lanzar herramientas de navegación si el usuario lo solicita de forma **expresa y explícita** en su instrucción.
+   - La verificación estándar debe realizarse a nivel de código mediante análisis estático y compilación (`type-check`, `lint` y `build`).
+
+---
+
+## 6. Diseño Responsivo y Cambios Visuales (Desktop + Mobile)
+
+1. **Responsividad Dual Obligatoria (Desktop y Celular):**
+   - Cada vez que se realice un cambio visual, nuevo componente, ajuste de layout o modificación de estilos, el agente **DEBE validar y diseñar contemplando que el cambio sea 100% soportado tanto para computadora (desktop) como para celular (mobile)**.
+   - Se debe verificar meticulosamente:
+     - Comportamiento de elementos flotantes, fijos y modales (evitar bloqueos de contexto de apilamiento con `position: fixed` dentro de ancestros con `backdrop-filter` o `transform`).
+     - Áreas táctiles accesibles en mobile (mínimo 44x44px en controles interactivos).
+     - Ausencia total de desborde horizontal (`overflow-x`) en pantallas compactas (320px - 390px).
+     - Contraste y legibilidad de textos sobre fondos oscuros.
+
+---
+
+## 7. Claridad, Alcance y Comunicación con el Usuario
+
+1. **"Si algo no está claro, revisá el código y lo que conversamos. Si seguís con dudas, preguntame. No inventes requisitos ni hagas cambios fuera de lo que te pedí."**
+2. **Alcance Estricto:** Toda tarea debe ceñirse con precisión quirúrgica a lo solicitado. No inventar funcionalidades secundarias, controles no pedidos ni alterar estilos existentes que no formen parte del requerimiento puntual.

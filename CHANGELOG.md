@@ -6,6 +6,21 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.1.1] - 2026-10-27
+
+### Corregido
+- **Menú Mobile (Drawer & Backdrop)**:
+  - Corrección del bug de contención CSS donde el `backdrop-filter` del navbar restringía la altura del menú y del backdrop a 88px, provocando que el fondo no cubriera la pantalla completa.
+  - Implementación de React Portal (`createPortal(..., document.body)`) para desacoplar el cajón y el backdrop del stacking context del navbar, logrando que el fondo del menú y el backdrop oscuro se posicionen correctamente por encima de toda la pantalla (`h-dvh` y `fixed inset-0`).
+  - Bloqueo del scroll del body mientras el menú móvil permanece desplegado.
+
+### Agregado
+- **Reglas de Agentes (`AGENTS.md`)**:
+  - Prohibición de tests exploratorios automáticos levantando Chrome/subagentes salvo pedido expreso del usuario.
+  - Obligatoriedad de diseño y validación dual responsiva (Desktop + Mobile) ante cualquier cambio visual.
+
+---
+
 ## [1.1.0] - 2026-10-27
 
 ### Agregado
