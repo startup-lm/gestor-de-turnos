@@ -1,10 +1,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Banknote, Wallet, ArrowRightLeft, CreditCard, Coins, Plus, X } from "lucide-react";
+import {
+  Banknote,
+  Wallet,
+  ArrowRightLeft,
+  CreditCard,
+  Coins,
+  Plus,
+  X,
+  Receipt,
+  Calendar,
+  Clock,
+  Sliders,
+  CheckCircle2,
+} from "lucide-react";
 import { ConfigFormSkeleton } from "@/components/loading/Skeleton";
 import SaveButton from "@/components/buttons/SaveButton";
 import { toast } from "@/lib/store/useToastStore";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { CashClosingFrequency } from "@/lib/types/cash";
 
 type PresetMethod = {
   name: string;
@@ -46,12 +61,44 @@ const PRESET_METHODS: PresetMethod[] = [
   },
 ];
 
+const CLOSING_FREQUENCIES: Array<{
+  id: CashClosingFrequency;
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  {
+    id: "daily",
+    title: "Diario (al final del día)",
+    description: "Cierre y arqueo de caja al concluir cada jornada laboral.",
+    icon: Clock,
+  },
+  {
+    id: "weekly",
+    title: "Semanal (al finalizar la semana)",
+    description: "Cierre acumulado en el último día de trabajo de la semana.",
+    icon: Calendar,
+  },
+  {
+    id: "manual",
+    title: "Personalizado / Manual",
+    description: "El administrador abre y cierra la caja a demanda según necesidad.",
+    icon: Sliders,
+  },
+];
+
 export default function ConfigPagosSection() {
+  const { isEnabled } = useBusinessContext();
+  const isCashManagementEnabled = isEnabled("cash_management");
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [initialMethods, setInitialMethods] = useState<string[]>([]);
   const [newMethod, setNewMethod] = useState("");
+
+  const [cashClosingFrequency, setCashClosingFrequency] = useState<CashClosingFrequency>("daily");
+  const [initialFrequency, setInitialFrequency] = useState<CashClosingFrequency>("daily");
 
   useEffect(() => {
     async function loadData() {
@@ -63,9 +110,13 @@ export default function ConfigPagosSection() {
           const loaded = data.payment_methods || ["Efectivo", "Mercado Pago"];
           setPaymentMethods(loaded);
           setInitialMethods(loaded);
+
+          const loadedFreq = (data.cash_closing_frequency as CashClosingFrequency) || "daily";
+          setCashClosingFrequency(loadedFreq);
+          setInitialFrequency(loadedFreq);
         }
       } catch (err) {
-        console.error("Error al cargar medios de pago:", err);
+        console.error("Error al cargar configuración de pagos:", err);
         toast.error("Error al cargar configuración de pagos");
       } finally {
         setLoading(false);
@@ -101,15 +152,27 @@ export default function ConfigPagosSection() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const payload: {
+        payment_methods: string[];
+        cash_closing_frequency?: CashClosingFrequency;
+      } = {
+        payment_methods: paymentMethods,
+      };
+
+      if (isCashManagementEnabled) {
+        payload.cash_closing_frequency = cashClosingFrequency;
+      }
+
       const res = await fetch("/api/business-settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payment_methods: paymentMethods }),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         setInitialMethods([...paymentMethods]);
-        toast.success("Medios de pago actualizados con éxito");
+        setInitialFrequency(cashClosingFrequency);
+        toast.success("Configuración actualizada con éxito");
       } else {
         toast.error("Error al guardar la configuración");
       }
@@ -123,7 +186,8 @@ export default function ConfigPagosSection() {
 
   const hasChanges =
     paymentMethods.length !== initialMethods.length ||
-    paymentMethods.some((m) => !initialMethods.includes(m));
+    paymentMethods.some((m) => !initialMethods.includes(m)) ||
+    (isCashManagementEnabled && cashClosingFrequency !== initialFrequency);
 
   if (loading) {
     return <ConfigFormSkeleton />;
@@ -134,10 +198,12 @@ export default function ConfigPagosSection() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-            Medios de pago
+            {isCashManagementEnabled ? "Medios de pago y caja" : "Medios de pago"}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Habilitá los métodos de pago aceptados para turnos y ventas en el local
+            {isCashManagementEnabled
+              ? "Habilitá los métodos de pago aceptados y configurá los turnos de caja de tu local"
+              : "Habilitá los métodos de pago aceptados para turnos y ventas en el local"}
           </p>
         </div>
         <SaveButton
@@ -148,6 +214,68 @@ export default function ConfigPagosSection() {
           className="w-full sm:w-auto"
         />
       </div>
+
+      {/* Frecuencia de Cierre de Caja (solo visible si el plan tiene cash_management habilitado) */}
+      {isCashManagementEnabled && (
+        <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)]">
+              <Receipt className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                <span>Caja y Cierres de Turno</span>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  Plan Activo
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Elegí la periodicidad con la que tu barbería realiza el balance y arqueo de caja
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            {CLOSING_FREQUENCIES.map((freq) => {
+              const Icon = freq.icon;
+              const isSelected = cashClosingFrequency === freq.id;
+              return (
+                <button
+                  key={freq.id}
+                  type="button"
+                  onClick={() => setCashClosingFrequency(freq.id)}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                    isSelected
+                      ? "!bg-[var(--accent)]/15 !border-[var(--accent)]/50 shadow-md shadow-[var(--accent)]/5"
+                      : "!bg-slate-950/40 !border-white/5 opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div
+                      className={`p-2 rounded-lg border ${
+                        isSelected
+                          ? "bg-[var(--accent)]/20 border-[var(--accent)]/40 text-[var(--accent)]"
+                          : "bg-white/5 border-white/10 text-slate-400"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    {isSelected && (
+                      <CheckCircle2 className="w-4 h-4 text-[var(--accent)]" />
+                    )}
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-bold text-white">{freq.title}</h5>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+                      {freq.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Métodos predefinidos */}
       <div className="space-y-3">

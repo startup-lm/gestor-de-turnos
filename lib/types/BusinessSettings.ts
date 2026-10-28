@@ -20,4 +20,5 @@ export type BusinessSettings = {
   slogan?: string;
   theme_colors?: ThemeColors;
   features?: Record<string, boolean>;
+  cash_closing_frequency?: "daily" | "weekly" | "manual";
 };

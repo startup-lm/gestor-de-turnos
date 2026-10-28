@@ -1,4 +1,4 @@
-export type FeatureFlagName = "arca" | (string & {});
+export type FeatureFlagName = "arca" | "cash_management" | (string & {});
 
 /**
  * Defaults de Feature Flags en código.
@@ -6,16 +6,16 @@ export type FeatureFlagName = "arca" | (string & {});
  */
 export const DEFAULT_FEATURES: Record<string, boolean> = {
   arca: false,
+  cash_management: false,
 };
 
 /**
  * Evalúa si una feature flag está habilitada para el cliente actual.
  * Función pura y segura para ejecutar en navegador y cliente.
- *
- * Jerarquía de resolución:
- * 1. Valor explícito en base de datos del cliente (`features[flag]`).
- * 2. Default definido en código (`DEFAULT_FEATURES[flag]`).
- * 3. Fallback seguro: `false`.
+ * 
+ * Regla de Oro SaaS: La base de datos (business_settings.features) es la ÚNICA
+ * fuente de verdad. El dueño del SaaS activa o desactiva features por plan
+ * directamente en la base de datos de cada cliente.
  */
 export function isFeatureEnabled(
   flag: FeatureFlagName,
