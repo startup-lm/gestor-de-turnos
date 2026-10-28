@@ -18,6 +18,7 @@ import {
 import { ConfigFormSkeleton } from "@/components/loading/Skeleton";
 import SaveButton from "@/components/buttons/SaveButton";
 import { toast } from "@/lib/store/useToastStore";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { CashClosingFrequency } from "@/lib/types/cash";
 
 type PresetMethod = {
@@ -87,15 +88,15 @@ const CLOSING_FREQUENCIES: Array<{
 ];
 
 export default function ConfigPagosSection() {
+  const { isEnabled } = useBusinessContext();
+  const isCashManagementEnabled = isEnabled("cash_management");
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [initialMethods, setInitialMethods] = useState<string[]>([]);
   const [newMethod, setNewMethod] = useState("");
 
-  // Configuración de Caja y Liquidaciones
-  const [features, setFeatures] = useState<Record<string, boolean>>({});
-  const [initialFeatures, setInitialFeatures] = useState<Record<string, boolean>>({});
   const [cashClosingFrequency, setCashClosingFrequency] = useState<CashClosingFrequency>("daily");
   const [initialFrequency, setInitialFrequency] = useState<CashClosingFrequency>("daily");
 
@@ -109,10 +110,6 @@ export default function ConfigPagosSection() {
           const loaded = data.payment_methods || ["Efectivo", "Mercado Pago"];
           setPaymentMethods(loaded);
           setInitialMethods(loaded);
-
-          const loadedFeatures = data.features || {};
-          setFeatures(loadedFeatures);
-          setInitialFeatures(loadedFeatures);
 
           const loadedFreq = (data.cash_closing_frequency as CashClosingFrequency) || "daily";
           setCashClosingFrequency(loadedFreq);
@@ -152,33 +149,28 @@ export default function ConfigPagosSection() {
     setPaymentMethods(paymentMethods.filter((m) => m !== name));
   };
 
-  const isCashManagementActive = Boolean(features.cash_management);
-
-  const handleToggleCashManagement = () => {
-    setFeatures((prev) => ({
-      ...prev,
-      cash_management: !prev.cash_management,
-    }));
-  };
-
   const handleSave = async () => {
     setSaving(true);
     try {
+      const payload: {
+        payment_methods: string[];
+        cash_closing_frequency?: CashClosingFrequency;
+      } = {
+        payment_methods: paymentMethods,
+      };
+
+      if (isCashManagementEnabled) {
+        payload.cash_closing_frequency = cashClosingFrequency;
+      }
+
       const res = await fetch("/api/business-settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          payment_methods: paymentMethods,
-          cash_closing_frequency: cashClosingFrequency,
-          features: {
-            ...features,
-          },
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         setInitialMethods([...paymentMethods]);
-        setInitialFeatures({ ...features });
         setInitialFrequency(cashClosingFrequency);
         toast.success("Configuración actualizada con éxito");
       } else {
@@ -195,8 +187,7 @@ export default function ConfigPagosSection() {
   const hasChanges =
     paymentMethods.length !== initialMethods.length ||
     paymentMethods.some((m) => !initialMethods.includes(m)) ||
-    Boolean(features.cash_management) !== Boolean(initialFeatures.cash_management) ||
-    cashClosingFrequency !== initialFrequency;
+    (isCashManagementEnabled && cashClosingFrequency !== initialFrequency);
 
   if (loading) {
     return <ConfigFormSkeleton />;
@@ -207,10 +198,12 @@ export default function ConfigPagosSection() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-            Medios de pago y caja
+            {isCashManagementEnabled ? "Medios de pago y caja" : "Medios de pago"}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Habilitá los métodos de pago aceptados y configurá el módulo de caja y cierres
+            {isCashManagementEnabled
+              ? "Habilitá los métodos de pago aceptados y configurá los turnos de caja de tu local"
+              : "Habilitá los métodos de pago aceptados para turnos y ventas en el local"}
           </p>
         </div>
         <SaveButton
@@ -222,96 +215,67 @@ export default function ConfigPagosSection() {
         />
       </div>
 
-      {/* Módulo de Caja Diaria y Liquidaciones (Feature Flag) */}
-      <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* Frecuencia de Cierre de Caja (solo visible si el plan tiene cash_management habilitado) */}
+      {isCashManagementEnabled && (
+        <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)]">
               <Receipt className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white tracking-tight">
-                Módulo de Caja, Gastos y Liquidaciones
+              <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                <span>Caja y Cierres de Turno</span>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  Plan Activo
+                </span>
               </h3>
               <p className="text-xs text-slate-400">
-                Control de salidas de dinero, registro efectivo de pago a empleados y gastos del salón
-              </p>
-            </div>
-          </div>
-
-          {/* Toggle Switch */}
-          <button
-            type="button"
-            onClick={handleToggleCashManagement}
-            className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-              isCashManagementActive ? "bg-emerald-500" : "bg-slate-700"
-            }`}
-          >
-            <span
-              className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                isCashManagementActive ? "translate-x-7" : "translate-x-0"
-              }`}
-            />
-          </button>
-        </div>
-
-        {isCashManagementActive ? (
-          <div className="pt-4 border-t border-white/10 space-y-3">
-            <div>
-              <h4 className="text-xs font-bold text-slate-300 tracking-wider">
-                FRECUENCIA DE CIERRE DE CAJA
-              </h4>
-              <p className="text-xs text-slate-400 mt-0.5">
                 Elegí la periodicidad con la que tu barbería realiza el balance y arqueo de caja
               </p>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-              {CLOSING_FREQUENCIES.map((freq) => {
-                const Icon = freq.icon;
-                const isSelected = cashClosingFrequency === freq.id;
-                return (
-                  <button
-                    key={freq.id}
-                    type="button"
-                    onClick={() => setCashClosingFrequency(freq.id)}
-                    className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
-                      isSelected
-                        ? "!bg-[var(--accent)]/15 !border-[var(--accent)]/50 shadow-md shadow-[var(--accent)]/5"
-                        : "!bg-slate-950/40 !border-white/5 opacity-70 hover:opacity-100"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div
-                        className={`p-2 rounded-lg border ${
-                          isSelected
-                            ? "bg-[var(--accent)]/20 border-[var(--accent)]/40 text-[var(--accent)]"
-                            : "bg-white/5 border-white/10 text-slate-400"
-                        }`}
-                      >
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      {isSelected && (
-                        <CheckCircle2 className="w-4 h-4 text-[var(--accent)]" />
-                      )}
-                    </div>
-                    <div>
-                      <h5 className="text-xs font-bold text-white">{freq.title}</h5>
-                      <p className="text-[11px] text-slate-400 mt-1 leading-snug">
-                        {freq.description}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
           </div>
-        ) : (
-          <p className="text-xs text-slate-400 bg-white/[0.02] p-3 rounded-xl border border-white/5">
-            🔒 El módulo está desactivado. Activá el interruptor para habilitar la liquidación efectiva de comisiones, registro de adelantos y gastos operativos en la sección de Finanzas.
-          </p>
-        )}
-      </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            {CLOSING_FREQUENCIES.map((freq) => {
+              const Icon = freq.icon;
+              const isSelected = cashClosingFrequency === freq.id;
+              return (
+                <button
+                  key={freq.id}
+                  type="button"
+                  onClick={() => setCashClosingFrequency(freq.id)}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                    isSelected
+                      ? "!bg-[var(--accent)]/15 !border-[var(--accent)]/50 shadow-md shadow-[var(--accent)]/5"
+                      : "!bg-slate-950/40 !border-white/5 opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div
+                      className={`p-2 rounded-lg border ${
+                        isSelected
+                          ? "bg-[var(--accent)]/20 border-[var(--accent)]/40 text-[var(--accent)]"
+                          : "bg-white/5 border-white/10 text-slate-400"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    {isSelected && (
+                      <CheckCircle2 className="w-4 h-4 text-[var(--accent)]" />
+                    )}
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-bold text-white">{freq.title}</h5>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+                      {freq.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Métodos predefinidos */}
       <div className="space-y-3">

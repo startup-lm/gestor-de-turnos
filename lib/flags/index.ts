@@ -22,8 +22,24 @@ export function isFeatureEnabled(
   flag: FeatureFlagName,
   features?: Record<string, boolean> | null
 ): boolean {
+  // 1. Valor explícito en base de datos del cliente (activado por el administrador del SaaS)
   if (features && typeof features[flag] === "boolean") {
     return features[flag];
   }
+
+  // 2. Activación por Variable de Entorno (Vercel / .env.local por deploy de cliente)
+  if (flag === "cash_management") {
+    const envVal = process.env.NEXT_PUBLIC_ENABLE_CASH_MANAGEMENT;
+    if (envVal === "true") return true;
+    if (envVal === "false") return false;
+  }
+
+  if (flag === "arca") {
+    const envVal = process.env.NEXT_PUBLIC_ENABLE_ARCA;
+    if (envVal === "true") return true;
+    if (envVal === "false") return false;
+  }
+
+  // 3. Default en código (apagado por defecto)
   return DEFAULT_FEATURES[flag] ?? false;
 }
