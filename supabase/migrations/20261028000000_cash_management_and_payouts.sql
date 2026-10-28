@@ -73,3 +73,11 @@ CREATE INDEX IF NOT EXISTS idx_cash_movements_created_at ON public.cash_movement
 CREATE INDEX IF NOT EXISTS idx_cash_movements_type ON public.cash_movements(type);
 CREATE INDEX IF NOT EXISTS idx_commission_payouts_barber_period ON public.commission_payouts(barber_id, period_start, period_end);
 CREATE INDEX IF NOT EXISTS idx_commission_payouts_payment_date ON public.commission_payouts(payment_date);
+
+-- 6. Seguridad: Habilitar RLS (Row Level Security)
+-- Las tablas quedan protegidas contra accesos directos desde el cliente anónimo (anon key).
+-- La API de Next.js accede mediante supabaseAdmin (service_role) con verificación de rol admin.
+ALTER TABLE public.cash_shifts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cash_movements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.commission_payouts ENABLE ROW LEVEL SECURITY;
+
