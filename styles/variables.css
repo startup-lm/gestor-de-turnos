@@ -25,6 +25,7 @@
 
   --bg-carousel: #111827;       /* similar al primary, un poco más integrado */
   --bg-navbar: #020617;         /* aún más oscuro para dar contraste */
+  --navbar-height: 105px;       /* altura del navbar con logo */
 
   --button-green: #22C55E;
   --button-green-hover: #16A34A;

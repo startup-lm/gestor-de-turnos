@@ -98,10 +98,17 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
   };
 
   return (
-    <div className="w-full min-h-[calc(100vh-64px)] flex flex-col lg:flex-row bg-[var(--background)]">
+    <div
+      style={{ minHeight: "calc(100vh - var(--navbar-height, 105px))" }}
+      className="w-full flex flex-col lg:flex-row bg-[var(--background)]"
+    >
       {/* Columna Izquierda: Menú Lateral con scroll independiente y colapso */}
       <aside
-        className={`w-full flex-shrink-0 border-b lg:border-b-0 lg:border-r border-white/10 bg-[#0B132B]/40 lg:sticky lg:top-[64px] lg:self-start lg:h-[calc(100vh-64px)] z-20 transition-all duration-300 ease-in-out flex flex-col overflow-hidden ${
+        style={{
+          top: "var(--navbar-height, 105px)",
+          height: "calc(100vh - var(--navbar-height, 105px))",
+        }}
+        className={`w-full flex-shrink-0 border-b lg:border-b-0 lg:border-r border-white/10 bg-[#0B132B]/40 lg:sticky lg:self-start z-20 transition-all duration-300 ease-in-out flex flex-col overflow-hidden ${
           isSidebarCollapsed ? "lg:w-16" : "lg:w-64 xl:w-72"
         }`}
       >
@@ -117,7 +124,10 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
       </aside>
 
       {/* Columna Derecha: Canvas de Contenido Dinámico (ocupa todo el ancho disponible) */}
-      <main className="flex-1 min-w-0 w-full min-h-[calc(100vh-64px)] overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10">
+      <section
+        style={{ minHeight: "calc(100vh - var(--navbar-height, 105px))" }}
+        className="flex-1 min-w-0 w-full overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10"
+      >
         <div className="w-full max-w-[1720px] mx-auto">
           {activeSection === "metricas" && <DashboardClient initialBarbers={barbers} />}
           {activeSection === "finanzas" && isAdmin && <FinanzasSection barbers={barbers} />}
@@ -143,7 +153,7 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
           {activeSection === "config-contacto" && isAdmin && <ConfigContactoSection />}
           {activeSection === "config-pagos" && isAdmin && <ConfigPagosSection />}
         </div>
-      </main>
+      </section>
     </div>
   );
 }

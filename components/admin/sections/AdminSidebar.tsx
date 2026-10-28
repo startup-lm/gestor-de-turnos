@@ -105,7 +105,10 @@ export default function AdminSidebar({
   return (
     <>
       {/* VERSIÓN MOBILE: Barra de pestañas horizontal deslizable */}
-      <div className="lg:hidden w-full overflow-x-auto py-2.5 px-3 border-b border-white/10 bg-[#0B132B]/60 backdrop-blur-md sticky top-[64px] z-30 flex items-center gap-1.5 no-scrollbar">
+      <div
+        style={{ top: "var(--navbar-height, 105px)" }}
+        className="lg:hidden w-full overflow-x-auto py-2.5 px-3 border-b border-white/10 bg-[#0B132B]/60 backdrop-blur-md sticky z-30 flex items-center gap-1.5 no-scrollbar"
+      >
         <span className="text-[10px] font-mono text-slate-400 bg-white/5 px-2 py-1 rounded border border-white/10 flex-shrink-0">
           v{APP_VERSION}
         </span>
@@ -306,7 +309,7 @@ export default function AdminSidebar({
       </div>
 
       {/* VERSIÓN DESKTOP: Menú lateral con footer fijo y scroll independiente */}
-      <div className={`hidden lg:flex flex-col w-full h-full min-h-0 py-3.5 ${isCollapsed ? "px-1.5" : "px-3"} overflow-hidden select-none`}>
+      <div className={`hidden lg:flex flex-col w-full h-full min-h-0 pt-3 pb-2.5 ${isCollapsed ? "px-1.5" : "px-3"} overflow-hidden select-none`}>
         {/* Cabecera del Sidebar (Fija superior) */}
         <div className={`flex-shrink-0 pb-3 mb-2 border-b border-white/10 ${isCollapsed ? "px-1 flex flex-col items-center" : "px-2"}`}>
           {!isCollapsed ? (
@@ -627,7 +630,7 @@ export default function AdminSidebar({
         </div>
 
         {/* Footer fijo al fondo de la pantalla del navegador */}
-        <div className={`flex-shrink-0 pt-3 mt-auto border-t border-white/10 ${isCollapsed ? "px-1 flex flex-col items-center justify-center gap-1.5" : "px-2 flex items-center justify-between"}`}>
+        <div className={`flex-shrink-0 pt-2.5 pb-0.5 mt-auto border-t border-white/10 ${isCollapsed ? "px-1 flex flex-col items-center justify-center gap-1.5" : "px-2 flex items-center justify-between"}`}>
           {!isCollapsed ? (
             <>
               <div className="flex items-center gap-1.5 text-xs text-slate-400 min-w-0">
