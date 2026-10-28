@@ -1,4 +1,4 @@
-export type FeatureFlagName = "arca" | (string & {});
+export type FeatureFlagName = "arca" | "cash_management" | (string & {});
 
 /**
  * Defaults de Feature Flags en código.
@@ -6,6 +6,7 @@ export type FeatureFlagName = "arca" | (string & {});
  */
 export const DEFAULT_FEATURES: Record<string, boolean> = {
   arca: false,
+  cash_management: false,
 };
 
 /**

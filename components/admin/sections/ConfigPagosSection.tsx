@@ -1,10 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Banknote, Wallet, ArrowRightLeft, CreditCard, Coins, Plus, X } from "lucide-react";
+import {
+  Banknote,
+  Wallet,
+  ArrowRightLeft,
+  CreditCard,
+  Coins,
+  Plus,
+  X,
+  Receipt,
+  Calendar,
+  Clock,
+  Sliders,
+  CheckCircle2,
+} from "lucide-react";
 import { ConfigFormSkeleton } from "@/components/loading/Skeleton";
 import SaveButton from "@/components/buttons/SaveButton";
 import { toast } from "@/lib/store/useToastStore";
+import { CashClosingFrequency } from "@/lib/types/cash";
 
 type PresetMethod = {
   name: string;
@@ -46,12 +60,44 @@ const PRESET_METHODS: PresetMethod[] = [
   },
 ];
 
+const CLOSING_FREQUENCIES: Array<{
+  id: CashClosingFrequency;
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  {
+    id: "daily",
+    title: "Diario (al final del día)",
+    description: "Cierre y arqueo de caja al concluir cada jornada laboral.",
+    icon: Clock,
+  },
+  {
+    id: "weekly",
+    title: "Semanal (al finalizar la semana)",
+    description: "Cierre acumulado en el último día de trabajo de la semana.",
+    icon: Calendar,
+  },
+  {
+    id: "manual",
+    title: "Personalizado / Manual",
+    description: "El administrador abre y cierra la caja a demanda según necesidad.",
+    icon: Sliders,
+  },
+];
+
 export default function ConfigPagosSection() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [initialMethods, setInitialMethods] = useState<string[]>([]);
   const [newMethod, setNewMethod] = useState("");
+
+  // Configuración de Caja y Liquidaciones
+  const [features, setFeatures] = useState<Record<string, boolean>>({});
+  const [initialFeatures, setInitialFeatures] = useState<Record<string, boolean>>({});
+  const [cashClosingFrequency, setCashClosingFrequency] = useState<CashClosingFrequency>("daily");
+  const [initialFrequency, setInitialFrequency] = useState<CashClosingFrequency>("daily");
 
   useEffect(() => {
     async function loadData() {
@@ -63,9 +109,17 @@ export default function ConfigPagosSection() {
           const loaded = data.payment_methods || ["Efectivo", "Mercado Pago"];
           setPaymentMethods(loaded);
           setInitialMethods(loaded);
+
+          const loadedFeatures = data.features || {};
+          setFeatures(loadedFeatures);
+          setInitialFeatures(loadedFeatures);
+
+          const loadedFreq = (data.cash_closing_frequency as CashClosingFrequency) || "daily";
+          setCashClosingFrequency(loadedFreq);
+          setInitialFrequency(loadedFreq);
         }
       } catch (err) {
-        console.error("Error al cargar medios de pago:", err);
+        console.error("Error al cargar configuración de pagos:", err);
         toast.error("Error al cargar configuración de pagos");
       } finally {
         setLoading(false);
@@ -98,18 +152,35 @@ export default function ConfigPagosSection() {
     setPaymentMethods(paymentMethods.filter((m) => m !== name));
   };
 
+  const isCashManagementActive = Boolean(features.cash_management);
+
+  const handleToggleCashManagement = () => {
+    setFeatures((prev) => ({
+      ...prev,
+      cash_management: !prev.cash_management,
+    }));
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
       const res = await fetch("/api/business-settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payment_methods: paymentMethods }),
+        body: JSON.stringify({
+          payment_methods: paymentMethods,
+          cash_closing_frequency: cashClosingFrequency,
+          features: {
+            ...features,
+          },
+        }),
       });
 
       if (res.ok) {
         setInitialMethods([...paymentMethods]);
-        toast.success("Medios de pago actualizados con éxito");
+        setInitialFeatures({ ...features });
+        setInitialFrequency(cashClosingFrequency);
+        toast.success("Configuración actualizada con éxito");
       } else {
         toast.error("Error al guardar la configuración");
       }
@@ -123,7 +194,9 @@ export default function ConfigPagosSection() {
 
   const hasChanges =
     paymentMethods.length !== initialMethods.length ||
-    paymentMethods.some((m) => !initialMethods.includes(m));
+    paymentMethods.some((m) => !initialMethods.includes(m)) ||
+    Boolean(features.cash_management) !== Boolean(initialFeatures.cash_management) ||
+    cashClosingFrequency !== initialFrequency;
 
   if (loading) {
     return <ConfigFormSkeleton />;
@@ -134,10 +207,10 @@ export default function ConfigPagosSection() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-            Medios de pago
+            Medios de pago y caja
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Habilitá los métodos de pago aceptados para turnos y ventas en el local
+            Habilitá los métodos de pago aceptados y configurá el módulo de caja y cierres
           </p>
         </div>
         <SaveButton
@@ -147,6 +220,97 @@ export default function ConfigPagosSection() {
           disabled={!hasChanges || saving}
           className="w-full sm:w-auto"
         />
+      </div>
+
+      {/* Módulo de Caja Diaria y Liquidaciones (Feature Flag) */}
+      <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)]">
+              <Receipt className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white tracking-tight">
+                Módulo de Caja, Gastos y Liquidaciones
+              </h3>
+              <p className="text-xs text-slate-400">
+                Control de salidas de dinero, registro efectivo de pago a empleados y gastos del salón
+              </p>
+            </div>
+          </div>
+
+          {/* Toggle Switch */}
+          <button
+            type="button"
+            onClick={handleToggleCashManagement}
+            className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              isCashManagementActive ? "bg-emerald-500" : "bg-slate-700"
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                isCashManagementActive ? "translate-x-7" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+
+        {isCashManagementActive ? (
+          <div className="pt-4 border-t border-white/10 space-y-3">
+            <div>
+              <h4 className="text-xs font-bold text-slate-300 tracking-wider">
+                FRECUENCIA DE CIERRE DE CAJA
+              </h4>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Elegí la periodicidad con la que tu barbería realiza el balance y arqueo de caja
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              {CLOSING_FREQUENCIES.map((freq) => {
+                const Icon = freq.icon;
+                const isSelected = cashClosingFrequency === freq.id;
+                return (
+                  <button
+                    key={freq.id}
+                    type="button"
+                    onClick={() => setCashClosingFrequency(freq.id)}
+                    className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                      isSelected
+                        ? "!bg-[var(--accent)]/15 !border-[var(--accent)]/50 shadow-md shadow-[var(--accent)]/5"
+                        : "!bg-slate-950/40 !border-white/5 opacity-70 hover:opacity-100"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div
+                        className={`p-2 rounded-lg border ${
+                          isSelected
+                            ? "bg-[var(--accent)]/20 border-[var(--accent)]/40 text-[var(--accent)]"
+                            : "bg-white/5 border-white/10 text-slate-400"
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      {isSelected && (
+                        <CheckCircle2 className="w-4 h-4 text-[var(--accent)]" />
+                      )}
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-white">{freq.title}</h5>
+                      <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+                        {freq.description}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400 bg-white/[0.02] p-3 rounded-xl border border-white/5">
+            🔒 El módulo está desactivado. Activá el interruptor para habilitar la liquidación efectiva de comisiones, registro de adelantos y gastos operativos en la sección de Finanzas.
+          </p>
+        )}
       </div>
 
       {/* Métodos predefinidos */}

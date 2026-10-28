@@ -6,6 +6,30 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.2.0] - 2026-10-28
+
+### Agregado
+- **Módulo de Caja Diaria, Gastos y Liquidación Efectiva de Comisiones (Fase 1)**:
+  - **Feature Flag `cash_management`**: Protección de la funcionalidad bajo `cash_management: false` por defecto en `lib/flags/index.ts`, configurable por cada cliente desde su base de datos Supabase.
+  - **Liquidación Efectiva de Comisiones (`LiquidationModal`)**:
+    - Registro formal de pago de liquidaciones a profesionales con selección de período, desglose de cortes y ventas de productos.
+    - Detección y deducción automática de adelantos otorgados en el período.
+    - Soporte para pagos en Efectivo (con egreso automático registrado en la caja diaria) y Transferencia bancaria (con número de comprobante/referencia opcional).
+    - Emisión instantánea de **Recibo Digital de Liquidación** interno y botón de un clic para copiar el recibo formateado a WhatsApp.
+  - **Gestión de Adelantos a Barberos (`AdvanceModal`)**:
+    - Modal express para registrar adelantos de comisión a profesionales que se descuentan automáticamente en la liquidación final.
+  - **Control de Gastos y Egresos del Salón (`ExpenseModal` & `ExpensesHistoryTable`)**:
+    - Registro categorizado de egresos del negocio (insumos, servicios públicos, alquiler, limpieza, retiros de dueño).
+    - Deducción de gastos operativos para el cálculo de la **Ganancia Neta Real** en los KPIs financieros de Finanzas.
+  - **Historial de Liquidaciones (`PayoutsHistoryTable`)**:
+    - Pestaña dedicada con auditoría de todos los pagos realizados a profesionales, detalle de comprobante, importes abonados y copia del recibo a WhatsApp.
+  - **Frecuencia de Cierre de Caja Configurable (`ConfigPagosSection`)**:
+    - Selector en panel de administración para definir la frecuencia de cierre de caja según la operativa de cada barbería: Diario (al final del día), Semanal (al finalizar la semana) o Personalizado/Manual.
+  - **Migración Supabase Versionada (`20261028000000_cash_management_and_payouts.sql`)**:
+    - Tablas aditivas `cash_shifts`, `cash_movements` y `commission_payouts` con índices optimizados para auditoría contable.
+
+---
+
 ## [1.1.1] - 2026-10-27
 
 ### Corregido
