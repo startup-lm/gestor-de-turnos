@@ -61,6 +61,9 @@ const ConfigContactoSection = dynamic(() => import("@/components/admin/sections/
 const ConfigPagosSection = dynamic(() => import("@/components/admin/sections/ConfigPagosSection"), {
   loading: () => <ConfigFormSkeleton />,
 });
+const ConfigResenasSection = dynamic(() => import("@/components/admin/sections/ConfigResenasSection"), {
+  loading: () => <ConfigFormSkeleton />,
+});
 
 export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>) {
   const router = useRouter();
@@ -70,6 +73,7 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
   const isAdmin = role === "admin";
   const arcaEnabled = isEnabled("arca");
   const cashManagementEnabled = isEnabled("cash_management");
+  const googleReviewsEnabled = isEnabled("google_reviews");
 
   const tabParam = searchParams.get("tab") as AdminSection | null;
   const initialTab = tabParam === "facturacion" ? "facturas" : tabParam || "metricas";
@@ -115,6 +119,7 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
           isAdmin={isAdmin}
           arcaEnabled={arcaEnabled}
           cashManagementEnabled={cashManagementEnabled}
+          googleReviewsEnabled={googleReviewsEnabled}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
         />
@@ -149,6 +154,9 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
           {activeSection === "config-horarios" && isAdmin && <ConfigHorariosSection />}
           {activeSection === "config-contacto" && isAdmin && <ConfigContactoSection />}
           {activeSection === "config-pagos" && isAdmin && <ConfigPagosSection />}
+          {activeSection === "config-resenas" && isAdmin && googleReviewsEnabled && (
+            <ConfigResenasSection />
+          )}
 
           {/* Footer mobile visible solo en pantallas pequeñas */}
           <div className="lg:hidden flex items-center justify-center gap-2 pt-8 pb-4 border-t border-white/5 text-[11px] text-slate-500 font-mono">

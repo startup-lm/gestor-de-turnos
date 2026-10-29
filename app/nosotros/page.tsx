@@ -2,7 +2,9 @@ import { getBarbers } from "@/lib/repository/barbers";
 import BarberCard from "@/components/nosotros/BarberCard";
 import BarberSocialMedia from "@/components/nosotros/BarberSocialMedia";
 import GoogleMapsLocation from "@/components/nosotros/GoogleMapsLocation";
+import GoogleReviewsSection from "@/components/reviews/GoogleReviewsSection";
 import { getBusinessSettings } from "@/lib/repository/businessSettings";
+import { isFeatureEnabled } from "@/lib/flags";
 import { FaInstagram, FaFacebook, FaTiktok, FaWhatsapp, FaLink } from "react-icons/fa";
 import Image from "next/image";
 import local from "@/public/images/local.webp";
@@ -11,6 +13,12 @@ export const revalidate = 60;
 
 export default async function NosotrosPage() {
   const [barbers, settings] = await Promise.all([getBarbers(), getBusinessSettings()]);
+
+  const isReviewsEnabled = isFeatureEnabled("google_reviews", settings?.features);
+  const showAboutReviews =
+    isReviewsEnabled &&
+    settings?.google_reviews?.enabled !== false &&
+    settings?.google_reviews?.show_in_about !== false;
 
   const iconMap: Record<string, React.ReactNode> = {
     instagram: <FaInstagram size={30} className="inline-block" />,
@@ -133,6 +141,12 @@ export default async function NosotrosPage() {
           </div>
         </section>
       </div>
+
+      {showAboutReviews && (
+        <div className="w-full mt-10 text-left">
+          <GoogleReviewsSection config={settings?.google_reviews} />
+        </div>
+      )}
     </div>
   );
 }

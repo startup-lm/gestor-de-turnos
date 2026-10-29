@@ -6,6 +6,36 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.4.0] - 2026-10-29
+
+### Agregado
+- **Módulo de Google Reviews (Reseñas de Google)**:
+  - **Feature Flag `google_reviews`**: Incorporación del flag en `lib/flags/index.ts`, apagado por defecto (`false`) para cumplir estrictamente con la arquitectura multi-cliente aislada.
+  - **Estrategia Cache & Sync en Supabase**:
+    - Columna `google_reviews JSONB` en `business_settings` (migración `20261029000000_google_reviews.sql`).
+    - Las visitas públicas leen de Supabase en < 10ms sin consultar a Google, garantizando costo $0 real dentro del crédito mensual de $200 USD de Google Cloud.
+  - **Servicio y Endpoint de Sincronización**:
+    - `lib/services/googlePlaces.ts`: Soporte de doble etapa (Places API New con fallback automático a Places API Legacy).
+    - `app/api/google-reviews/sync/route.ts`: Endpoint administrativo seguro para sincronizar calificación, total de opiniones y comentarios oficiales.
+  - **Panel de Administración en el Gestor (`ConfigResenasSection`)**:
+    - Integración en `AdminSidebar.tsx` dentro del grupo "Configuración", condicional a `google_reviews` y rol `admin`.
+    - Detección interactiva de candidatos ("¿Es este tu local en Google Maps?") tanto por nombre comercial + dirección como por buscador manual y links de Google Maps.
+    - Moderación individual de reseñas con switch "Visible" / "Oculta" para destacar las mejores opiniones.
+    - Carga manual de reseñas destacadas (100% gratuita sin cuenta de Google Cloud).
+    - Previsualización en vivo (Live Preview) idéntica a la vista del sitio web a ancho completo (`w-full`).
+  - **Componentes Visuales Públicos**:
+    - `GoogleReviewsSection`: Carrusel interactivo automático con `KeenSlider` y `KeenAutoplayPlugin` (rotación cada 4.5s, pausa al posar el mouse, flechas de navegación responsive y dots indicadores).
+    - `GoogleRatingBadge`: Micro-badge visual informativo en el Hero de portada (no interactivo).
+    - `GoogleReviewCard`: Tarjetas de reseña con estrellas doradas, avatar de Google optimizado, nombre y cita.
+    - Integración condicional en la página de inicio (`app/page.tsx`) ubicada después de la sección "¿Dónde estamos?", y en la página "Sobre nosotros" (`app/nosotros/page.tsx`).
+  - **Arquitectura y Reglas del Repositorio**:
+    - Regla 10 en `AGENTS.md`: Obligatoriedad de `Loader2` y props de carga estándar (`loading={...}`) en botones, con prohibición de alterar textos a gerundios ("Guardando...", "Cargando...").
+    - Soporte de dominios CDN de Google (`*.googleusercontent.com`, `lh3.googleusercontent.com`) en `next.config.ts`.
+  - **Tests automatizados**:
+    - Tests unitarios en `lib/flags/__tests__/flags.test.ts` y `lib/services/__tests__/googlePlaces.test.ts` (66 tests pasando en total).
+
+---
+
 ## [1.3.0] - 2026-10-28
 
 ### Agregado

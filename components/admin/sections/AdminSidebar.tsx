@@ -20,6 +20,7 @@ import {
   TrendingDown,
   ChevronLeft,
   ChevronRight,
+  Star,
 } from "lucide-react";
 import { APP_VERSION } from "@/lib/version";
 
@@ -37,7 +38,8 @@ export type AdminSection =
   | "config-identidad"
   | "config-horarios"
   | "config-contacto"
-  | "config-pagos";
+  | "config-pagos"
+  | "config-resenas";
 
 type ModuleCategory =
   | "principal"
@@ -52,6 +54,7 @@ interface Props {
   isAdmin: boolean;
   arcaEnabled: boolean;
   cashManagementEnabled?: boolean;
+  googleReviewsEnabled?: boolean;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
@@ -62,6 +65,7 @@ export default function AdminSidebar({
   isAdmin,
   arcaEnabled,
   cashManagementEnabled = false,
+  googleReviewsEnabled = false,
   isCollapsed = false,
   onToggleCollapse,
 }: Readonly<Props>) {
@@ -297,6 +301,21 @@ export default function AdminSidebar({
               <CreditCard className="w-3.5 h-3.5" />
               <span>Medios de pago</span>
             </button>
+
+            {googleReviewsEnabled && (
+              <button
+                type="button"
+                onClick={() => onSelectSection("config-resenas")}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
+                  activeSection === "config-resenas"
+                    ? "!bg-[var(--accent)] !text-slate-950 font-bold"
+                    : "!bg-white/5 !text-slate-300"
+                }`}
+              >
+                <Star className="w-3.5 h-3.5" />
+                <span>Reseñas de Google</span>
+              </button>
+            )}
           </>
         )}
       </div>
@@ -616,6 +635,18 @@ export default function AdminSidebar({
                     <CreditCard className="w-3.5 h-3.5 flex-shrink-0" />
                     {!isCollapsed && <span>Medios de pago</span>}
                   </button>
+
+                  {googleReviewsEnabled && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectSection("config-resenas")}
+                      className={navItemClass("config-resenas")}
+                      title="Reseñas de Google"
+                    >
+                      <Star className="w-3.5 h-3.5 flex-shrink-0" />
+                      {!isCollapsed && <span>Reseñas de Google</span>}
+                    </button>
+                  )}
                 </div>
               )}
             </div>

@@ -1,9 +1,11 @@
 import AboutUs from "@/components/home/AboutUs";
 import Hero from "@/components/home/Hero";
 import HomeCarousel from "@/components/home/HomeCarousel";
+import GoogleReviewsSection from "@/components/reviews/GoogleReviewsSection";
 import { getProducts } from "@/lib/repository/products";
 import { getServices } from "@/lib/repository/services";
 import { getBusinessSettings } from "@/lib/repository/businessSettings";
+import { isFeatureEnabled } from "@/lib/flags";
 
 export const revalidate = 60;
 
@@ -16,6 +18,12 @@ export default async function HomePage() {
 
   const services = rawServices.map(({ id, name, image }) => ({ id, name, image }));
   const products = rawProducts.map(({ id, name, image }) => ({ id, name, image }));
+
+  const isReviewsEnabled = isFeatureEnabled("google_reviews", settings?.features);
+  const showHomeReviews =
+    isReviewsEnabled &&
+    settings?.google_reviews?.enabled !== false &&
+    settings?.google_reviews?.show_in_home !== false;
 
   return (
     <main className="bg-[var(--background)] text-[var(--foreground)] pb-20 relative overflow-hidden">
@@ -36,6 +44,11 @@ export default async function HomePage() {
 
         {/* LOCAL INFO: Storefront Photo (40%) & Google Maps (60%) */}
         <AboutUs address={settings?.location_address} photo={settings?.local_photo} />
+
+        {/* REVIEWS: Opiniones de Google oficiales (si la feature flag y los settings están activos) */}
+        {showHomeReviews && (
+          <GoogleReviewsSection config={settings?.google_reviews} />
+        )}
       </div>
     </main>
   );
