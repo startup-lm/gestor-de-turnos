@@ -6,6 +6,13 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.4.1] - 2026-10-29
+
+### Corregido
+- **Resolución de dependencias en despliegues de CI y Vercel**: Se incorporó archivo de configuración `.npmrc` con `legacy-peer-deps=true` y se actualizó `@types/node` a `^20.19.0` para solucionar el conflicto de peer dependencies `ERESOLVE` entre `vite@8.3.5` y `@types/node` en entornos de compilación automatizada.
+
+---
+
 ## [1.4.0] - 2026-10-29
 
 ### Agregado
