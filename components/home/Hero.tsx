@@ -4,13 +4,22 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Clock } from "lucide-react";
 import HeroActions from "./HeroActions";
+import GoogleRatingBadge from "@/components/reviews/GoogleRatingBadge";
 import homeBg from "@/public/images/home.jpg";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { getBusinessOpenStatus, getScheduleSummary, BusinessOpenStatus } from "@/utils/businessHours";
 
 export default function Hero() {
-  const { businessSettings, businessHours } = useBusinessContext();
+  const { businessSettings, businessHours, isEnabled } = useBusinessContext();
   const [openStatus, setOpenStatus] = useState<BusinessOpenStatus | null>(null);
+
+  const reviewsConfig = businessSettings?.google_reviews;
+  const isReviewsFlag = isEnabled ? isEnabled("google_reviews") : false;
+  const showHeroBadge =
+    isReviewsFlag &&
+    reviewsConfig?.enabled !== false &&
+    reviewsConfig?.show_in_hero !== false &&
+    ((reviewsConfig?.user_ratings_total ?? 0) > 0 || (reviewsConfig?.reviews?.length ?? 0) > 0);
 
   useEffect(() => {
     const checkStatus = () => {
@@ -100,6 +109,15 @@ export default function Hero() {
           <p className="text-base sm:text-lg text-slate-300 font-medium tracking-wide max-w-md mx-auto leading-relaxed">
             {businessSettings?.slogan ?? "Corte, afeitado tradicional y estilo diseñado para el caballero moderno. Reservá tu turno de forma ágil y cómoda."}
           </p>
+
+          {showHeroBadge && (
+            <div className="pt-2">
+              <GoogleRatingBadge
+                rating={reviewsConfig?.rating}
+                totalReviews={reviewsConfig?.user_ratings_total}
+              />
+            </div>
+          )}
         </div>
 
         <HeroActions />

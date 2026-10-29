@@ -6,6 +6,31 @@ export type ThemeColors = {
   accent?: string;
 };
 
+export type GoogleReviewItem = {
+  id: string;
+  author_name: string;
+  author_photo_url?: string;
+  rating: number;
+  text: string;
+  relative_time?: string;
+  publish_time?: string;
+  visible: boolean;
+};
+
+export type GoogleReviewsConfig = {
+  enabled?: boolean;
+  place_id?: string;
+  api_key?: string;
+  write_review_url?: string;
+  rating?: number;
+  user_ratings_total?: number;
+  show_in_hero?: boolean;
+  show_in_home?: boolean;
+  show_in_about?: boolean;
+  last_synced_at?: string | null;
+  reviews?: GoogleReviewItem[];
+};
+
 export type BusinessSettings = {
   slot_step_minutes: 15 | 30 | 45 | 60;
   phone?: string;
@@ -21,4 +46,5 @@ export type BusinessSettings = {
   theme_colors?: ThemeColors;
   features?: Record<string, boolean>;
   cash_closing_frequency?: "daily" | "weekly" | "manual";
+  google_reviews?: GoogleReviewsConfig;
 };

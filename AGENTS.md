@@ -117,4 +117,15 @@ Antes de finalizar una tarea, crear un Pull Request o mergear a `main` o a `rele
      - Al completar exitosamente la acción, se regresa automáticamente a la vista de lista y se refrescan los datos.
    - Esto evita problemas de contexto de apilamiento (`z-index`), desbordes en dispositivos móviles y bloqueos de scroll.
 
+---
+
+## 10. Estados de Carga en Botones (Uso Obligatorio de Loader2 / ActionButton / SaveButton)
+
+1. **Prohibición de cambiar el texto a gerundios ("Guardando...", "Cargando..."):**
+   - **NO** alterar la propiedad `name` ni el texto de los botones durante estados de carga (ej: reemplazar "Guardar cambios" por "Guardando...", "Sincronizar" por "Sincronizando...", etc.).
+   - En su lugar, se debe utilizar:
+     - La prop estándar `loading={...}` en componentes como `SaveButton` o `ActionButton`, los cuales internamente gestionan el estado y renderizan `<Loader2 className="w-5 h-5 animate-spin" />`.
+     - En botones `<button>` personalizados, renderizar condicionalmente el icono `<Loader2 className="... animate-spin" />` en lugar del icono regular de la acción, manteniendo inalterado el texto del botón.
+   - Esto evita saltos de ancho en el botón (layout shift), mantiene la coherencia visual con el resto del sistema y respeta la convención de diseño establecida.
+
 

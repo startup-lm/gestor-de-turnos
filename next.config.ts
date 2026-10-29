@@ -16,12 +16,19 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_APP_VERSION: packageJson.version,
   },
   images: {
-    // 1) Limita exactamente qué URLs se optimizan (solo Storage)
     remotePatterns: [
       {
         protocol: "https",
         hostname: host,
         pathname: "/storage/v1/object/**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
       },
     ],
     // 2) Un solo formato (evita duplicar trabajo)
