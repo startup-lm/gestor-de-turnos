@@ -91,6 +91,7 @@ Asegúrate de contar con Node.js (versión 18 o superior recomendada) instalado:
 npm install
 ```
 
+
 ### 2. Configurar la Base de Datos Local (Supabase CLI)
 El proyecto está configurado para correr opcionalmente contra una base de datos local usando [Docker](https://www.docker.com/) y el CLI de Supabase:
 1. Instala el CLI de Supabase (e.g. `brew install supabase/tap/supabase` en macOS).
