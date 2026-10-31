@@ -6,6 +6,22 @@
 
 ---
 
+## 0. Stack y Comandos
+
+- **Stack**: Next.js 15.5 (App Router, sin `pages/` ni `getServerSideProps`), React 19, TypeScript, Tailwind CSS v4, Supabase, Sentry, Vitest (unit) y Playwright (e2e). Deploy en Vercel.
+- **Comandos**:
+  ```bash
+  npm run dev          # servidor de desarrollo
+  npm run type-check   # verificación de tipos
+  npm run lint         # ESLint
+  npm test             # Vitest (unit)
+  npm run build        # build de producción
+  npm run test:e2e     # Playwright: abre navegador, solo si el usuario lo pide expresamente (sección 5)
+  ```
+- **Verificación estándar** al terminar un cambio: `type-check`, `lint` y `test`.
+
+---
+
 ## 1. Arquitectura Central (Repositorio Único Multi-Cliente)
 
 1. **Un solo repositorio de código:** `gestor-de-turnos` es el único repositorio fuente.
@@ -128,4 +144,21 @@ Antes de finalizar una tarea, crear un Pull Request o mergear a `main` o a `rele
      - En botones `<button>` personalizados, renderizar condicionalmente el icono `<Loader2 className="... animate-spin" />` en lugar del icono regular de la acción, manteniendo inalterado el texto del botón.
    - Esto evita saltos de ancho en el botón (layout shift), mantiene la coherencia visual con el resto del sistema y respeta la convención de diseño establecida.
 
+---
 
+## 11. Colores y Tokens de Marca
+
+1. Los colores de marca viven en `styles/variables.css` (variables CSS como `--background`, `--accent`, etc.).
+2. **Prohibido** escribir hexadecimales fijos (ej. `#FF0000`) dentro de componentes: usar los tokens, por ejemplo `bg-[var(--accent)]`.
+
+---
+
+## 12. Datos, API y Manejo de Errores
+
+1. **Soft delete en turnos**: los turnos (`appointments`) nunca se borran con `.delete()`. Se marca `deleted_at = NOW()` y todos los listados y métricas filtran con `.is("deleted_at", null)`. (Barberos, productos, servicios y ventas hoy usan borrado físico: no cambiarlo sin pedido explícito.)
+2. **Escrituras en el servidor**: las mutaciones pasan por `app/api/...`, que usa `supabaseAdmin` cuando necesita saltear RLS. El frontend nunca ejecuta DDL ni importa `supabaseAdmin`.
+3. **Respuestas de la API**: usar `successResponse()` y `errorResponse(message, status)` de `@/lib/api/response` en los route handlers.
+4. **Errores de base de datos**: try/catch con mensaje de fallback (`status 500`). Nunca mostrar al usuario stacks de Postgres sin procesar.
+5. **Logs**: nada de `console.log()` sueltos en código de producción.
+6. **Tipos**: los contratos viven en `@/lib/types` (`Appointment.ts`, `Sale.ts`, etc.). Si se agrega un campo a la base, actualizar su tipo en el mismo cambio.
+7. **Textos al usuario** (alertas, toasts, mensajes): español claro y cortés (ej. "Turno eliminado con éxito"), respetando el sentence case de la sección 8.
