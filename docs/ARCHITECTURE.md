@@ -8,7 +8,7 @@ Este documento detalla la estructura principal del repositorio base `gestor-de-t
   - Incluye rutas estáticas como `page.tsx` (Página de Inicio generada y revalidada con SSR/ISG).
   - Incluye servicios de la capa Server bajo `/app/api/` (Endpoints para mutaciones de la BD).
 - `/components`: Elementos modulares divididos por contexto funcional de negocio y de UI.
-  - `/turnos`: Toda la interactividad atada al flujo de un turno (ej: `AppointmentDetailsModal.tsx`).
+  - `/turnos`: Toda la interactividad atada al flujo de un turno (ej: `AppointmentDetailsSplitPanel.tsx`, `BookingSplitPanel.tsx`).
   - `/admin`: Componentes enfocados a la carga y selectores (Pickers).
   - `/ui`: Componentes estructurales base y sin lógica fuerte de negocio.
 - `/lib`: Capa intermedia de utilidades lógicas y patrones.
@@ -28,4 +28,17 @@ El proyecto emplea una arquitectura de Red enfocada a optimizar el caché integr
 4. El Route Handler (Route Server) procesa el evento con el entorno privilegiado `supabaseAdmin`, actualiza Base de Datos y, de ser necesario, usa `revalidateTag("appointments")` para limpiar el caché inter-global.
 
 ## 3. Estado Local de UI
-El estado inter-fase (Component-to-Component) se confía puramente a Hooks locales (`useState`) y composición paramétrica. Existen patrones customizados que persisten el estado modal como `usePopup()`.
+El estado inter-fase (Component-to-Component) se confía a Hooks locales (`useState`), composición paramétrica y stores puntuales de Zustand (`lib/store/`). No se usan modales: los flujos de creación/edición cambian de vista dentro del panel (`viewMode: 'list' | 'create'`, ver `AGENTS.md` §9).
+
+## 4. Seguridad de la API
+
+- **Toda ruta que lee o escribe datos internos valida la sesión primero**, con `requireAdmin()` o `requireBarberOrAdmin()` de `lib/api/auth.ts`, antes de tocar la base. `app/api/__tests__/authGuards.test.ts` lo verifica para cada ruta: si agregás una ruta protegida, sumala a esa lista.
+- **Rutas públicas** (reserva, cancelación, home): `GET /api/appointments` enmascara cliente, teléfono, precio y datos fiscales y solo acepta filtros conocidos; `GET /api/barbers` devuelve solo campos públicos a anónimos; `GET /api/business-settings` quita secretos (`lib/settings/sanitize.ts`).
+- **RLS activo en todas las tablas** (`20261101000000_security_hardening.sql`): la anon key no lee ni escribe directo. Única excepción: lectura de `appointments` para staff autenticado (realtime del calendario).
+- **Rate limit** persistente vía `checkRateLimit()` (función `check_rate_limit` de Postgres), con fallback en memoria.
+- **Errores**: `dbErrorResponse(error, contexto)` registra el detalle y devuelve un mensaje genérico; nunca se envía el mensaje crudo de Postgres.
+- **Storage**: solo buckets conocidos, solo imágenes de hasta 5 MB; un barbero solo modifica el bucket `barbers`. El acceso al proveedor está aislado en `lib/storage/server.ts`.
+
+## 5. Planes y Feature Flags
+
+`business_settings.plan` (`basic` | `pro`) define qué features incluye cada cliente (`PLAN_FEATURES` en `lib/flags/index.ts`). `business_settings.features` queda para overrides puntuales y tiene prioridad sobre el plan. Ambos campos los modifica solo el dueño del SaaS directo en la base: `PUT /api/business-settings` los descarta.

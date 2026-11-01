@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET, POST, PUT, DELETE } from "@/app/api/appointments/route";
 import * as auth from "@/lib/api/auth";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
-import { createSupabaseServerClient } from "@/lib/supabase/supabaseServer";
 
 vi.mock("@/lib/api/auth", () => ({
   requireBarberOrAdmin: vi.fn(),
@@ -16,13 +15,10 @@ vi.mock("@/lib/supabase/supabaseAdmin", () => ({
   },
 }));
 
-vi.mock("@/lib/supabase/supabaseServer", () => ({
-  createSupabaseServerClient: vi.fn(),
-}));
-
 describe("API /api/appointments", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(supabaseAdmin.from).mockReset();
   });
 
   describe("GET - Enmascaramiento y privacidad", () => {
@@ -109,7 +105,7 @@ describe("API /api/appointments", () => {
         }),
       };
 
-      vi.mocked(createSupabaseServerClient).mockResolvedValueOnce(mockSupabase as any);
+      vi.mocked(supabaseAdmin.from).mockImplementation(mockSupabase.from as any);
 
       const response = await PUT(
         new Request("http://localhost:3000/api/appointments", {
@@ -153,7 +149,7 @@ describe("API /api/appointments", () => {
         }),
       });
 
-      vi.mocked(createSupabaseServerClient).mockResolvedValueOnce(mockSupabase as any);
+      vi.mocked(supabaseAdmin.from).mockImplementation(mockSupabase.from as any);
 
       const response = await PUT(
         new Request("http://localhost:3000/api/appointments", {
@@ -188,7 +184,7 @@ describe("API /api/appointments", () => {
         }),
       };
 
-      vi.mocked(createSupabaseServerClient).mockResolvedValueOnce(mockSupabase as any);
+      vi.mocked(supabaseAdmin.from).mockImplementation(mockSupabase.from as any);
 
       const response = await DELETE(
         new Request("http://localhost:3000/api/appointments", {
@@ -276,5 +272,42 @@ describe("API /api/appointments", () => {
       expect(response.status).toBe(400);
       expect(json.error).toMatch(/coincide o se solapa/i);
     });
+  });
+});
+
+describe("API /api/appointments - filtros y datos fiscales", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(supabaseAdmin.from).mockReset();
+  });
+
+  it("un anónimo no puede filtrar por teléfono ni ver facturas ARCA", async () => {
+    vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(null);
+
+    const queryMock = {
+      select: vi.fn().mockReturnThis(),
+      is: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockReturnThis(),
+      lte: vi.fn().mockReturnThis(),
+      then: vi.fn((resolve) =>
+        resolve({
+          data: [{ id: 1, client: "Ana", phone: "+5491100000000", client_id: 7, arca_invoice_id: 3, arca_invoices: { cae: "123" } }],
+          error: null,
+        })
+      ),
+    };
+    vi.mocked(supabaseAdmin.from).mockReturnValueOnce(queryMock as any);
+
+    const response = await GET(
+      new Request("http://localhost:3000/api/appointments?phone=%2B5491100000000&client=Ana&barber_id=2")
+    );
+    const json = await response.json();
+
+    expect(queryMock.eq).not.toHaveBeenCalledWith("phone", expect.anything());
+    expect(queryMock.eq).not.toHaveBeenCalledWith("client", expect.anything());
+    expect(queryMock.eq).toHaveBeenCalledWith("barber_id", "2");
+    expect(json[0]).toMatchObject({ client: "Ocupado", phone: null, client_id: null, arca_invoice_id: null, arca_invoices: null });
   });
 });
