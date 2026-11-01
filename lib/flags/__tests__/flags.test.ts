@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isFeatureEnabled, DEFAULT_FEATURES } from "@/lib/flags";
+import { isFeatureEnabled, DEFAULT_FEATURES, PLAN_FEATURES } from "@/lib/flags";
 
 describe("isFeatureEnabled", () => {
   it("por defecto, toda funcionalidad nueva debe nacer apagada (false)", () => {
@@ -34,5 +34,27 @@ describe("isFeatureEnabled", () => {
 
     expect(isFeatureEnabled("arca", incompleteFeatures)).toBe(false);
     expect(isFeatureEnabled("feature_inexistente", incompleteFeatures)).toBe(false);
+  });
+});
+
+describe("isFeatureEnabled con planes", () => {
+  it("sin plan se asume basic: todo apagado", () => {
+    expect(isFeatureEnabled("arca", {}, null)).toBe(false);
+    expect(isFeatureEnabled("arca", {}, "plan_inexistente")).toBe(false);
+  });
+
+  it("el plan pro enciende las features que incluye", () => {
+    expect(isFeatureEnabled("arca", {}, "pro")).toBe(true);
+    expect(isFeatureEnabled("cash_management", null, "pro")).toBe(true);
+    expect(isFeatureEnabled("feature_inexistente", null, "pro")).toBe(false);
+  });
+
+  it("el override en features tiene prioridad sobre el plan", () => {
+    expect(isFeatureEnabled("arca", { arca: false }, "pro")).toBe(false);
+    expect(isFeatureEnabled("google_reviews", { google_reviews: true }, "basic")).toBe(true);
+  });
+
+  it("el plan basic no incluye ninguna feature paga", () => {
+    expect(Object.values(PLAN_FEATURES.basic).some(Boolean)).toBe(false);
   });
 });

@@ -14,7 +14,7 @@ export const revalidate = 60;
 export default async function NosotrosPage() {
   const [barbers, settings] = await Promise.all([getBarbers(), getBusinessSettings()]);
 
-  const isReviewsEnabled = isFeatureEnabled("google_reviews", settings?.features);
+  const isReviewsEnabled = isFeatureEnabled("google_reviews", settings?.features, settings?.plan);
   const showAboutReviews =
     isReviewsEnabled &&
     settings?.google_reviews?.enabled !== false &&

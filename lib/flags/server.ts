@@ -9,11 +9,11 @@ export async function isServerFeatureEnabled(flag: FeatureFlagName): Promise<boo
   try {
     const { data } = await supabaseAdmin
       .from("business_settings")
-      .select("features")
+      .select("*")
       .eq("id", 1)
       .maybeSingle();
 
-    return isFeatureEnabled(flag, data?.features);
+    return isFeatureEnabled(flag, data?.features, data?.plan);
   } catch (error) {
     console.error(`Error al verificar flag '${flag}' en servidor:`, error);
     return DEFAULT_FEATURES[flag] ?? false;

@@ -19,7 +19,7 @@ export default async function HomePage() {
   const services = rawServices.map(({ id, name, image }) => ({ id, name, image }));
   const products = rawProducts.map(({ id, name, image }) => ({ id, name, image }));
 
-  const isReviewsEnabled = isFeatureEnabled("google_reviews", settings?.features);
+  const isReviewsEnabled = isFeatureEnabled("google_reviews", settings?.features, settings?.plan);
   const showHomeReviews =
     isReviewsEnabled &&
     settings?.google_reviews?.enabled !== false &&

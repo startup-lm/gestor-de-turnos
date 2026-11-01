@@ -68,8 +68,8 @@ export function BusinessProvider({
   }, [businessSettings?.business_name]);
 
   const checkFlag = useCallback((flag: FeatureFlagName) => {
-    return isFeatureEnabled(flag, businessSettings?.features);
-  }, [businessSettings?.features]);
+    return isFeatureEnabled(flag, businessSettings?.features, businessSettings?.plan);
+  }, [businessSettings?.features, businessSettings?.plan]);
 
   const value = useMemo(
     () => ({
