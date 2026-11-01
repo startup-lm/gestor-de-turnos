@@ -6,6 +6,26 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.6.0] - 2026-11-02
+
+### Agregado
+- **Tres planes comerciales (`basic` | `standard` | `premium`)** en `lib/flags/index.ts`:
+  - `basic`: turnos, servicios, productos, "Nosotros", WhatsApp, horarios e identidad. 1 profesional y medios de cobro por defecto.
+  - `standard`: + facturación ARCA, métricas, venta de productos, liquidación de comisiones, gestión de profesionales (hasta 4), reseñas de Google y hasta 3 medios de cobro.
+  - `premium`: + finanzas, registro de gastos, criterio de asignación de turnos, profesionales y medios de cobro ilimitados.
+- **Límites por plan** (`PLAN_LIMITS`, `getPlanLimits`) validados en el servidor: alta de profesionales y cantidad de medios de cobro.
+- **Validación de plan en la API** (`requirePlanFeature`, `getServerPlanContext`): ventas, liquidaciones y gastos responden 403 si el plan no los incluye.
+- **Alta de cuentas de profesionales desde el servidor** (`POST /api/auth` con `auth.admin.createUser`): permite apagar el registro público de Supabase.
+- Migración `20261102000000_commercial_plans.sql`.
+
+### Cambiado
+- El panel de administración muestra cada sección según el plan; una sección no incluida cae a la sección por defecto (turnos si no hay métricas).
+- La configuración leída aplica el plan (`applyPlanToSettings`): sin criterio de asignación el turno se asigna aleatorio y `basic` usa los medios de cobro por defecto.
+
+### Eliminado
+- Plan `pro` y flag `cash_management` (reemplazados por `finances`, `expenses` y `commission_payouts`).
+- Registro de cuentas con `supabase.auth.signUp` desde el navegador.
+
 ## [1.5.0] - 2026-11-01
 
 ### Agregado

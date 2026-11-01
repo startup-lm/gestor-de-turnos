@@ -41,4 +41,15 @@ El estado inter-fase (Component-to-Component) se confía a Hooks locales (`useSt
 
 ## 5. Planes y Feature Flags
 
-`business_settings.plan` (`basic` | `pro`) define qué features incluye cada cliente (`PLAN_FEATURES` en `lib/flags/index.ts`). `business_settings.features` queda para overrides puntuales y tiene prioridad sobre el plan. Ambos campos los modifica solo el dueño del SaaS directo en la base: `PUT /api/business-settings` los descarta.
+`business_settings.plan` (`basic` | `standard` | `premium`) define qué features y límites tiene cada cliente (`PLAN_FEATURES` y `PLAN_LIMITS` en `lib/flags/index.ts`). `business_settings.features` queda para overrides puntuales y tiene prioridad sobre el plan. Ambos campos los modifica solo el dueño del SaaS directo en la base: `PUT /api/business-settings` los descarta.
+
+| Flag | basic | standard | premium |
+|---|---|---|---|
+| `arca`, `metrics`, `sales`, `commission_payouts`, `staff_management`, `google_reviews` | — | ✓ | ✓ |
+| `finances`, `expenses`, `booking_rules` (criterio de asignación) | — | — | ✓ |
+| Profesionales | 1 | 4 | sin límite |
+| Medios de cobro | por defecto | 3 | sin límite |
+
+- **Servidor**: toda mutación de una feature paga valida el plan con `requirePlanFeature(flag)` o `getServerPlanContext()` (`lib/flags/server.ts`). Ocultar la UI no alcanza.
+- **Configuración efectiva**: `applyPlanToSettings` (`lib/settings/sanitize.ts`) devuelve los valores por defecto de lo que el plan no incluye, para que reserva y cobros usen siempre lo que corresponde.
+- **Feature nueva**: agregar el flag en `DEFAULT_FEATURES` (apagado) y sumarlo al plan que la venda.
