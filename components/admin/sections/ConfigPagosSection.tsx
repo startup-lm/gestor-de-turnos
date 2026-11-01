@@ -18,6 +18,7 @@ import {
 import { ConfigFormSkeleton } from "@/components/loading/Skeleton";
 import SaveButton from "@/components/buttons/SaveButton";
 import { toast } from "@/lib/store/useToastStore";
+import { DEFAULT_PAYMENT_METHODS } from "@/lib/flags";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { CashClosingFrequency } from "@/lib/types/cash";
 
@@ -88,8 +89,9 @@ const CLOSING_FREQUENCIES: Array<{
 ];
 
 export default function ConfigPagosSection() {
-  const { isEnabled } = useBusinessContext();
-  const isCashManagementEnabled = isEnabled("cash_management");
+  const { isEnabled, limits } = useBusinessContext();
+  const isFinancesEnabled = isEnabled("finances");
+  const maxPaymentMethods = limits.maxPaymentMethods;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -107,7 +109,7 @@ export default function ConfigPagosSection() {
         const res = await fetch("/api/business-settings");
         if (res.ok) {
           const data = await res.json();
-          const loaded = data.payment_methods || ["Efectivo", "Mercado Pago"];
+          const loaded = data.payment_methods || DEFAULT_PAYMENT_METHODS;
           setPaymentMethods(loaded);
           setInitialMethods(loaded);
 
@@ -125,9 +127,14 @@ export default function ConfigPagosSection() {
     loadData();
   }, []);
 
+  const isAtLimit = paymentMethods.length >= maxPaymentMethods;
+  const limitMessage = `Tu plan permite hasta ${maxPaymentMethods} medios de cobro`;
+
   const handleTogglePreset = (name: string) => {
     if (paymentMethods.includes(name)) {
       setPaymentMethods(paymentMethods.filter((m) => m !== name));
+    } else if (isAtLimit) {
+      toast.error(limitMessage);
     } else {
       setPaymentMethods([...paymentMethods, name]);
     }
@@ -139,6 +146,10 @@ export default function ConfigPagosSection() {
     if (!clean) return;
     if (paymentMethods.includes(clean)) {
       toast.error(`"${clean}" ya está en la lista`);
+      return;
+    }
+    if (isAtLimit) {
+      toast.error(limitMessage);
       return;
     }
     setPaymentMethods([...paymentMethods, clean]);
@@ -159,7 +170,7 @@ export default function ConfigPagosSection() {
         payment_methods: paymentMethods,
       };
 
-      if (isCashManagementEnabled) {
+      if (isFinancesEnabled) {
         payload.cash_closing_frequency = cashClosingFrequency;
       }
 
@@ -187,7 +198,7 @@ export default function ConfigPagosSection() {
   const hasChanges =
     paymentMethods.length !== initialMethods.length ||
     paymentMethods.some((m) => !initialMethods.includes(m)) ||
-    (isCashManagementEnabled && cashClosingFrequency !== initialFrequency);
+    (isFinancesEnabled && cashClosingFrequency !== initialFrequency);
 
   if (loading) {
     return <ConfigFormSkeleton />;
@@ -198,10 +209,10 @@ export default function ConfigPagosSection() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-            {isCashManagementEnabled ? "Medios de pago y caja" : "Medios de pago"}
+            {isFinancesEnabled ? "Medios de pago y caja" : "Medios de pago"}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            {isCashManagementEnabled
+            {isFinancesEnabled
               ? "Habilitá los métodos de pago aceptados y configurá los turnos de caja de tu local"
               : "Habilitá los métodos de pago aceptados para turnos y ventas en el local"}
           </p>
@@ -215,8 +226,8 @@ export default function ConfigPagosSection() {
         />
       </div>
 
-      {/* Frecuencia de Cierre de Caja (solo visible si el plan tiene cash_management habilitado) */}
-      {isCashManagementEnabled && (
+      {/* Frecuencia de Cierre de Caja (solo visible si el plan incluye finanzas) */}
+      {isFinancesEnabled && (
         <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)]">
@@ -336,12 +347,16 @@ export default function ConfigPagosSection() {
           />
           <button
             type="submit"
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-xs transition-all cursor-pointer shadow-md shadow-[var(--accent)]/15"
+            disabled={isAtLimit}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-xs transition-all cursor-pointer shadow-md shadow-[var(--accent)]/15 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-4 h-4" />
             Agregar
           </button>
         </form>
+        {Number.isFinite(maxPaymentMethods) && (
+          <p className="text-xs text-slate-400">{limitMessage}.</p>
+        )}
 
         <div className="flex flex-wrap gap-2 pt-2">
           {paymentMethods.map((m) => (

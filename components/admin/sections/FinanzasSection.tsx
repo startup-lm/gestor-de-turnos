@@ -114,7 +114,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
 
   // Obtener datos consolidados
   const { businessSettings, isEnabled } = useBusinessContext();
-  const isCashManagementEnabled = isEnabled("cash_management");
+  const isExpensesEnabled = isEnabled("expenses");
 
   const { summary, paymentTotals, barberTotals } = useBarberCutsData(startDate, endDate, barbers);
   const { totalSalesRevenue, totalSales, totalSalesCommission, salesByBarber } = useTotalRevenueForAllSales(startDate, endDate, barbers);
@@ -123,9 +123,9 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
   const [copiedBarberId, setCopiedBarberId] = useState<number | null>(null);
   const [operatingExpenses, setOperatingExpenses] = useState<number>(0);
 
-  // Cargar gastos operativos del período si el módulo de caja está activo
+  // Cargar gastos operativos del período si el plan incluye registro de gastos
   useEffect(() => {
-    if (!isCashManagementEnabled) return;
+    if (!isExpensesEnabled) return;
     let isMounted = true;
     (async () => {
       try {
@@ -145,7 +145,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
     return () => {
       isMounted = false;
     };
-  }, [startDate, endDate, isCashManagementEnabled]);
+  }, [startDate, endDate, isExpensesEnabled]);
 
   const handleCopyLiquidation = (
     barberName: string,
@@ -171,8 +171,8 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
   const combinedRevenue = totalTurnosRevenue + totalSalesRevenue;
   const totalCommissionsAll = totalCommissions + totalSalesCommission;
 
-  // Ganancia neta real (deduciendo gastos si la gestión de caja está activa)
-  const netProfit = isCashManagementEnabled
+  // Ganancia neta real (deduciendo gastos si el plan incluye registro de gastos)
+  const netProfit = isExpensesEnabled
     ? combinedRevenue - totalCommissionsAll - operatingExpenses
     : combinedRevenue - totalCommissionsAll;
   const isNegative = netProfit < 0;
@@ -379,7 +379,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <span className="block text-[11px] font-bold text-slate-400 tracking-wider leading-none mb-1.5">
-                    {isCashManagementEnabled ? "Ganancia neta real" : "Ganancia neta estimada"}
+                    {isExpensesEnabled ? "Ganancia neta real" : "Ganancia neta estimada"}
                   </span>
                   <h3 className={`text-2xl lg:text-3xl font-extrabold ${isNegative ? "text-red-400" : "text-emerald-400"}`}>
                     <CountUp start={0} end={netProfit} duration={2} prefix="$" separator="." />
@@ -627,7 +627,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                   </div>
 
                   {/* Gastos Operativos si el módulo está activo */}
-                  {isCashManagementEnabled && operatingExpenses > 0 && (
+                  {isExpensesEnabled && operatingExpenses > 0 && (
                     <div className="p-3.5 rounded-xl bg-amber-950/20 border border-amber-500/20 flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <TrendingDown className="w-4 h-4 text-amber-400" />
