@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { successResponse, errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
+import { requirePlanFeature } from "@/lib/flags/server";
 import { revalidateTag } from "next/cache";
 
 export async function GET() {
@@ -21,6 +22,8 @@ export async function GET() {
 export async function POST(request: Request) {
   const staff = await requireBarberOrAdmin();
   if (!staff) return errorResponse("No autorizado", 401);
+  const planError = await requirePlanFeature("sales");
+  if (planError) return planError;
 
   const { barber_id, product_id, price, quantity, details, total } = await request.json();
   const { data, error } = await supabaseAdmin
@@ -37,6 +40,8 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   const staff = await requireBarberOrAdmin();
   if (!staff) return errorResponse("No autorizado", 401);
+  const planError = await requirePlanFeature("sales");
+  if (planError) return planError;
 
   const { id, barber_id, product_id, price, quantity, details } = await request.json();
 
@@ -79,6 +84,8 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   const staff = await requireBarberOrAdmin();
   if (!staff) return errorResponse("No autorizado", 401);
+  const planError = await requirePlanFeature("sales");
+  if (planError) return planError;
 
   const { id } = await request.json();
 

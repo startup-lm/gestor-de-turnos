@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/api/auth";
+import { requirePlanFeature } from "@/lib/flags/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 
@@ -38,6 +39,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
+  const planError = await requirePlanFeature("commission_payouts");
+  if (planError) return planError;
 
   try {
     const body = await request.json();

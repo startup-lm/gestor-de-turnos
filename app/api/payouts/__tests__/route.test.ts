@@ -3,9 +3,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET, POST } from "@/app/api/payouts/route";
 import * as auth from "@/lib/api/auth";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
+import * as planServer from "@/lib/flags/server";
 
 vi.mock("@/lib/api/auth", () => ({
   requireAdmin: vi.fn(),
+}));
+
+// El plan se testea en lib/flags/__tests__/server.test.ts: acá se asume habilitado
+vi.mock("@/lib/flags/server", () => ({
+  requirePlanFeature: vi.fn(async () => null),
 }));
 
 vi.mock("@/lib/supabase/supabaseAdmin", () => ({
@@ -55,6 +61,21 @@ describe("API /api/payouts", () => {
   });
 
   describe("POST /api/payouts", () => {
+    it("debe rechazar con 403 si el plan no incluye liquidación de comisiones", async () => {
+      vi.mocked(auth.requireAdmin).mockResolvedValueOnce({ email: "admin@test.com" } as any);
+      vi.mocked(planServer.requirePlanFeature).mockResolvedValueOnce(
+        Response.json({ error: "Tu plan no incluye esta función" }, { status: 403 }) as any
+      );
+
+      const response = await POST(
+        new Request("http://localhost:3000/api/payouts", { method: "POST", body: "{}" })
+      );
+
+      expect(response.status).toBe(403);
+      expect(planServer.requirePlanFeature).toHaveBeenCalledWith("commission_payouts");
+      expect(supabaseAdmin.from).not.toHaveBeenCalled();
+    });
+
     it("debe rechazar si faltan campos obligatorios", async () => {
       vi.mocked(auth.requireAdmin).mockResolvedValueOnce({ email: "admin@test.com" } as any);
 

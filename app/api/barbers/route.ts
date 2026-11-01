@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { successResponse, errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { requireAdmin, requireBarberOrAdmin } from "@/lib/api/auth";
+import { checkBarberLimit } from "@/lib/flags/server";
 import { BARBER_PRIVATE_FIELDS, BARBER_PUBLIC_FIELDS } from "@/lib/repository/barbers";
 import { revalidateTag } from "next/cache";
 
@@ -41,6 +42,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
+
+  const limitError = await checkBarberLimit();
+  if (limitError) return limitError;
 
   const { email, name, image, instagram, role, commission, sale_commission, active } = await request.json();
   const insertPayload: Record<string, unknown> = {

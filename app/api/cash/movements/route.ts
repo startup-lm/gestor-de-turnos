@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/api/auth";
+import { requirePlanFeature } from "@/lib/flags/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 
@@ -67,6 +68,11 @@ export async function POST(request: Request) {
     if (!type || amount === undefined || !description) {
       return errorResponse("Tipo, importe y descripción son requeridos", 400);
     }
+
+    // Adelantos y pagos de comisión son parte de la liquidación; el resto es registro de gastos
+    const isPayoutMovement = type === "advance" || type === "commission_payout";
+    const planError = await requirePlanFeature(isPayoutMovement ? "commission_payouts" : "expenses");
+    if (planError) return planError;
 
     const defaultCategory =
       type === "advance" ? "adelanto" : type === "expense" ? "insumos" : "otro";

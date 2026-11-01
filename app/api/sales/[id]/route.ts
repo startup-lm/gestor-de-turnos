@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { successResponse, errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { revalidateTag } from "next/cache";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
+import { requirePlanFeature } from "@/lib/flags/server";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -29,6 +30,8 @@ export async function GET(request: Request, { params }: RouteParams) {
 export async function PATCH(request: Request, { params }: RouteParams) {
   const staff = await requireBarberOrAdmin();
   if (!staff) return errorResponse("No autorizado", 401);
+  const planError = await requirePlanFeature("sales");
+  if (planError) return planError;
 
   const resolvedParams = await params;
   const id = Number(resolvedParams.id);
@@ -87,6 +90,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 export async function DELETE(request: Request, { params }: RouteParams) {
   const staff = await requireBarberOrAdmin();
   if (!staff) return errorResponse("No autorizado", 401);
+  const planError = await requirePlanFeature("sales");
+  if (planError) return planError;
 
   const resolvedParams = await params;
   const id = Number(resolvedParams.id);
