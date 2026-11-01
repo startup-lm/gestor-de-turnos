@@ -3,12 +3,16 @@ import { supabaseClient } from "../supabase/supabaseClient";
 import { getBaseUrl } from "@/utils/getBaseUrl";
 const BASE = getBaseUrl();
 
-export const signUp = async (email: string, password: string) => {
-  const { data, error } = await supabaseClient.auth.signUp({
-    email,
-    password,
-  })
-  return { data, error }
+/** Crea la cuenta de acceso de un profesional (solo admin, vía servidor). Devuelve el mensaje de error o null. */
+export const createStaffAccount = async (email: string, password: string): Promise<string | null> => {
+  const res = await fetch(`${BASE}/api/auth`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (res.ok) return null;
+  const body = await res.json().catch(() => null);
+  return body?.error ?? "Error al registrar la cuenta de usuario.";
 };
 
 export async function resetPassword(email: string) {

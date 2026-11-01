@@ -11,7 +11,8 @@ import {
   addBarber,
   updateBarber,
 } from "@/lib/repository/barbers";
-import { signUp, isBarberAuthenticated, deleteAuthUser } from "@/lib/repository/auth";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { createStaffAccount, isBarberAuthenticated, deleteAuthUser } from "@/lib/repository/auth";
 import { uploadImage } from "@/lib/repository/storage";
 import { toast } from "@/lib/store/useToastStore";
 import InputPassword from "@/components/input/InputPassword";
@@ -46,6 +47,8 @@ const SALE_COMMISSION_PRESETS = [0, 5, 10, 15, 20];
 export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
   const router = useRouter();
   const { role, user } = useAuth();
+  const { limits } = useBusinessContext();
+  const isAtBarberLimit = barbers.length >= limits.maxBarbers;
 
   // Navigation mode: "list", "create", or "edit"
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -181,9 +184,9 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
       }
 
       if (!inAuth) {
-        const { data, error } = await signUp(cleanEmail, password);
-        if (error || !data?.user) {
-          toast.error("Error al registrar la cuenta de usuario.");
+        const accountError = await createStaffAccount(cleanEmail, password);
+        if (accountError) {
+          toast.error(accountError);
           setSubmitting(false);
           return;
         }
@@ -697,14 +700,22 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
           </p>
         </div>
 
-        <button
-          onClick={startCreate}
-          data-testid="btn-add-barber"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span>Nuevo barbero</span>
-        </button>
+        <div className="flex flex-col items-start sm:items-end gap-1.5 self-start sm:self-auto">
+          <button
+            onClick={startCreate}
+            disabled={isAtBarberLimit}
+            data-testid="btn-add-barber"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>Nuevo barbero</span>
+          </button>
+          {isAtBarberLimit && (
+            <p className="text-xs text-slate-400">
+              Tu plan permite hasta {limits.maxBarbers} profesionales
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Grilla de Barberos */}
