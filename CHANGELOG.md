@@ -6,6 +6,31 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.5.0] - 2026-11-01
+
+### Agregado
+- **Planes comerciales (`basic` | `pro`)**: columna `business_settings.plan` y `PLAN_FEATURES` en `lib/flags/index.ts`. Prioridad: override en `features` > plan > apagado. Sin plan se asume `basic` (todo apagado).
+- **Rate limit persistente**: tabla `rate_limits` y función `check_rate_limit` en Postgres, compartida entre instancias serverless (`checkRateLimit()`), con fallback en memoria.
+- **Test de guards de autenticación** (`app/api/__tests__/authGuards.test.ts`): verifica que cada ruta protegida responda 401 sin sesión y sin tocar la base.
+- Migración `20261101000000_security_hardening.sql`.
+
+### Corregido
+- **Rutas sin autenticación**: `storage`, `sales/[id]`, `sales/all`, `sales/list`, `sales/barber`, `appointments/all`, `arca/config`, `arca/emit`, `arca/invoices`, `arca/status`, `admin/revalidate` y `GET /api/auth` ahora exigen sesión de staff o admin.
+- **Storage**: solo buckets conocidos, solo imágenes de hasta 5 MB y nombres de archivo planos; un barbero solo modifica el bucket `barbers`.
+- **Fuga de la API key de Google** en `GET /api/business-settings` y en el HTML de páginas públicas.
+- **El admin del local podía activarse features pagas**: `PUT /api/business-settings` ahora descarta `plan` y `features`.
+- **`GET /api/appointments`**: solo acepta filtros conocidos (antes se podía buscar por teléfono) y enmascara también los datos fiscales para anónimos.
+- **`GET /api/barbers` y páginas públicas**: email y comisiones solo para staff.
+- **Perfil `/barbers/[id]`**: requiere sesión, un barbero solo ve su propio perfil y ya no se cachea con ISR.
+- **Recuperar contraseña**: ya no revela si un email pertenece al equipo.
+- **RLS activado en todas las tablas**: la anon key pública deja de poder leer o escribir directo.
+- **Errores de base de datos**: se reemplazaron los mensajes crudos de Postgres por un mensaje genérico (`dbErrorResponse`).
+
+### Cambiado
+- `docs/ARCHITECTURE.md`: secciones de seguridad y planes; se quitaron las referencias a modales.
+
+---
+
 ## [1.4.1] - 2026-10-29
 
 ### Corregido
