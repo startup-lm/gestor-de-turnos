@@ -14,7 +14,8 @@ export const getBusinessSettings = async (): Promise<BusinessSettings> => {
         .eq("id", 1)
         .single();
       if (error || !data) return fallback;
-      return data;
+      const { toPublicBusinessSettings } = await import("@/lib/settings/sanitize");
+      return toPublicBusinessSettings(data);
     } catch (e) {
       console.error("getBusinessSettings server query error:", e);
       return fallback;

@@ -1,8 +1,11 @@
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
-import { successResponse, errorResponse } from "@/lib/api/response";
+import { successResponse, errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/api/auth";
 
 export async function GET(request: Request) {
+  const admin = await requireAdmin();
+  if (!admin) return errorResponse("No autorizado", 401);
+
   const { searchParams } = new URL(request.url);
   const email = searchParams.get("email");
   if (!email) return errorResponse("Falta el email");
@@ -33,6 +36,6 @@ export async function DELETE(request: Request) {
   const userId = user.id;
   const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
   
-  if (deleteError) return errorResponse(deleteError.message);
+  if (deleteError) return dbErrorResponse(deleteError, "auth");
   return successResponse();
 }

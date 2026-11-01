@@ -1,3 +1,4 @@
+import { dbErrorResponse } from "@/lib/api/response";
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
@@ -10,7 +11,7 @@ export async function GET() {
     .eq("id", 1)
     .single();
 
-  if (error || !data) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error || !data) return dbErrorResponse(error, "business-hours");
   return NextResponse.json(data);
 }
 
@@ -25,7 +26,7 @@ export async function PUT(req: Request) {
     .select("open_time, close_time, lunch_start, lunch_end, closed_days")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return dbErrorResponse(error, "business-hours");
   revalidateTag("business-hours");
   return NextResponse.json(data);
 }

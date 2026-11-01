@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { errorResponse } from "@/lib/api/response";
+import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
+import { requireBarberOrAdmin } from "@/lib/api/auth";
 
 export async function GET(request: Request) {
+  const staff = await requireBarberOrAdmin();
+  if (!staff) return errorResponse("No autorizado", 401);
+
   const { searchParams } = new URL(request.url);
   const pageParam = searchParams.get("page");
   const pageSizeParam = searchParams.get("pageSize");
@@ -37,7 +41,7 @@ export async function GET(request: Request) {
 
   const { data, error, count } = await query;
 
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "sales/list");
 
   return NextResponse.json({
     data: data ?? [],

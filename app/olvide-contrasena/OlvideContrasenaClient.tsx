@@ -4,7 +4,6 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, AlertCircle, CheckCircle, Mail, Loader2 } from "lucide-react";
-import { getBarberByEmail } from "@/lib/repository/barbers";
 import { resetPassword } from "@/lib/repository/auth";
 import logo from "@/public/images/logo.png";
 
@@ -20,16 +19,7 @@ export default function OlvideContrasenaClient() {
     setMessage(null);
     setLoading(true);
 
-    const barberExists = await getBarberByEmail(email);
-    if (!barberExists) {
-      setMessage({
-        text: "El correo electrónico no corresponde a ningún miembro registrado.",
-        success: false,
-      });
-      setLoading(false);
-      return;
-    }
-
+    // No se revela si el correo está registrado: evita la enumeración de cuentas del staff
     const error = await resetPassword(email);
     setLoading(false);
 
@@ -40,7 +30,7 @@ export default function OlvideContrasenaClient() {
       });
     } else {
       setMessage({
-        text: "¡Listo! Te enviamos un correo con las instrucciones para restablecer tu contraseña.",
+        text: "Si el correo pertenece a un miembro del equipo, te enviamos las instrucciones para restablecer tu contraseña.",
         success: true,
       });
       setEmail("");

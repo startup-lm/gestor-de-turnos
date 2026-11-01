@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
-import { errorResponse } from "@/lib/api/response";
+import { errorResponse, dbErrorResponse } from "@/lib/api/response";
+import { requireAdmin } from "@/lib/api/auth";
 
 export async function GET(req: Request) {
+  const admin = await requireAdmin();
+  if (!admin) return errorResponse("No autorizado", 401);
+
   const { searchParams } = new URL(req.url);
   const limit = Math.min(Number(searchParams.get("limit") ?? 20), 100);
   const sourceType = searchParams.get("source_type");
@@ -25,6 +29,6 @@ export async function GET(req: Request) {
 
   const { data, error } = await query;
 
-  if (error) return errorResponse(`ARCA: ${error.message}`);
+  if (error) return dbErrorResponse(error, "arca/invoices");
   return NextResponse.json(data ?? []);
 }

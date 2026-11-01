@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { successResponse, errorResponse } from "@/lib/api/response";
+import { successResponse, errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { requireAdmin } from "@/lib/api/auth";
-import { deleteImage } from "@/lib/repository/storage";
+import { removeStorageObjectByUrl } from "@/lib/storage/server";
 import { revalidateTag } from "next/cache";
 
 export async function GET() {
@@ -12,7 +12,7 @@ export async function GET() {
     .select()
     .order("name", { ascending: true });
 
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "products");
   return NextResponse.json(data);
 }
 
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       stock: stock ? Number(stock) : 0,
     });
 
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "products");
   revalidateTag("products");
   return successResponse();
 }
@@ -49,7 +49,7 @@ export async function PUT(request: Request) {
     .update(updateData)
     .eq("id", id);
 
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "products");
   revalidateTag("products");
   return successResponse();
 }
@@ -64,14 +64,14 @@ export async function DELETE(request: Request) {
     .select("image")
     .eq("id", id)
     .single();
-  if (fetchError) return errorResponse(fetchError.message);
-  if (product?.image) await deleteImage("products", product.image);
+  if (fetchError) return dbErrorResponse(fetchError, "products");
+  if (product?.image) await removeStorageObjectByUrl("products", product.image);
   const { data, error }  = await supabaseAdmin
     .from("products")
     .delete()
     .eq("id", id)
     .select();
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "products");
   if (!data || data.length === 0) return errorResponse("no delete", 404);
   revalidateTag("products");
   return successResponse();

@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
-import { successResponse, errorResponse } from "@/lib/api/response";
+import { successResponse, errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
-import { createSupabaseServerClient } from "@/lib/supabase/supabaseServer";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
-import { rateLimit } from "@/lib/api/rateLimit";
+import { checkRateLimit, getClientIp } from "@/lib/api/rateLimit";
 import { revalidateTag } from "next/cache";
 import {
   AppointmentInsertSchema,
@@ -24,6 +23,7 @@ export async function GET(request: Request) {
     .from("appointments")
     .select(`*, barbers(name), services(name), arca_invoices(*)`)
     .is("deleted_at", null);
+  // Solo filtros conocidos: un filtro libre permitiría a un anónimo buscar por teléfono o cliente
   for (const [key, value] of searchParams.entries()) {
     if (key === "start_date") {
       query = query.gte("date", value);
@@ -31,16 +31,17 @@ export async function GET(request: Request) {
       query = query.lte("date", value);
     } else if (key === "date") {
       query = query.eq("date", value);
-    } else if (key === "barber_id" && value === "0") {
-      // Omitir filtro para traer todos los turnos si no hay preferencia (Cualquier Barbero)
-    } else {
+    } else if (key === "barber_id") {
+      // barber_id=0 significa "Cualquier Barbero": no se filtra
+      if (value !== "0") query = query.eq("barber_id", value);
+    } else if (key === "id" || key === "service_id") {
       query = query.eq(key, value);
     }
   }
   const { data, error } = await query
     .order("date", { ascending: true })
     .order("start_time", { ascending: true });
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "appointments.get");
   const formatted = data.map(item => ({
     ...item,
     start_time: item.start_time?.slice(0, 5) ?? item.start_time,
@@ -52,6 +53,10 @@ export async function GET(request: Request) {
     payment_method: isAuthorized ? item.payment_method : null,
     created_by: isAuthorized ? item.created_by : null,
     deleted_by: isAuthorized ? item.deleted_by : null,
+    client_id: isAuthorized ? item.client_id : null,
+    paid: isAuthorized ? item.paid : false,
+    arca_invoice_id: isAuthorized ? item.arca_invoice_id : null,
+    arca_invoices: isAuthorized ? item.arca_invoices : null,
   }));
   return NextResponse.json(formatted);
 }
@@ -63,12 +68,10 @@ export async function POST(request: Request) {
 
   if (!isStaff) {
     // 2. Obtener IP del cliente
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || 
-               request.headers.get("x-real-ip") || 
-               "127.0.0.1";
+    const ip = getClientIp(request);
 
     // 3. Aplicar límite de 10 turnos por minuto (60000 ms) para usuarios anónimos
-    const limitResult = rateLimit(ip, 10, 60000);
+    const limitResult = await checkRateLimit(`create-appointment-${ip}`, 10, 60000);
 
     if (!limitResult.success) {
       return errorResponse(
@@ -152,7 +155,7 @@ export async function POST(request: Request) {
     .limit(1);
 
   if (overlapError) {
-    return errorResponse(overlapError.message, 500);
+    return dbErrorResponse(overlapError, "appointments");
   }
 
   if (overlapping && overlapping.length > 0) {
@@ -177,7 +180,7 @@ export async function POST(request: Request) {
     .insert(insertPayload)
     .select("id");
 
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "appointments");
   revalidateTag("appointments");
   revalidateTag(`appointments-${barber_id}-${date.split("T")[0]}`);
   return NextResponse.json({ success: true, id: data?.[0]?.id });
@@ -196,17 +199,15 @@ export async function PUT(request: Request) {
 
   const { appointmentId, isPaid, price, payment_method } = parsed.data;
 
-  const supabase = await createSupabaseServerClient();
-
   // Validar si el turno ya cuenta con comprobante fiscal emitido
-  const { data: existingAppt, error: findError } = await supabase
+  const { data: existingAppt, error: findError } = await supabaseAdmin
     .from("appointments")
     .select("id, arca_invoice_id")
     .eq("id", appointmentId)
     .is("deleted_at", null)
     .maybeSingle();
 
-  if (findError) return errorResponse(findError.message, 500);
+  if (findError) return dbErrorResponse(findError, "appointments");
   if (!existingAppt) return errorResponse("No existe ese número de turno o ya fue eliminado", 404);
 
   if (existingAppt.arca_invoice_id) {
@@ -216,13 +217,13 @@ export async function PUT(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("appointments")
     .update({ paid: isPaid, price, payment_method })
     .eq("id", appointmentId)
     .select();
 
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "appointments");
   
   revalidateTag("appointments");
   if (data && data.length > 0) {
@@ -247,17 +248,15 @@ export async function DELETE(request: Request) {
 
   const { id, deleted_by } = parsed.data;
 
-  const supabase = await createSupabaseServerClient();
-
   // Validar existencia y estado del turno antes de eliminar
-  const { data: appt, error: findError } = await supabase
+  const { data: appt, error: findError } = await supabaseAdmin
     .from("appointments")
     .select("id, paid, arca_invoice_id, type")
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
 
-  if (findError) return errorResponse(findError.message, 500);
+  if (findError) return dbErrorResponse(findError, "appointments");
   if (!appt) return errorResponse("No existe ese número de turno o ya fue eliminado", 404);
 
   // Un bloqueo de horario no es un turno de cliente, se puede desbloquear normalmente
@@ -280,12 +279,12 @@ export async function DELETE(request: Request) {
   const updatePayload: any = { deleted_at: new Date().toISOString() };
   if (deleted_by) updatePayload.deleted_by = deleted_by;
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("appointments")
     .update(updatePayload)
     .eq("id", id)
     .select();
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "appointments");
   if (!data || data.length === 0) return errorResponse("No existe ese número de turno", 404);
   
   const deletedAppt = data[0];
@@ -309,17 +308,15 @@ export async function PATCH(request: Request) {
   }
 
   const { appointmentId, updates } = parsed.data;
-  const supabase = await createSupabaseServerClient();
-
   // Validar si el turno ya cuenta con comprobante fiscal emitido
-  const { data: existingAppt, error: findError } = await supabase
+  const { data: existingAppt, error: findError } = await supabaseAdmin
     .from("appointments")
     .select("id, arca_invoice_id")
     .eq("id", appointmentId)
     .is("deleted_at", null)
     .maybeSingle();
 
-  if (findError) return errorResponse(findError.message, 500);
+  if (findError) return dbErrorResponse(findError, "appointments");
   if (!existingAppt) return errorResponse("No existe ese número de turno o ya fue eliminado", 404);
 
   if (existingAppt.arca_invoice_id) {
@@ -329,13 +326,13 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("appointments")
     .update(updates)
     .eq("id", appointmentId)
     .select();
 
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "appointments");
   revalidateTag("appointments");
   if (data && data.length > 0) {
     const updated = data[0];

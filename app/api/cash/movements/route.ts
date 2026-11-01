@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/api/auth";
-import { errorResponse } from "@/lib/api/response";
+import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 
 export async function GET(request: Request) {
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
   }
 
   const { data, error } = await query;
-  if (error) return errorResponse(error.message, 500);
+  if (error) return dbErrorResponse(error, "cash/movements");
 
   return NextResponse.json(data ?? []);
 }
@@ -87,14 +87,12 @@ export async function POST(request: Request) {
       .select("id")
       .single();
 
-    if (error) return errorResponse(error.message, 500);
+    if (error) return dbErrorResponse(error, "cash/movements");
 
     revalidateTag("cash_movements");
 
     return NextResponse.json({ success: true, id: data.id });
   } catch (err: unknown) {
-    console.error("POST /api/cash/movements error:", err);
-    const message = err instanceof Error ? err.message : "Error al registrar movimiento de caja";
-    return errorResponse(message, 500);
+    return dbErrorResponse(err, "cash/movements.post");
   }
 }

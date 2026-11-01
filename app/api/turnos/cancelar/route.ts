@@ -1,18 +1,15 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
-import { rateLimit } from "@/lib/api/rateLimit";
+import { checkRateLimit, getClientIp } from "@/lib/api/rateLimit";
 import { arePhonesEqual, formatPhoneDisplay } from "@/utils/phone";
 import { revalidateTag } from "next/cache";
 
 export async function POST(request: Request) {
   // Rate limiting por IP para prevenir ataques de fuerza bruta sobre IDs y teléfonos
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0] ||
-    request.headers.get("x-real-ip") ||
-    "127.0.0.1";
+  const ip = getClientIp(request);
 
-  const limitResult = rateLimit(`cancel-turnos-${ip}`, 12, 60000);
+  const limitResult = await checkRateLimit(`cancel-turnos-${ip}`, 12, 60000);
   if (!limitResult.success) {
     return errorResponse(
       "Has superado el límite de intentos permitidos por minuto. Por favor, aguarda un instante.",
