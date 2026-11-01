@@ -1,3 +1,5 @@
+import type { PlanName } from "@/lib/flags";
+
 export type ThemeColors = {
   background?: string;
   foreground?: string;
@@ -45,7 +47,7 @@ export type BusinessSettings = {
   slogan?: string;
   theme_colors?: ThemeColors;
   /** Plan contratado (lo define el dueño del SaaS). Ver PLAN_FEATURES en lib/flags. */
-  plan?: "basic" | "pro";
+  plan?: PlanName;
   features?: Record<string, boolean>;
   cash_closing_frequency?: "daily" | "weekly" | "manual";
   google_reviews?: GoogleReviewsConfig;

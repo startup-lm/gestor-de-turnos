@@ -1,4 +1,10 @@
 import type { BusinessSettings } from "@/lib/types/BusinessSettings";
+import {
+  isFeatureEnabled,
+  getPlanLimits,
+  DEFAULT_ASSIGNMENT_CRITERIA,
+  DEFAULT_PAYMENT_METHODS,
+} from "@/lib/flags";
 
 /**
  * Campos que solo controla el dueño del SaaS (plan contratado y overrides de features).
@@ -6,12 +12,32 @@ import type { BusinessSettings } from "@/lib/types/BusinessSettings";
  */
 export const OWNER_ONLY_SETTINGS_FIELDS = ["plan", "features"] as const;
 
-/** Quita secretos antes de enviar la configuración al navegador. */
+/**
+ * Aplica el plan a la configuración leída: lo que el plan no incluye vuelve a su valor por defecto,
+ * así todo el sitio (reserva, cobros, paneles) usa los valores efectivos.
+ */
+export function applyPlanToSettings<T extends Partial<BusinessSettings>>(settings: T): T {
+  if (!settings) return settings;
+  const result = { ...settings };
+  if (!isFeatureEnabled("booking_rules", settings.features, settings.plan)) {
+    result.assignment_criteria = DEFAULT_ASSIGNMENT_CRITERIA;
+  }
+  const { maxPaymentMethods } = getPlanLimits(settings.plan);
+  if (maxPaymentMethods === 0) {
+    result.payment_methods = [...DEFAULT_PAYMENT_METHODS];
+  } else if (settings.payment_methods && settings.payment_methods.length > maxPaymentMethods) {
+    result.payment_methods = settings.payment_methods.slice(0, maxPaymentMethods);
+  }
+  return result;
+}
+
+/** Quita secretos y aplica el plan antes de enviar la configuración al navegador. */
 export function toPublicBusinessSettings<T extends Partial<BusinessSettings>>(settings: T): T {
-  if (!settings?.google_reviews) return settings;
+  const effective = applyPlanToSettings(settings);
+  if (!effective?.google_reviews) return effective;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { api_key, ...googleReviews } = settings.google_reviews;
-  return { ...settings, google_reviews: googleReviews };
+  const { api_key, ...googleReviews } = effective.google_reviews;
+  return { ...effective, google_reviews: googleReviews };
 }
 
 /** Deja en el payload de actualización solo los campos editables por el admin del local. */

@@ -1,34 +1,88 @@
-export type FeatureFlagName = "arca" | "cash_management" | "google_reviews" | (string & {});
+export type FeatureFlagName =
+  | "arca"
+  | "google_reviews"
+  | "metrics"
+  | "sales"
+  | "commission_payouts"
+  | "staff_management"
+  | "finances"
+  | "expenses"
+  | "booking_rules"
+  | (string & {});
 
 /**
  * Defaults de Feature Flags en código.
  * Regla: Toda feature nueva sale con el default apagado (false).
  */
 export const DEFAULT_FEATURES: Record<string, boolean> = {
-  arca: false,
-  cash_management: false,
-  google_reviews: false,
+  arca: false,               // Facturación ARCA
+  google_reviews: false,     // Reseñas de Google en la home
+  metrics: false,            // Sección métricas
+  sales: false,              // Registro de venta de productos
+  commission_payouts: false, // Liquidación de comisiones
+  staff_management: false,   // Gestión de profesionales
+  finances: false,           // Sección finanzas
+  expenses: false,           // Registro de gastos y egresos
+  booking_rules: false,      // Personalización del criterio de asignación de turnos
 };
 
 /**
  * Planes comerciales. Cada plan define qué features incluye.
  * Una feature nueva no se agrega a ningún plan hasta que se decida venderla.
  */
-export type PlanName = "basic" | "pro";
+export type PlanName = "basic" | "standard" | "premium";
 
 export const DEFAULT_PLAN: PlanName = "basic";
 
+const STANDARD_FEATURES: Record<string, boolean> = {
+  arca: true,
+  google_reviews: true,
+  metrics: true,
+  sales: true,
+  commission_payouts: true,
+  staff_management: true,
+};
+
 export const PLAN_FEATURES: Record<PlanName, Record<string, boolean>> = {
   basic: {},
-  pro: {
-    arca: true,
-    cash_management: true,
-    google_reviews: true,
+  standard: STANDARD_FEATURES,
+  premium: {
+    ...STANDARD_FEATURES,
+    finances: true,
+    expenses: true,
+    booking_rules: true,
   },
 };
 
+export interface PlanLimits {
+  /** Cantidad máxima de profesionales (barberos) cargados. */
+  maxBarbers: number;
+  /** Cantidad máxima de medios de cobro configurables. 0 = usa los medios por defecto. */
+  maxPaymentMethods: number;
+}
+
+export const PLAN_LIMITS: Record<PlanName, PlanLimits> = {
+  basic: { maxBarbers: 1, maxPaymentMethods: 0 },
+  standard: { maxBarbers: 4, maxPaymentMethods: 3 },
+  premium: { maxBarbers: Infinity, maxPaymentMethods: Infinity },
+};
+
+/** Medios de cobro que usa un plan sin medios configurables. */
+export const DEFAULT_PAYMENT_METHODS = ["Efectivo", "Mercado Pago"];
+
+/** Criterio de asignación de profesional cuando el plan no permite personalizarlo. */
+export const DEFAULT_ASSIGNMENT_CRITERIA = "random";
+
 export function isPlanName(value: unknown): value is PlanName {
   return typeof value === "string" && value in PLAN_FEATURES;
+}
+
+export function resolvePlan(plan?: string | null): PlanName {
+  return isPlanName(plan) ? plan : DEFAULT_PLAN;
+}
+
+export function getPlanLimits(plan?: string | null): PlanLimits {
+  return PLAN_LIMITS[resolvePlan(plan)];
 }
 
 /**
@@ -51,9 +105,9 @@ export function isFeatureEnabled(
   if (features && typeof features[flag] === "boolean") {
     return features[flag];
   }
-  const planName = isPlanName(plan) ? plan : DEFAULT_PLAN;
-  if (typeof PLAN_FEATURES[planName][flag] === "boolean") {
-    return PLAN_FEATURES[planName][flag];
+  const planFeatures = PLAN_FEATURES[resolvePlan(plan)];
+  if (typeof planFeatures[flag] === "boolean") {
+    return planFeatures[flag];
   }
   return DEFAULT_FEATURES[flag] ?? false;
 }

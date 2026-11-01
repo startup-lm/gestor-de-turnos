@@ -1,60 +1,73 @@
 import { describe, it, expect } from "vitest";
-import { isFeatureEnabled, DEFAULT_FEATURES, PLAN_FEATURES } from "@/lib/flags";
+import {
+  isFeatureEnabled,
+  getPlanLimits,
+  resolvePlan,
+  DEFAULT_FEATURES,
+  PLAN_FEATURES,
+} from "@/lib/flags";
+
+const STANDARD = ["arca", "google_reviews", "metrics", "sales", "commission_payouts", "staff_management"];
+const PREMIUM_ONLY = ["finances", "expenses", "booking_rules"];
 
 describe("isFeatureEnabled", () => {
-  it("por defecto, toda funcionalidad nueva debe nacer apagada (false)", () => {
-    expect(DEFAULT_FEATURES.arca).toBe(false);
-    expect(DEFAULT_FEATURES.cash_management).toBe(false);
-    expect(DEFAULT_FEATURES.google_reviews).toBe(false);
-    expect(isFeatureEnabled("arca")).toBe(false);
-    expect(isFeatureEnabled("cash_management")).toBe(false);
-    expect(isFeatureEnabled("google_reviews")).toBe(false);
+  it("por defecto, toda funcionalidad debe nacer apagada (false)", () => {
+    for (const [flag, value] of Object.entries(DEFAULT_FEATURES)) {
+      expect(value).toBe(false);
+      expect(isFeatureEnabled(flag)).toBe(false);
+    }
   });
 
-  it("debe retornar false si no se proporciona el objeto features o es null", () => {
-    expect(isFeatureEnabled("arca", null)).toBe(false);
-    expect(isFeatureEnabled("google_reviews", null)).toBe(false);
-    expect(isFeatureEnabled("arca", undefined)).toBe(false);
-  });
-
-  it("debe respetar la configuración de la base de datos de cada cliente", () => {
-    const clientFeatures = {
-      arca: true,
-      cash_management: false,
-      google_reviews: true,
-    };
-
-    expect(isFeatureEnabled("arca", clientFeatures)).toBe(true);
-    expect(isFeatureEnabled("cash_management", clientFeatures)).toBe(false);
-    expect(isFeatureEnabled("google_reviews", clientFeatures)).toBe(true);
-  });
-
-  it("si una feature no existe en el objeto del cliente, debe caer al default apagado", () => {
-    const incompleteFeatures = {};
-
-    expect(isFeatureEnabled("arca", incompleteFeatures)).toBe(false);
-    expect(isFeatureEnabled("feature_inexistente", incompleteFeatures)).toBe(false);
+  it("si una feature no existe, cae al default apagado", () => {
+    expect(isFeatureEnabled("feature_inexistente", {}, "premium")).toBe(false);
   });
 });
 
-describe("isFeatureEnabled con planes", () => {
-  it("sin plan se asume basic: todo apagado", () => {
-    expect(isFeatureEnabled("arca", {}, null)).toBe(false);
-    expect(isFeatureEnabled("arca", {}, "plan_inexistente")).toBe(false);
+describe("planes comerciales", () => {
+  it("sin plan o con un plan desconocido se asume basic", () => {
+    expect(resolvePlan(null)).toBe("basic");
+    expect(resolvePlan("pro")).toBe("basic");
+    expect(isFeatureEnabled("arca", null, "plan_inexistente")).toBe(false);
   });
 
-  it("el plan pro enciende las features que incluye", () => {
-    expect(isFeatureEnabled("arca", {}, "pro")).toBe(true);
-    expect(isFeatureEnabled("cash_management", null, "pro")).toBe(true);
-    expect(isFeatureEnabled("feature_inexistente", null, "pro")).toBe(false);
+  it("basic no incluye ninguna feature paga", () => {
+    expect(Object.values(PLAN_FEATURES.basic).some(Boolean)).toBe(false);
+    for (const flag of [...STANDARD, ...PREMIUM_ONLY]) {
+      expect(isFeatureEnabled(flag, null, "basic")).toBe(false);
+    }
+  });
+
+  it("standard incluye ARCA, métricas, ventas, liquidaciones, profesionales y reseñas", () => {
+    for (const flag of STANDARD) expect(isFeatureEnabled(flag, null, "standard")).toBe(true);
+    for (const flag of PREMIUM_ONLY) expect(isFeatureEnabled(flag, null, "standard")).toBe(false);
+  });
+
+  it("premium incluye todo lo de standard más finanzas, gastos y criterios de turno", () => {
+    for (const flag of [...STANDARD, ...PREMIUM_ONLY]) {
+      expect(isFeatureEnabled(flag, null, "premium")).toBe(true);
+    }
   });
 
   it("el override en features tiene prioridad sobre el plan", () => {
-    expect(isFeatureEnabled("arca", { arca: false }, "pro")).toBe(false);
-    expect(isFeatureEnabled("google_reviews", { google_reviews: true }, "basic")).toBe(true);
+    expect(isFeatureEnabled("arca", { arca: false }, "premium")).toBe(false);
+    expect(isFeatureEnabled("finances", { finances: true }, "basic")).toBe(true);
+  });
+});
+
+describe("getPlanLimits", () => {
+  it("basic: 1 profesional y sin medios de cobro configurables", () => {
+    expect(getPlanLimits("basic")).toEqual({ maxBarbers: 1, maxPaymentMethods: 0 });
   });
 
-  it("el plan basic no incluye ninguna feature paga", () => {
-    expect(Object.values(PLAN_FEATURES.basic).some(Boolean)).toBe(false);
+  it("standard: hasta 4 profesionales y 3 medios de cobro", () => {
+    expect(getPlanLimits("standard")).toEqual({ maxBarbers: 4, maxPaymentMethods: 3 });
+  });
+
+  it("premium: sin límites", () => {
+    expect(getPlanLimits("premium")).toEqual({ maxBarbers: Infinity, maxPaymentMethods: Infinity });
+  });
+
+  it("sin plan aplica los límites de basic", () => {
+    expect(getPlanLimits(undefined)).toEqual(getPlanLimits("basic"));
   });
 });

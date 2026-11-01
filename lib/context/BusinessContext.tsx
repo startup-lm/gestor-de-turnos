@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { GlobalHours } from "@/lib/types/BusinessHours";
 import { BusinessSettings } from "@/lib/types/BusinessSettings";
 import { getCalendarConfig, CalendarConfig } from "@/lib/repository/calendar";
-import { isFeatureEnabled, FeatureFlagName } from "@/lib/flags";
+import { isFeatureEnabled, getPlanLimits, FeatureFlagName, PlanLimits } from "@/lib/flags";
 
 export const DEFAULT_BUSINESS_HOURS: GlobalHours = {
   open_time: "09:00",
@@ -26,6 +26,7 @@ interface BusinessContextType {
   refreshConfig: () => Promise<void>;
   isFeatureEnabled: (flag: FeatureFlagName) => boolean;
   isEnabled: (flag: FeatureFlagName) => boolean;
+  limits: PlanLimits;
 }
 
 const BusinessContext = createContext<BusinessContextType | undefined>(undefined);
@@ -71,6 +72,8 @@ export function BusinessProvider({
     return isFeatureEnabled(flag, businessSettings?.features, businessSettings?.plan);
   }, [businessSettings?.features, businessSettings?.plan]);
 
+  const limits = useMemo(() => getPlanLimits(businessSettings?.plan), [businessSettings?.plan]);
+
   const value = useMemo(
     () => ({
       businessHours,
@@ -79,8 +82,9 @@ export function BusinessProvider({
       refreshConfig: fetchConfig,
       isFeatureEnabled: checkFlag,
       isEnabled: checkFlag,
+      limits,
     }),
-    [businessHours, businessSettings, isLoading, fetchConfig, checkFlag]
+    [businessHours, businessSettings, isLoading, fetchConfig, checkFlag, limits]
   );
 
   const colors = businessSettings?.theme_colors;
@@ -117,5 +121,6 @@ export function useBusinessContext() {
     refreshConfig: context.refreshConfig,
     isFeatureEnabled: context.isFeatureEnabled,
     isEnabled: context.isEnabled,
+    limits: context.limits,
   };
 }
