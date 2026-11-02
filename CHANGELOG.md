@@ -6,7 +6,7 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
-## [1.6.1] - 2026-11-03
+## [1.6.1] - 2026-11-02
 
 ### Corregido
 - **Policies de RLS abiertas** (migración `20261103000000_tighten_rls_policies.sql`): con la anon key se podían leer todos los turnos (nombres y teléfonos) y la configuración privada, crear turnos salteando la API, y cualquier usuario autenticado podía editar o borrar turnos. Ahora solo queda la lectura de turnos para staff activo (realtime del calendario).
