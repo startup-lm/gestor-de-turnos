@@ -22,6 +22,7 @@ import {
   Star,
 } from "lucide-react";
 import { APP_VERSION } from "@/lib/version";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 export type AdminSection =
   | "metricas"
@@ -664,9 +665,9 @@ export default function AdminSidebar({
             <>
               <div className="flex items-center gap-1.5 text-xs text-slate-400 min-w-0">
                 <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)] flex-shrink-0" />
-                <span className="truncate text-[11px]">Gestor de turnos</span>
+                <span className="truncate text-[11px]">{PRODUCT_NAME}</span>
               </div>
-              <span className="text-[10px] font-mono font-medium text-slate-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 flex-shrink-0" title="Versión del gestor">
+              <span className="text-[10px] font-mono font-medium text-slate-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 flex-shrink-0" title={`Versión de ${PRODUCT_NAME}`}>
                 v{APP_VERSION}
               </span>
             </>

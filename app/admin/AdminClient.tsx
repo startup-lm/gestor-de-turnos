@@ -20,6 +20,7 @@ import {
 // Modular Sidebar
 import AdminSidebar, { AdminSection, AdminModules } from "@/components/admin/sections/AdminSidebar";
 import { APP_VERSION } from "@/lib/version";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 // Sections (Lazy Loaded on Demand with matching High-Fidelity Skeletons)
 const DashboardClient = dynamic(() => import("@/app/dashboard/DashboardClient"), {
@@ -90,14 +91,13 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
   const [activeSection, setActiveSection] = useState<AdminSection>(initialTab);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Sincronizar sección si cambia el query param (ej: navegación adelante/atrás del navegador)
+  // Sincronizar sección si cambia el query param (ej: navegación adelante/atrás del navegador).
+  // No depende de activeSection: si lo hiciera, un click volvería a la sección anterior
+  // antes de que la URL se actualice.
   useEffect(() => {
     const rawTab = (searchParams.get("tab") as AdminSection | null) || defaultSection;
-    const currentTab = rawTab === "facturacion" ? "facturas" : rawTab;
-    if (currentTab !== activeSection) {
-      setActiveSection(currentTab);
-    }
-  }, [searchParams, activeSection, defaultSection]);
+    setActiveSection(rawTab === "facturacion" ? "facturas" : rawTab);
+  }, [searchParams, defaultSection]);
 
   // Protección de rol: redirigir a inicio si no es usuario autenticado
   useEffect(() => {
@@ -129,7 +129,8 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
   const handleSelectSection = (section: AdminSection) => {
     const targetSection = section === "facturacion" ? "facturas" : section;
     setActiveSection(targetSection);
-    router.replace(`/admin?tab=${targetSection}`, { scroll: false });
+    // Shallow routing: actualiza la URL y useSearchParams sin volver a pedir la página al servidor
+    window.history.replaceState(null, "", `/admin?tab=${targetSection}`);
   };
 
   return (
@@ -188,7 +189,7 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
 
           {/* Footer mobile visible solo en pantallas pequeñas */}
           <div className="lg:hidden flex items-center justify-center gap-2 pt-8 pb-4 border-t border-white/5 text-[11px] text-slate-500 font-mono">
-            <span>Gestor de turnos</span>
+            <span>{PRODUCT_NAME}</span>
             <span>•</span>
             <span>v{APP_VERSION}</span>
           </div>
