@@ -1,4 +1,4 @@
-# Gestor de Turnos Inteligente ✂️ — Documentación Técnica del Proyecto
+# Turnik ✂️ — Documentación técnica del proyecto
 
 Este repositorio contiene la plataforma de gestión de reservas y administración de turnos diseñada para barberías y centros estéticos. Está construida como una aplicación **Next.js (App Router)** moderna y reactiva, con tipado estricto en **TypeScript**, base de datos y autenticación provistas por **Supabase**, y estilos controlados mediante **Tailwind CSS** y variables nativas CSS.
 
