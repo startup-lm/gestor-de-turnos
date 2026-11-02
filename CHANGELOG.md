@@ -15,6 +15,9 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 ### Agregado
 - `lib/brand.ts` con `PRODUCT_NAME` y `PRODUCT_CREDIT`.
 
+### Corregido
+- Al cambiar de sección en el panel admin ya no se vuelve a montar la sección anterior (con su skeleton) antes de mostrar la nueva. El cambio de pestaña actualiza la URL con `history.replaceState`, sin volver a pedir la página al servidor.
+
 ### Eliminado
 - `public/manifest.json` (reemplazado por `app/manifest.ts`).
 
