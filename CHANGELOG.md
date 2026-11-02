@@ -6,6 +6,18 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.7.0] - 2026-11-02
+
+### Cambiado
+- **El producto pasa a llamarse Turnik.** El panel admin muestra "Turnik" y el footer público "© <año> Turnik by LM². Todos los derechos reservados." (sin el nombre del local).
+- El título de la pestaña y la PWA instalable toman el nombre del local desde `business_settings.business_name` (fallback "Turnik"), mediante `generateMetadata` y `app/manifest.ts` dinámico con revalidación cada 60 s.
+
+### Agregado
+- `lib/brand.ts` con `PRODUCT_NAME` y `PRODUCT_CREDIT`.
+
+### Eliminado
+- `public/manifest.json` (reemplazado por `app/manifest.ts`).
+
 ## [1.6.1] - 2026-11-02
 
 ### Corregido
