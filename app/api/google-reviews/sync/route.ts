@@ -1,3 +1,4 @@
+import { dbErrorResponse } from "@/lib/api/response";
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
       .single();
 
     if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      return dbErrorResponse(updateErr, "google-reviews/sync");
     }
 
     revalidateTag("business-settings");
@@ -77,8 +78,6 @@ export async function POST(req: Request) {
       google_reviews: updated?.google_reviews ?? mergedConfig,
     });
   } catch (err: unknown) {
-    console.error("Error en sync de google reviews:", err);
-    const message = err instanceof Error ? err.message : "Error interno del servidor al sincronizar.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return dbErrorResponse(err, "google-reviews/sync");
   }
 }

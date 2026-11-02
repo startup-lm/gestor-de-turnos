@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/api/auth";
-import { errorResponse } from "@/lib/api/response";
+import { requirePlanFeature } from "@/lib/flags/server";
+import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 
 export async function GET(request: Request) {
@@ -30,7 +31,7 @@ export async function GET(request: Request) {
   }
 
   const { data, error } = await query;
-  if (error) return errorResponse(error.message, 500);
+  if (error) return dbErrorResponse(error, "payouts");
 
   return NextResponse.json(data ?? []);
 }
@@ -38,6 +39,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
+  const planError = await requirePlanFeature("commission_payouts");
+  if (planError) return planError;
 
   try {
     const body = await request.json();
@@ -84,7 +87,7 @@ export async function POST(request: Request) {
       .select("id")
       .single();
 
-    if (error) return errorResponse(error.message, 500);
+    if (error) return dbErrorResponse(error, "payouts");
 
     // Si se abona en efectivo y hay un monto pagado > 0, registrar automáticamente el egreso en caja
     if (payment_method === "Efectivo" && Number(total_paid) > 0) {
@@ -109,8 +112,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, id: payout.id });
   } catch (err: unknown) {
-    console.error("POST /api/payouts error:", err);
-    const message = err instanceof Error ? err.message : "Error al procesar la liquidación";
-    return errorResponse(message, 500);
+    return dbErrorResponse(err, "payouts.post");
   }
 }

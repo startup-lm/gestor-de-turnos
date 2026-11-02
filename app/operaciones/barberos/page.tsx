@@ -1,11 +1,14 @@
-import { getBarbers } from "@/lib/repository/barbers";
+import { redirect } from "next/navigation";
+import { getBarbersWithPrivateFields } from "@/lib/repository/barbers";
+import { isServerFeatureEnabled } from "@/lib/flags/server";
 import BackButton from "@/components/ui/BackButton";
 import AdminBarberosClient from "./AdminBarberosClient";
 
 export const revalidate = 0; // Don't cache admin page
 
 export default async function AdminBarberosPage() {
-  const barbers = await getBarbers();
+  if (!(await isServerFeatureEnabled("staff_management"))) redirect("/admin?tab=turnos");
+  const barbers = await getBarbersWithPrivateFields();
 
   return (
     <div className="p-5 flex flex-col items-center">

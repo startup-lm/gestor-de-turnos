@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/api/auth";
-import { errorResponse } from "@/lib/api/response";
+import { requirePlanFeature } from "@/lib/flags/server";
+import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 
 export async function GET(request: Request) {
@@ -42,7 +43,7 @@ export async function GET(request: Request) {
   }
 
   const { data, error } = await query;
-  if (error) return errorResponse(error.message, 500);
+  if (error) return dbErrorResponse(error, "cash/movements");
 
   return NextResponse.json(data ?? []);
 }
@@ -68,6 +69,11 @@ export async function POST(request: Request) {
       return errorResponse("Tipo, importe y descripción son requeridos", 400);
     }
 
+    // Adelantos y pagos de comisión son parte de la liquidación; el resto es registro de gastos
+    const isPayoutMovement = type === "advance" || type === "commission_payout";
+    const planError = await requirePlanFeature(isPayoutMovement ? "commission_payouts" : "expenses");
+    if (planError) return planError;
+
     const defaultCategory =
       type === "advance" ? "adelanto" : type === "expense" ? "insumos" : "otro";
 
@@ -87,14 +93,12 @@ export async function POST(request: Request) {
       .select("id")
       .single();
 
-    if (error) return errorResponse(error.message, 500);
+    if (error) return dbErrorResponse(error, "cash/movements");
 
     revalidateTag("cash_movements");
 
     return NextResponse.json({ success: true, id: data.id });
   } catch (err: unknown) {
-    console.error("POST /api/cash/movements error:", err);
-    const message = err instanceof Error ? err.message : "Error al registrar movimiento de caja";
-    return errorResponse(message, 500);
+    return dbErrorResponse(err, "cash/movements.post");
   }
 }

@@ -8,6 +8,7 @@ import { getBusinessHours, upsertBusinessHours } from "@/lib/repository/business
 import { getBusinessSettings, updateBusinessSettings } from "@/lib/repository/businessSettings";
 import { GlobalHours } from "@/lib/types/BusinessHours";
 import { Shuffle, Scale, Crown, Briefcase } from "lucide-react";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
 
 const DAY_LABELS = [
   { id: 1, name: "Lunes" },
@@ -27,6 +28,8 @@ export default function ConfigHorariosSection() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const { isEnabled } = useBusinessContext();
+  const canCustomizeCriteria = isEnabled("booking_rules");
   const [openTime, setOpenTime] = useState("09:00");
   const [closeTime, setCloseTime] = useState("20:00");
   const [lunchEnabled, setLunchEnabled] = useState(false);
@@ -138,7 +141,7 @@ export default function ConfigHorariosSection() {
         upsertBusinessHours(hoursPayload),
         updateBusinessSettings({
           slot_step_minutes: slotStep,
-          assignment_criteria: criteria,
+          ...(canCustomizeCriteria && { assignment_criteria: criteria }),
         }),
       ]);
 
@@ -351,45 +354,47 @@ export default function ConfigHorariosSection() {
         </div>
       </div>
 
-      {/* Criterio de Asignación Automática */}
-      <div className="bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10 space-y-4">
-        <div>
-          <h3 className="text-sm font-bold tracking-wider text-[var(--accent)]">
-            Criterio de asignación de turnos
-          </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Define a qué barbero se asigna un turno cuando el cliente no elige uno específico:
-          </p>
-        </div>
+      {/* Criterio de Asignación Automática (solo si el plan lo incluye) */}
+      {canCustomizeCriteria && (
+        <div className="bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10 space-y-4">
+          <div>
+            <h3 className="text-sm font-bold tracking-wider text-[var(--accent)]">
+              Criterio de asignación de turnos
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Define a qué barbero se asigna un turno cuando el cliente no elige uno específico:
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
-          {criteriaOptions.map((opt) => {
-            const isSelected = criteria === opt.id;
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setCriteria(opt.id)}
-                className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all cursor-pointer ${
-                  isSelected
-                    ? "!bg-[var(--accent)]/15 !border-[var(--accent)]/60 shadow-md shadow-[var(--accent)]/10"
-                    : "!bg-[var(--foreground)]/5 !border-[var(--foreground)]/10 hover:!bg-[var(--foreground)]/10"
-                }`}
-              >
-                <div className={`p-2 rounded-lg ${isSelected ? "!bg-[var(--accent)]/20 !text-[var(--accent)]" : "!bg-black/30 !text-slate-400"}`}>
-                  <opt.icon className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className={`text-sm font-bold ${isSelected ? "!text-[var(--accent)]" : "!text-white"}`}>
-                    {opt.title}
-                  </h4>
-                  <p className={`text-xs mt-0.5 ${isSelected ? "text-slate-200" : "text-slate-400"}`}>{opt.desc}</p>
-                </div>
-              </button>
-            );
-          })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+            {criteriaOptions.map((opt) => {
+              const isSelected = criteria === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setCriteria(opt.id)}
+                  className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                    isSelected
+                      ? "!bg-[var(--accent)]/15 !border-[var(--accent)]/60 shadow-md shadow-[var(--accent)]/10"
+                      : "!bg-[var(--foreground)]/5 !border-[var(--foreground)]/10 hover:!bg-[var(--foreground)]/10"
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg ${isSelected ? "!bg-[var(--accent)]/20 !text-[var(--accent)]" : "!bg-black/30 !text-slate-400"}`}>
+                    <opt.icon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className={`text-sm font-bold ${isSelected ? "!text-[var(--accent)]" : "!text-white"}`}>
+                      {opt.title}
+                    </h4>
+                    <p className={`text-xs mt-0.5 ${isSelected ? "text-slate-200" : "text-slate-400"}`}>{opt.desc}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </form>
   );
 }

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
-import { errorResponse } from "@/lib/api/response";
+import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { isServerFeatureEnabled } from "@/lib/flags/server";
+import { requireAdmin } from "@/lib/api/auth";
 
 const DEFAULT_CONFIG = {
   environment: "mock",
@@ -29,6 +30,9 @@ function sanitize(data: Record<string, unknown>) {
 }
 
 export async function GET() {
+  const admin = await requireAdmin();
+  if (!admin) return errorResponse("No autorizado", 401);
+
   const enabled = await isServerFeatureEnabled("arca");
   if (!enabled) return errorResponse("Not Found", 404);
 
@@ -38,12 +42,15 @@ export async function GET() {
     .eq("id", 1)
     .maybeSingle();
 
-  if (error) return errorResponse(`ARCA: ${error.message}`);
+  if (error) return dbErrorResponse(error, "arca/config");
   if (!data) return NextResponse.json(DEFAULT_CONFIG);
   return NextResponse.json(sanitize(data));
 }
 
 export async function PUT(req: Request) {
+  const admin = await requireAdmin();
+  if (!admin) return errorResponse("No autorizado", 401);
+
   const enabled = await isServerFeatureEnabled("arca");
   if (!enabled) return errorResponse("Not Found", 404);
 
@@ -68,6 +75,6 @@ export async function PUT(req: Request) {
     .select("*")
     .single();
 
-  if (error) return errorResponse(`ARCA: ${error.message}`);
+  if (error) return dbErrorResponse(error, "arca/config");
   return NextResponse.json(sanitize(data));
 }

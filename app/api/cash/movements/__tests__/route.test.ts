@@ -3,10 +3,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET, POST } from "@/app/api/cash/movements/route";
 import * as auth from "@/lib/api/auth";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
+import * as planServer from "@/lib/flags/server";
 
 // Mock del módulo de autenticación
 vi.mock("@/lib/api/auth", () => ({
   requireAdmin: vi.fn(),
+}));
+
+// El plan se testea en lib/flags/__tests__/server.test.ts: acá se asume habilitado
+vi.mock("@/lib/flags/server", () => ({
+  requirePlanFeature: vi.fn(async () => null),
 }));
 
 // Mock del cliente supabaseAdmin
@@ -68,6 +74,32 @@ describe("API /api/cash/movements", () => {
   });
 
   describe("POST /api/cash/movements", () => {
+    const post = (body: Record<string, unknown>) =>
+      POST(new Request("http://localhost:3000/api/cash/movements", { method: "POST", body: JSON.stringify(body) }));
+    const forbidden = () =>
+      Response.json({ error: "Tu plan no incluye esta función" }, { status: 403 }) as any;
+
+    it("un gasto requiere el registro de gastos del plan", async () => {
+      vi.mocked(auth.requireAdmin).mockResolvedValueOnce({ email: "admin@test.com" } as any);
+      vi.mocked(planServer.requirePlanFeature).mockResolvedValueOnce(forbidden());
+
+      const response = await post({ type: "expense", amount: 100, description: "Insumos" });
+
+      expect(response.status).toBe(403);
+      expect(planServer.requirePlanFeature).toHaveBeenCalledWith("expenses");
+      expect(supabaseAdmin.from).not.toHaveBeenCalled();
+    });
+
+    it("un adelanto requiere la liquidación de comisiones del plan", async () => {
+      vi.mocked(auth.requireAdmin).mockResolvedValueOnce({ email: "admin@test.com" } as any);
+      vi.mocked(planServer.requirePlanFeature).mockResolvedValueOnce(forbidden());
+
+      const response = await post({ type: "advance", amount: 100, description: "Adelanto", barber_id: 2 });
+
+      expect(response.status).toBe(403);
+      expect(planServer.requirePlanFeature).toHaveBeenCalledWith("commission_payouts");
+    });
+
     it("debe rechazar con 401 si no es admin", async () => {
       vi.mocked(auth.requireAdmin).mockResolvedValueOnce(null);
 

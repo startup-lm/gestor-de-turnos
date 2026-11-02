@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
-import { successResponse, errorResponse } from "@/lib/api/response";
+import { successResponse, errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { revalidateTag } from "next/cache";
+import { requireBarberOrAdmin } from "@/lib/api/auth";
+import { requirePlanFeature } from "@/lib/flags/server";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
+  const staff = await requireBarberOrAdmin();
+  if (!staff) return errorResponse("No autorizado", 401);
+
   const resolvedParams = await params;
   const id = Number(resolvedParams.id);
   if (Number.isNaN(id)) { return errorResponse("ID inválido", 400); }
@@ -23,6 +28,11 @@ export async function GET(request: Request, { params }: RouteParams) {
 }
 
 export async function PATCH(request: Request, { params }: RouteParams) {
+  const staff = await requireBarberOrAdmin();
+  if (!staff) return errorResponse("No autorizado", 401);
+  const planError = await requirePlanFeature("sales");
+  if (planError) return planError;
+
   const resolvedParams = await params;
   const id = Number(resolvedParams.id);
   if (Number.isNaN(id)) { return errorResponse("ID inválido", 400); }
@@ -34,7 +44,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     .eq("id", id)
     .maybeSingle();
 
-  if (findError) return errorResponse(findError.message, 500);
+  if (findError) return dbErrorResponse(findError, "sales/id");
   if (!sale) return errorResponse("Venta no encontrada", 404);
 
   if (sale.arca_invoice_id) {
@@ -71,13 +81,18 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     .update(updateData)
     .eq("id", id);
 
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "sales/id");
 
   revalidateTag("sales");
   return successResponse();
 }
 
 export async function DELETE(request: Request, { params }: RouteParams) {
+  const staff = await requireBarberOrAdmin();
+  if (!staff) return errorResponse("No autorizado", 401);
+  const planError = await requirePlanFeature("sales");
+  if (planError) return planError;
+
   const resolvedParams = await params;
   const id = Number(resolvedParams.id);
   if (Number.isNaN(id)) { return errorResponse("ID inválido", 400); }
@@ -99,7 +114,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     .from("sales")
     .delete()
     .eq("id", id);
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "sales/id");
   revalidateTag("sales");
   return successResponse();
 }

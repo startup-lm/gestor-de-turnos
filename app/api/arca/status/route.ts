@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
-import { errorResponse } from "@/lib/api/response";
+import { errorResponse, dbErrorResponse } from "@/lib/api/response";
+import { requireBarberOrAdmin } from "@/lib/api/auth";
 
 const DEFAULT_STATUS = {
   environment: "mock",
@@ -14,13 +15,16 @@ const DEFAULT_STATUS = {
 };
 
 export async function GET() {
+  const staff = await requireBarberOrAdmin();
+  if (!staff) return errorResponse("No autorizado", 401);
+
   const { data, error } = await supabaseAdmin
     .from("arca_settings")
     .select("*")
     .eq("id", 1)
     .maybeSingle();
 
-  if (error) return errorResponse(`ARCA: ${error.message}`);
+  if (error) return dbErrorResponse(error, "arca/status");
   if (!data) return NextResponse.json(DEFAULT_STATUS);
 
   const hasCert = !!data.cert_pem;

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { errorResponse } from "@/lib/api/response";
+import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { revalidateTag } from "next/cache";
 import { ClientUpsertSchema } from "@/lib/schemas";
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
   }
 
   const { data, error } = await query;
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "clients");
   return NextResponse.json(data ?? []);
 }
 
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       .eq("id", existing.id)
       .select()
       .single();
-    if (error) return errorResponse(error.message);
+    if (error) return dbErrorResponse(error, "clients");
     revalidateTag("clients");
     return NextResponse.json(data);
   }
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     .insert({ name, phone: canonicalPhone, last_visit_date: today })
     .select()
     .single();
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "clients");
   revalidateTag("clients");
   return NextResponse.json(data);
 }

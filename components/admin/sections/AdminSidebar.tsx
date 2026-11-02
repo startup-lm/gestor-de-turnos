@@ -3,7 +3,6 @@
 import { useState } from "react";
 import {
   TrendingUp,
-  Wallet,
   Calendar,
   ShoppingBag,
   FileText,
@@ -48,13 +47,24 @@ type ModuleCategory =
   | "facturacion"
   | "configuracion";
 
+/** Módulos habilitados por el plan del cliente (ver PLAN_FEATURES en lib/flags). */
+export interface AdminModules {
+  metrics: boolean;
+  sales: boolean;
+  finances: boolean;
+  commissionPayouts: boolean;
+  expenses: boolean;
+  staffManagement: boolean;
+  paymentMethods: boolean;
+  arca: boolean;
+  googleReviews: boolean;
+}
+
 interface Props {
   activeSection: AdminSection;
   onSelectSection: (section: AdminSection) => void;
   isAdmin: boolean;
-  arcaEnabled: boolean;
-  cashManagementEnabled?: boolean;
-  googleReviewsEnabled?: boolean;
+  modules: AdminModules;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
@@ -63,12 +73,12 @@ export default function AdminSidebar({
   activeSection,
   onSelectSection,
   isAdmin,
-  arcaEnabled,
-  cashManagementEnabled = false,
-  googleReviewsEnabled = false,
+  modules,
   isCollapsed = false,
   onToggleCollapse,
 }: Readonly<Props>) {
+  const { arca: arcaEnabled, googleReviews: googleReviewsEnabled } = modules;
+  const hasFinanceModules = modules.finances || modules.commissionPayouts || modules.expenses;
   // Estado para colapsar/desplegar categorías internas. Por defecto: TODOS VISIBLES (false = no colapsado)
   const [collapsedCategories, setCollapsedCategories] = useState<Record<ModuleCategory, boolean>>({
     principal: false,
@@ -110,20 +120,22 @@ export default function AdminSidebar({
     <>
       {/* VERSIÓN MOBILE: Barra de pestañas horizontal deslizable */}
       <div className="lg:hidden w-full overflow-x-auto py-2.5 px-3 flex items-center gap-1.5 no-scrollbar">
-        <button
-          type="button"
-          onClick={() => onSelectSection("metricas")}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
-            activeSection === "metricas"
-              ? "!bg-[var(--accent)] !text-slate-950 font-bold"
-              : "!bg-white/5 !text-slate-300"
-          }`}
-        >
-          <TrendingUp className="w-3.5 h-3.5" />
-          <span>Panel de control</span>
-        </button>
+        {modules.metrics && (
+          <button
+            type="button"
+            onClick={() => onSelectSection("metricas")}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
+              activeSection === "metricas"
+                ? "!bg-[var(--accent)] !text-slate-950 font-bold"
+                : "!bg-white/5 !text-slate-300"
+            }`}
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>Panel de control</span>
+          </button>
+        )}
 
-        {isAdmin && !cashManagementEnabled && (
+        {isAdmin && modules.finances && (
           <button
             type="button"
             onClick={() => onSelectSection("finanzas")}
@@ -133,50 +145,39 @@ export default function AdminSidebar({
                 : "!bg-white/5 !text-slate-300"
             }`}
           >
-            <Wallet className="w-3.5 h-3.5" />
-            <span>Finanzas</span>
+            <Coins className="w-3.5 h-3.5" />
+            <span>Balance y liquidaciones</span>
           </button>
         )}
 
-        {isAdmin && cashManagementEnabled && (
-          <>
-            <button
-              type="button"
-              onClick={() => onSelectSection("finanzas")}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
-                activeSection === "finanzas"
-                  ? "!bg-[var(--accent)] !text-slate-950 font-bold"
-                  : "!bg-white/5 !text-slate-300"
-              }`}
-            >
-              <Coins className="w-3.5 h-3.5" />
-              <span>Balance y liquidaciones</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onSelectSection("finanzas-liquidaciones")}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
-                activeSection === "finanzas-liquidaciones"
-                  ? "!bg-[var(--accent)] !text-slate-950 font-bold"
-                  : "!bg-white/5 !text-slate-300"
-              }`}
-            >
-              <Receipt className="w-3.5 h-3.5" />
-              <span>Historial de pagos</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onSelectSection("finanzas-gastos")}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
-                activeSection === "finanzas-gastos"
-                  ? "!bg-[var(--accent)] !text-slate-950 font-bold"
-                  : "!bg-white/5 !text-slate-300"
-              }`}
-            >
-              <TrendingDown className="w-3.5 h-3.5" />
-              <span>Gastos del local</span>
-            </button>
-          </>
+        {isAdmin && modules.commissionPayouts && (
+          <button
+            type="button"
+            onClick={() => onSelectSection("finanzas-liquidaciones")}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
+              activeSection === "finanzas-liquidaciones"
+                ? "!bg-[var(--accent)] !text-slate-950 font-bold"
+                : "!bg-white/5 !text-slate-300"
+            }`}
+          >
+            <Receipt className="w-3.5 h-3.5" />
+            <span>Historial de pagos</span>
+          </button>
+        )}
+
+        {isAdmin && modules.expenses && (
+          <button
+            type="button"
+            onClick={() => onSelectSection("finanzas-gastos")}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
+              activeSection === "finanzas-gastos"
+                ? "!bg-[var(--accent)] !text-slate-950 font-bold"
+                : "!bg-white/5 !text-slate-300"
+            }`}
+          >
+            <TrendingDown className="w-3.5 h-3.5" />
+            <span>Gastos del local</span>
+          </button>
         )}
 
         <button
@@ -192,18 +193,20 @@ export default function AdminSidebar({
           <span>Gestión de turnos</span>
         </button>
 
-        <button
-          type="button"
-          onClick={() => onSelectSection("ventas")}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
-            activeSection === "ventas"
-              ? "!bg-[var(--accent)] !text-slate-950 font-bold"
-              : "!bg-white/5 !text-slate-300"
-          }`}
-        >
-          <ShoppingBag className="w-3.5 h-3.5" />
-          <span>Gestión de ventas</span>
-        </button>
+        {modules.sales && (
+          <button
+            type="button"
+            onClick={() => onSelectSection("ventas")}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
+              activeSection === "ventas"
+                ? "!bg-[var(--accent)] !text-slate-950 font-bold"
+                : "!bg-white/5 !text-slate-300"
+            }`}
+          >
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span>Gestión de ventas</span>
+          </button>
+        )}
 
         {arcaEnabled && isAdmin && (
           <>
@@ -237,18 +240,20 @@ export default function AdminSidebar({
 
         {isAdmin && (
           <>
-            <button
-              type="button"
-              onClick={() => onSelectSection("barberos")}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
-                activeSection === "barberos"
-                  ? "!bg-[var(--accent)] !text-slate-950 font-bold"
-                  : "!bg-white/5 !text-slate-300"
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>Gestión de barberos</span>
-            </button>
+            {modules.staffManagement && (
+              <button
+                type="button"
+                onClick={() => onSelectSection("barberos")}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
+                  activeSection === "barberos"
+                    ? "!bg-[var(--accent)] !text-slate-950 font-bold"
+                    : "!bg-white/5 !text-slate-300"
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Gestión de barberos</span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -289,18 +294,20 @@ export default function AdminSidebar({
               <span>Contacto y canales</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => onSelectSection("config-pagos")}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
-                activeSection === "config-pagos"
-                  ? "!bg-[var(--accent)] !text-slate-950 font-bold"
-                  : "!bg-white/5 !text-slate-300"
-              }`}
-            >
-              <CreditCard className="w-3.5 h-3.5" />
-              <span>Medios de pago</span>
-            </button>
+            {modules.paymentMethods && (
+              <button
+                type="button"
+                onClick={() => onSelectSection("config-pagos")}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium transition-all ${
+                  activeSection === "config-pagos"
+                    ? "!bg-[var(--accent)] !text-slate-950 font-bold"
+                    : "!bg-white/5 !text-slate-300"
+                }`}
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                <span>Medios de pago</span>
+              </button>
+            )}
 
             {googleReviewsEnabled && (
               <button
@@ -389,21 +396,23 @@ export default function AdminSidebar({
 
             {(!collapsedCategories.principal || isCollapsed) && (
               <div className="space-y-0.5 mt-0.5">
-                <button
-                  type="button"
-                  onClick={() => onSelectSection("metricas")}
-                  className={navItemClass("metricas")}
-                  title="Panel de control"
-                >
-                  <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />
-                  {!isCollapsed && <span>Panel de control</span>}
-                </button>
+                {modules.metrics && (
+                  <button
+                    type="button"
+                    onClick={() => onSelectSection("metricas")}
+                    className={navItemClass("metricas")}
+                    title="Panel de control"
+                  >
+                    <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />
+                    {!isCollapsed && <span>Panel de control</span>}
+                  </button>
+                )}
               </div>
             )}
           </div>
 
-          {/* Módulo 2: Finanzas y Caja (Solo Admin) */}
-          {isAdmin && (
+          {/* Módulo 2: Finanzas y Caja (Solo Admin, si el plan incluye algún módulo de finanzas) */}
+          {isAdmin && hasFinanceModules && (
             <div>
               {!isCollapsed ? (
                 <button
@@ -424,47 +433,39 @@ export default function AdminSidebar({
 
               {(!collapsedCategories.finanzas || isCollapsed) && (
                 <div className="space-y-0.5 mt-0.5">
-                  {cashManagementEnabled ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => onSelectSection("finanzas")}
-                        className={navItemClass("finanzas")}
-                        title="Balance y liquidaciones"
-                      >
-                        <Coins className="w-3.5 h-3.5 flex-shrink-0" />
-                        {!isCollapsed && <span>Balance y liquidaciones</span>}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => onSelectSection("finanzas-liquidaciones")}
-                        className={navItemClass("finanzas-liquidaciones")}
-                        title="Historial de pagos"
-                      >
-                        <Receipt className="w-3.5 h-3.5 flex-shrink-0" />
-                        {!isCollapsed && <span>Historial de pagos</span>}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => onSelectSection("finanzas-gastos")}
-                        className={navItemClass("finanzas-gastos")}
-                        title="Gastos del local"
-                      >
-                        <TrendingDown className="w-3.5 h-3.5 flex-shrink-0" />
-                        {!isCollapsed && <span>Gastos del local</span>}
-                      </button>
-                    </>
-                  ) : (
+                  {modules.finances && (
                     <button
                       type="button"
                       onClick={() => onSelectSection("finanzas")}
                       className={navItemClass("finanzas")}
-                      title="Finanzas"
+                      title="Balance y liquidaciones"
                     >
-                      <Wallet className="w-3.5 h-3.5 flex-shrink-0" />
-                      {!isCollapsed && <span>Finanzas</span>}
+                      <Coins className="w-3.5 h-3.5 flex-shrink-0" />
+                      {!isCollapsed && <span>Balance y liquidaciones</span>}
+                    </button>
+                  )}
+
+                  {modules.commissionPayouts && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectSection("finanzas-liquidaciones")}
+                      className={navItemClass("finanzas-liquidaciones")}
+                      title="Historial de pagos"
+                    >
+                      <Receipt className="w-3.5 h-3.5 flex-shrink-0" />
+                      {!isCollapsed && <span>Historial de pagos</span>}
+                    </button>
+                  )}
+
+                  {modules.expenses && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectSection("finanzas-gastos")}
+                      className={navItemClass("finanzas-gastos")}
+                      title="Gastos del local"
+                    >
+                      <TrendingDown className="w-3.5 h-3.5 flex-shrink-0" />
+                      {!isCollapsed && <span>Gastos del local</span>}
                     </button>
                   )}
                 </div>
@@ -503,17 +504,19 @@ export default function AdminSidebar({
                   {!isCollapsed && <span>Gestión de turnos</span>}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => onSelectSection("ventas")}
-                  className={navItemClass("ventas")}
-                  title="Gestión de ventas"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5 flex-shrink-0" />
-                  {!isCollapsed && <span>Gestión de ventas</span>}
-                </button>
+                {modules.sales && (
+                  <button
+                    type="button"
+                    onClick={() => onSelectSection("ventas")}
+                    className={navItemClass("ventas")}
+                    title="Gestión de ventas"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5 flex-shrink-0" />
+                    {!isCollapsed && <span>Gestión de ventas</span>}
+                  </button>
+                )}
 
-                {isAdmin && (
+                {isAdmin && modules.staffManagement && (
                   <button
                     type="button"
                     onClick={() => onSelectSection("barberos")}
@@ -626,15 +629,17 @@ export default function AdminSidebar({
                     {!isCollapsed && <span>Contacto y canales</span>}
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => onSelectSection("config-pagos")}
-                    className={navItemClass("config-pagos")}
-                    title="Medios de pago"
-                  >
-                    <CreditCard className="w-3.5 h-3.5 flex-shrink-0" />
-                    {!isCollapsed && <span>Medios de pago</span>}
-                  </button>
+                  {modules.paymentMethods && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectSection("config-pagos")}
+                      className={navItemClass("config-pagos")}
+                      title="Medios de pago"
+                    >
+                      <CreditCard className="w-3.5 h-3.5 flex-shrink-0" />
+                      {!isCollapsed && <span>Medios de pago</span>}
+                    </button>
+                  )}
 
                   {googleReviewsEnabled && (
                     <button

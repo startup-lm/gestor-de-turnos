@@ -18,7 +18,7 @@ import {
 } from "@/components/loading/Skeleton";
 
 // Modular Sidebar
-import AdminSidebar, { AdminSection } from "@/components/admin/sections/AdminSidebar";
+import AdminSidebar, { AdminSection, AdminModules } from "@/components/admin/sections/AdminSidebar";
 import { APP_VERSION } from "@/lib/version";
 
 // Sections (Lazy Loaded on Demand with matching High-Fidelity Skeletons)
@@ -69,25 +69,35 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
   const router = useRouter();
   const searchParams = useSearchParams();
   const { role, user, isLoadingAuth } = useAuth();
-  const { isEnabled } = useBusinessContext();
+  const { isEnabled, limits } = useBusinessContext();
   const isAdmin = role === "admin";
-  const arcaEnabled = isEnabled("arca");
-  const cashManagementEnabled = isEnabled("cash_management");
-  const googleReviewsEnabled = isEnabled("google_reviews");
+  const modules: AdminModules = {
+    metrics: isEnabled("metrics"),
+    sales: isEnabled("sales"),
+    finances: isEnabled("finances"),
+    commissionPayouts: isEnabled("commission_payouts"),
+    expenses: isEnabled("expenses"),
+    staffManagement: isEnabled("staff_management"),
+    paymentMethods: limits.maxPaymentMethods > 0,
+    arca: isEnabled("arca"),
+    googleReviews: isEnabled("google_reviews"),
+  };
+  // Sin métricas en el plan, el panel arranca en la gestión de turnos
+  const defaultSection: AdminSection = modules.metrics ? "metricas" : "turnos";
 
   const tabParam = searchParams.get("tab") as AdminSection | null;
-  const initialTab = tabParam === "facturacion" ? "facturas" : tabParam || "metricas";
+  const initialTab = tabParam === "facturacion" ? "facturas" : tabParam || defaultSection;
   const [activeSection, setActiveSection] = useState<AdminSection>(initialTab);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Sincronizar sección si cambia el query param (ej: navegación adelante/atrás del navegador)
   useEffect(() => {
-    const rawTab = (searchParams.get("tab") as AdminSection | null) || "metricas";
+    const rawTab = (searchParams.get("tab") as AdminSection | null) || defaultSection;
     const currentTab = rawTab === "facturacion" ? "facturas" : rawTab;
     if (currentTab !== activeSection) {
       setActiveSection(currentTab);
     }
-  }, [searchParams, activeSection]);
+  }, [searchParams, activeSection, defaultSection]);
 
   // Protección de rol: redirigir a inicio si no es usuario autenticado
   useEffect(() => {
@@ -95,6 +105,26 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
       router.replace("/");
     }
   }, [role, user, isLoadingAuth, router]);
+
+  // Una sección que el plan no incluye (ej. un link viejo a ?tab=metricas) cae a la sección por defecto
+  const sectionAvailable: Record<AdminSection, boolean> = {
+    metricas: modules.metrics,
+    finanzas: modules.finances,
+    "finanzas-liquidaciones": modules.commissionPayouts,
+    "finanzas-gastos": modules.expenses,
+    turnos: true,
+    ventas: modules.sales,
+    facturas: modules.arca,
+    facturacion: modules.arca,
+    "facturacion-config": modules.arca,
+    barberos: modules.staffManagement,
+    "config-identidad": true,
+    "config-horarios": true,
+    "config-contacto": true,
+    "config-pagos": modules.paymentMethods,
+    "config-resenas": modules.googleReviews,
+  };
+  const visibleSection = sectionAvailable[activeSection] ? activeSection : defaultSection;
 
   const handleSelectSection = (section: AdminSection) => {
     const targetSection = section === "facturacion" ? "facturas" : section;
@@ -114,12 +144,10 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
         }`}
       >
         <AdminSidebar
-          activeSection={activeSection}
+          activeSection={visibleSection}
           onSelectSection={handleSelectSection}
           isAdmin={isAdmin}
-          arcaEnabled={arcaEnabled}
-          cashManagementEnabled={cashManagementEnabled}
-          googleReviewsEnabled={googleReviewsEnabled}
+          modules={modules}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
         />
@@ -131,30 +159,30 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
         className="flex-1 min-w-0 w-full overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10"
       >
         <div className="w-full max-w-[1720px] mx-auto">
-          {activeSection === "metricas" && <DashboardClient initialBarbers={barbers} />}
-          {activeSection === "finanzas" && isAdmin && <FinanzasSection barbers={barbers} />}
-          {activeSection === "finanzas-liquidaciones" && isAdmin && (
+          {visibleSection === "metricas" && <DashboardClient initialBarbers={barbers} />}
+          {visibleSection === "finanzas" && isAdmin && <FinanzasSection barbers={barbers} />}
+          {visibleSection === "finanzas-liquidaciones" && isAdmin && (
             <LiquidacionesSection barbers={barbers} />
           )}
-          {activeSection === "finanzas-gastos" && isAdmin && (
+          {visibleSection === "finanzas-gastos" && isAdmin && (
             <GastosSection barbers={barbers} />
           )}
-          {activeSection === "turnos" && <TurnosSection />}
-          {activeSection === "ventas" && <VentasSection />}
-          {(activeSection === "facturas" || activeSection === "facturacion") && arcaEnabled && isAdmin && (
+          {visibleSection === "turnos" && <TurnosSection />}
+          {visibleSection === "ventas" && <VentasSection />}
+          {(visibleSection === "facturas" || visibleSection === "facturacion") && isAdmin && (
             <FacturasSection />
           )}
-          {activeSection === "facturacion-config" && arcaEnabled && isAdmin && (
+          {visibleSection === "facturacion-config" && isAdmin && (
             <ArcaConfigSection />
           )}
-          {activeSection === "barberos" && isAdmin && <AdminBarberosClient barbers={barbers} />}
+          {visibleSection === "barberos" && isAdmin && <AdminBarberosClient barbers={barbers} />}
 
           {/* Secciones de Configuración Directas en Pantalla */}
-          {activeSection === "config-identidad" && isAdmin && <ConfigIdentidadSection />}
-          {activeSection === "config-horarios" && isAdmin && <ConfigHorariosSection />}
-          {activeSection === "config-contacto" && isAdmin && <ConfigContactoSection />}
-          {activeSection === "config-pagos" && isAdmin && <ConfigPagosSection />}
-          {activeSection === "config-resenas" && isAdmin && googleReviewsEnabled && (
+          {visibleSection === "config-identidad" && isAdmin && <ConfigIdentidadSection />}
+          {visibleSection === "config-horarios" && isAdmin && <ConfigHorariosSection />}
+          {visibleSection === "config-contacto" && isAdmin && <ConfigContactoSection />}
+          {visibleSection === "config-pagos" && isAdmin && <ConfigPagosSection />}
+          {visibleSection === "config-resenas" && isAdmin && (
             <ConfigResenasSection />
           )}
 

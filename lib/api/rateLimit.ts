@@ -65,3 +65,37 @@ export function rateLimit(
     remaining: limit - validTimestamps.length,
   };
 }
+
+/** IP del cliente según los headers del proxy (Vercel o el reverse proxy del VPS). */
+export function getClientIp(request: Request): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "127.0.0.1"
+  );
+}
+
+/**
+ * Rate limit persistente y compartido entre instancias.
+ * En serverless (Vercel) el Map en memoria vive por instancia y se reinicia,
+ * así que se usa la función `check_rate_limit` de Postgres. Si no está disponible
+ * (migración sin aplicar o error de red) se cae al limitador en memoria.
+ */
+export async function checkRateLimit(
+  key: string,
+  limit: number = 10,
+  windowMs: number = 60 * 1000
+): Promise<RateLimitResponse> {
+  try {
+    const { supabaseAdmin } = await import("@/lib/supabase/supabaseAdmin");
+    const { data, error } = await supabaseAdmin.rpc("check_rate_limit", {
+      p_key: key,
+      p_limit: limit,
+      p_window_seconds: Math.ceil(windowMs / 1000),
+    });
+    if (error || typeof data !== "number") throw error ?? new Error("Respuesta inválida de check_rate_limit");
+    return { success: data <= limit, limit, remaining: Math.max(0, limit - data) };
+  } catch {
+    return rateLimit(key, limit, windowMs);
+  }
+}

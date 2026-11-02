@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
-import { errorResponse } from "@/lib/api/response";
+import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { revalidateTag } from "next/cache";
 import { isServerFeatureEnabled } from "@/lib/flags/server";
+import { requireBarberOrAdmin } from "@/lib/api/auth";
 
 function randomCae(): string {
   const min = 10 ** 13;
@@ -15,6 +16,9 @@ function formatDate(value: Date): string {
 }
 
 export async function POST(req: Request) {
+  const staff = await requireBarberOrAdmin();
+  if (!staff) return errorResponse("No autorizado", 401);
+
   const enabled = await isServerFeatureEnabled("arca");
   if (!enabled) return errorResponse("Not Found", 404);
 
@@ -28,7 +32,7 @@ export async function POST(req: Request) {
     .eq("id", 1)
     .maybeSingle();
 
-  if (error) return errorResponse(`ARCA: ${error.message}`);
+  if (error) return dbErrorResponse(error, "arca/emit");
   if (!config) return errorResponse("ARCA no configurado", 400);
 
   if (config.environment !== "mock") {
@@ -80,7 +84,7 @@ export async function POST(req: Request) {
     )
     .single();
 
-  if (insertError) return errorResponse(`ARCA: ${insertError.message}`);
+  if (insertError) return dbErrorResponse(insertError, "arca/emit");
 
   // Si el comprobante viene de un turno, actualizar appointments.arca_invoice_id
   if (payload?.sourceType === "appointment" && payload?.sourceId) {

@@ -4,21 +4,18 @@ import { Barber } from "../types/Barbers";
 import { getBaseUrl } from "@/utils/getBaseUrl";
 const BASE = getBaseUrl();
 
+// Campos visibles para cualquier visitante. Email y comisiones solo para staff.
+export const BARBER_PUBLIC_FIELDS = "id, name, image, instagram, role, active";
+export const BARBER_PRIVATE_FIELDS = "id, email, name, image, instagram, role, active, commission, sale_commission";
+
+/**
+ * Lado servidor: devuelve solo campos públicos, porque se usa en páginas públicas
+ * (/turnos, /nosotros) cuyo HTML llega a cualquier visitante.
+ * Las páginas de staff usan getBarbersWithPrivateFields().
+ */
 export const getBarbers = async (): Promise<Barber[]> => {
   if (typeof window === "undefined") {
-    try {
-      const { supabaseAdmin } = await import("@/lib/supabase/supabaseAdmin");
-      const { data, error } = await supabaseAdmin
-        .from("barbers")
-        .select("id, email, name, image, instagram, role, active, commission, sale_commission")
-        .eq("active", true)
-        .order("id", { ascending: true });
-      if (error || !data) return [];
-      return data;
-    } catch (e) {
-      console.error("getBarbers server query error:", e);
-      return [];
-    }
+    return queryActiveBarbers(BARBER_PUBLIC_FIELDS);
   }
 
   try {
@@ -32,6 +29,25 @@ export const getBarbers = async (): Promise<Barber[]> => {
     return [];
   }
 };
+
+/** Solo servidor, en páginas protegidas para staff (/admin, /operaciones). */
+export const getBarbersWithPrivateFields = async (): Promise<Barber[]> => queryActiveBarbers(BARBER_PRIVATE_FIELDS);
+
+async function queryActiveBarbers(fields: string): Promise<Barber[]> {
+  try {
+    const { supabaseAdmin } = await import("@/lib/supabase/supabaseAdmin");
+    const { data, error } = await supabaseAdmin
+      .from("barbers")
+      .select(fields)
+      .eq("active", true)
+      .order("id", { ascending: true });
+    if (error || !data) return [];
+    return data as unknown as Barber[];
+  } catch (e) {
+    console.error("getBarbers server query error:", e);
+    return [];
+  }
+}
 
 export const getIdAndRole = async (email: string): Promise<{ id: number; role: string } | null> => {
   try {
@@ -91,6 +107,24 @@ export async function getBarberById(id: number): Promise<Barber> {
     return JSON.parse(text);
   } catch (err) {
     console.error("getBarberById error:", err);
+    return emptyBarber;
+  }
+}
+
+/** Solo servidor: perfil completo de un barbero (la página que lo usa valida el acceso). */
+export async function getBarberByIdWithPrivateFields(id: number): Promise<Barber> {
+  const emptyBarber = { id: id, name: "", role: "barber", image: "", email: "", instagram: "" } as Barber;
+  try {
+    const { supabaseAdmin } = await import("@/lib/supabase/supabaseAdmin");
+    const { data, error } = await supabaseAdmin
+      .from("barbers")
+      .select(BARBER_PRIVATE_FIELDS)
+      .eq("id", id)
+      .maybeSingle();
+    if (error || !data) return emptyBarber;
+    return data as unknown as Barber;
+  } catch (e) {
+    console.error("getBarberByIdWithPrivateFields error:", e);
     return emptyBarber;
   }
 }

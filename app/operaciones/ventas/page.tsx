@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
 import SalesTable from "@/components/sales/SalesTable";
 import SaleSplitPanel from "@/components/sales/SaleSplitPanel";
 import BackButton from "@/components/ui/BackButton";
@@ -9,6 +11,15 @@ import { Plus } from "lucide-react";
 export default function OperacionesVentasPage() {
   const [viewMode, setViewMode] = useState<"list" | "new-sale">("list");
   const [refreshKey, setRefreshKey] = useState(0);
+  const router = useRouter();
+  const { isEnabled } = useBusinessContext();
+  const salesEnabled = isEnabled("sales");
+
+  useEffect(() => {
+    if (!salesEnabled) router.replace("/admin?tab=turnos");
+  }, [salesEnabled, router]);
+
+  if (!salesEnabled) return null;
 
   if (viewMode === "new-sale") {
     return (

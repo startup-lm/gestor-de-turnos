@@ -1,6 +1,7 @@
 import { NextResponse }    from "next/server";
-import { errorResponse }   from "@/lib/api/response";
-import { createSupabaseServerClient } from "@/lib/supabase/supabaseServer";
+import { errorResponse, dbErrorResponse } from "@/lib/api/response";
+import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
+import { requireBarberOrAdmin } from "@/lib/api/auth";
 
 interface RawRow {
   barber_id: number;
@@ -9,14 +10,16 @@ interface RawRow {
 }
 
 export async function GET(request: Request) {
+  const staff = await requireBarberOrAdmin();
+  if (!staff) return errorResponse("No autorizado", 401);
+
   const { searchParams } = new URL(request.url);
   const start = searchParams.get("start_date");
   const end   = searchParams.get("end_date");
 
   if (!start || !end) return errorResponse("start_date y end_date son requeridos", 400);
 
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("appointments")
     .select("barber_id, price, payment_method")
     .is("deleted_at", null)
@@ -24,7 +27,7 @@ export async function GET(request: Request) {
     .lte("date", end)
     .neq("phone", "0000000000");
 
-  if (error) return errorResponse(error.message);
+  if (error) return dbErrorResponse(error, "appointments/all");
 
   const rows = (data ?? []) as RawRow[];
 

@@ -6,6 +6,58 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.6.1] - 2026-11-02
+
+### Corregido
+- **Policies de RLS abiertas** (migración `20261103000000_tighten_rls_policies.sql`): con la anon key se podían leer todos los turnos (nombres y teléfonos) y la configuración privada, crear turnos salteando la API, y cualquier usuario autenticado podía editar o borrar turnos. Ahora solo queda la lectura de turnos para staff activo (realtime del calendario).
+- Los buckets de storage limitan a 5 MB e imágenes JPG, PNG, WEBP o GIF, igual que `/api/storage`.
+- Se quita el flag obsoleto `cash_management` de `features`.
+
+## [1.6.0] - 2026-11-02
+
+### Agregado
+- **Tres planes comerciales (`basic` | `standard` | `premium`)** en `lib/flags/index.ts`:
+  - `basic`: turnos, servicios, productos, "Nosotros", WhatsApp, horarios e identidad. 1 profesional y medios de cobro por defecto.
+  - `standard`: + facturación ARCA, métricas, venta de productos, liquidación de comisiones, gestión de profesionales (hasta 4), reseñas de Google y hasta 3 medios de cobro.
+  - `premium`: + finanzas, registro de gastos, criterio de asignación de turnos, profesionales y medios de cobro ilimitados.
+- **Límites por plan** (`PLAN_LIMITS`, `getPlanLimits`) validados en el servidor: alta de profesionales y cantidad de medios de cobro.
+- **Validación de plan en la API** (`requirePlanFeature`, `getServerPlanContext`): ventas, liquidaciones y gastos responden 403 si el plan no los incluye.
+- **Alta de cuentas de profesionales desde el servidor** (`POST /api/auth` con `auth.admin.createUser`): permite apagar el registro público de Supabase.
+- Migración `20261102000000_commercial_plans.sql`.
+
+### Cambiado
+- El panel de administración muestra cada sección según el plan; una sección no incluida cae a la sección por defecto (turnos si no hay métricas).
+- La configuración leída aplica el plan (`applyPlanToSettings`): sin criterio de asignación el turno se asigna aleatorio y `basic` usa los medios de cobro por defecto.
+
+### Eliminado
+- Plan `pro` y flag `cash_management` (reemplazados por `finances`, `expenses` y `commission_payouts`).
+- Registro de cuentas con `supabase.auth.signUp` desde el navegador.
+
+## [1.5.0] - 2026-11-01
+
+### Agregado
+- **Planes comerciales (`basic` | `pro`)**: columna `business_settings.plan` y `PLAN_FEATURES` en `lib/flags/index.ts`. Prioridad: override en `features` > plan > apagado. Sin plan se asume `basic` (todo apagado).
+- **Rate limit persistente**: tabla `rate_limits` y función `check_rate_limit` en Postgres, compartida entre instancias serverless (`checkRateLimit()`), con fallback en memoria.
+- **Test de guards de autenticación** (`app/api/__tests__/authGuards.test.ts`): verifica que cada ruta protegida responda 401 sin sesión y sin tocar la base.
+- Migración `20261101000000_security_hardening.sql`.
+
+### Corregido
+- **Rutas sin autenticación**: `storage`, `sales/[id]`, `sales/all`, `sales/list`, `sales/barber`, `appointments/all`, `arca/config`, `arca/emit`, `arca/invoices`, `arca/status`, `admin/revalidate` y `GET /api/auth` ahora exigen sesión de staff o admin.
+- **Storage**: solo buckets conocidos, solo imágenes de hasta 5 MB y nombres de archivo planos; un barbero solo modifica el bucket `barbers`.
+- **Fuga de la API key de Google** en `GET /api/business-settings` y en el HTML de páginas públicas.
+- **El admin del local podía activarse features pagas**: `PUT /api/business-settings` ahora descarta `plan` y `features`.
+- **`GET /api/appointments`**: solo acepta filtros conocidos (antes se podía buscar por teléfono) y enmascara también los datos fiscales para anónimos.
+- **`GET /api/barbers` y páginas públicas**: email y comisiones solo para staff.
+- **Perfil `/barbers/[id]`**: requiere sesión, un barbero solo ve su propio perfil y ya no se cachea con ISR.
+- **Recuperar contraseña**: ya no revela si un email pertenece al equipo.
+- **RLS activado en todas las tablas**: la anon key pública deja de poder leer o escribir directo.
+- **Errores de base de datos**: se reemplazaron los mensajes crudos de Postgres por un mensaje genérico (`dbErrorResponse`).
+
+### Cambiado
+- `docs/ARCHITECTURE.md`: secciones de seguridad y planes; se quitaron las referencias a modales.
+
+---
+
 ## [1.4.1] - 2026-10-29
 
 ### Corregido

@@ -1,6 +1,6 @@
 # Estado del Plan Multi-Cliente
 
-- **Rama activa en gestor-de-turnos**: `feat/multi-cliente-config-flags`
+- **Rama activa en gestor-de-turnos**: `main` (desarrollo) → `release` (producción clientes). La rama `feat/multi-cliente-config-flags` ya fue integrada.
 - **Fase actual**: Fase 5 (Entorno de pruebas completo) en ejecución.
 - **Fases aprobadas**: Fase 0, Fase 1, Fase 2, Fase 3, Fase 4.
 - **Fases completadas**: Fase 0, Fase 1, Fase 2, Fase 3, Fase 4.
