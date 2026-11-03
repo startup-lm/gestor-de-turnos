@@ -23,7 +23,8 @@ export function applyPlanToSettings<T extends Partial<BusinessSettings>>(setting
     result.assignment_criteria = DEFAULT_ASSIGNMENT_CRITERIA;
   }
   const { maxPaymentMethods } = getPlanLimits(settings.plan);
-  if (maxPaymentMethods === 0) {
+  const customMethods = isFeatureEnabled("custom_payment_methods", settings.features, settings.plan);
+  if (!customMethods || maxPaymentMethods === 0) {
     result.payment_methods = [...DEFAULT_PAYMENT_METHODS];
   } else if (settings.payment_methods && settings.payment_methods.length > maxPaymentMethods) {
     result.payment_methods = settings.payment_methods.slice(0, maxPaymentMethods);

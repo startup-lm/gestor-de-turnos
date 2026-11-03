@@ -126,7 +126,7 @@ export default function AdminClient({ barbers, me }: Readonly<{ barbers: Barber[
     commissionPayouts: isEnabled("commission_payouts"),
     expenses: isEnabled("expenses"),
     staffManagement: isEnabled("staff_management"),
-    paymentMethods: limits.maxPaymentMethods > 0,
+    paymentMethods: isEnabled("custom_payment_methods") && limits.maxPaymentMethods > 0,
     arca: isEnabled("arca"),
     googleReviews: isEnabled("google_reviews"),
     cashRegister: isEnabled("cash_register"),

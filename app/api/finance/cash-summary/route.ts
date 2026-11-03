@@ -7,6 +7,8 @@ import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 import { createdAtBound } from "@/lib/dates/argentina";
 import { computeCashSummary } from "@/lib/finance/cashSummary";
 import { isValidPeriod } from "@/lib/finance/payoutData";
+import { applyPlanToSettings } from "@/lib/settings/sanitize";
+import type { BusinessSettings } from "@/lib/types/BusinessSettings";
 
 // GET /api/finance/cash-summary?start_date=&end_date=  (YYYY-MM-DD, días de Argentina)
 export async function GET(request: Request) {
@@ -24,7 +26,7 @@ export async function GET(request: Request) {
   const to = createdAtBound(end!, "end");
 
   const [settings, appointments, sales, movements] = await Promise.all([
-    supabaseAdmin.from("business_settings").select("payment_methods").eq("id", 1).maybeSingle(),
+    supabaseAdmin.from("business_settings").select("payment_methods, plan, features").eq("id", 1).maybeSingle(),
     fetchAllRows<{ price: number | null; payment_method: string | null }>((a, b) =>
       supabaseAdmin
         .from("appointments")
@@ -61,7 +63,7 @@ export async function GET(request: Request) {
   if (error) return dbErrorResponse(error, "finance/cash-summary");
 
   const summary = computeCashSummary({
-    methods: (settings.data?.payment_methods as string[] | null) ?? [],
+    methods: applyPlanToSettings((settings.data ?? {}) as Partial<BusinessSettings>).payment_methods ?? [],
     appointments: appointments.data,
     sales: sales.data,
     movements: movements.data,
