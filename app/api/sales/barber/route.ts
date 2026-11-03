@@ -3,7 +3,7 @@ import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { isAdminStaff } from "@/lib/api/ownership";
-import { createdAtBound } from "@/lib/dates/argentina";
+import { dateColumnBound } from "@/lib/dates/argentina";
 import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 
 export async function GET(request: Request) {
@@ -19,8 +19,8 @@ export async function GET(request: Request) {
     return errorResponse("barber_id, start_date y end_date son requeridos", 400);
   }
 
-  const startIso = createdAtBound(start, "start");
-  const endIso = createdAtBound(end, "end");
+  const startIso = dateColumnBound(start);
+  const endIso = dateColumnBound(end);
 
   // Un barbero solo recibe sus propias ventas, pida el barber_id que pida
   const numBarberId = isAdminStaff(staff) ? Number(barberId) : staff.barber.id;

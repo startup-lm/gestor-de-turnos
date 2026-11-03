@@ -3,7 +3,7 @@ import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin }   from "@/lib/supabase/supabaseAdmin";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { isAdminStaff } from "@/lib/api/ownership";
-import { createdAtBound } from "@/lib/dates/argentina";
+import { dateColumnBound } from "@/lib/dates/argentina";
 import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 import { commissionOf } from "@/lib/finance/commission";
 import { getAllBarberRates } from "@/lib/finance/barberRates";
@@ -24,8 +24,8 @@ export async function GET(request: Request) {
 
   if (!start || !end) return errorResponse("start_date y end_date son requeridos", 400);
 
-  const startIso = createdAtBound(start, "start");
-  const endIso = createdAtBound(end, "end");
+  const startIso = dateColumnBound(start);
+  const endIso = dateColumnBound(end);
 
   const { data: rows, error } = await fetchAllRows<RawRow>((from, to) => {
     let query = supabaseAdmin

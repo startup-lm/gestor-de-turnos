@@ -37,7 +37,7 @@ export async function getTotalRevenueForAllSales(start_date: Date, end_date: Dat
 }
 
 export async function getBarberSalesFromDates(barberId: number, startDate: Date, endDate: Date) {
-  const params = new URLSearchParams({ barber_id: String(barberId), start_date: startDate.toISOString().split("T")[0], end_date: endDate.toISOString().split("T")[0], });
+  const params = new URLSearchParams({ barber_id: String(barberId), start_date: formatLocalDate(startDate), end_date: formatLocalDate(endDate) });
   const res = await fetch(`${BASE}/api/sales/barber?${params}`, {
     next: { tags: ["sales"] },
   });

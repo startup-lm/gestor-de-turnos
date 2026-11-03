@@ -10,6 +10,7 @@ import { revalidateTag } from "next/cache";
 import { getBarberRates } from "@/lib/finance/barberRates";
 import { adjustProductStock, stockFailureResponse } from "@/lib/finance/stock";
 import { currentShiftId } from "@/lib/finance/openShift";
+import { todayInArgentina } from "@/lib/dates/argentina";
 
 // Edición y borrado de ventas: ver /api/sales/[id]
 export async function POST(request: Request) {
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
       total: price * quantity,
       commission_rate: rates.saleCommission,
       shift_id: shiftId,
+      created_at: todayInArgentina(),
     })
     .select("id")
     .single();

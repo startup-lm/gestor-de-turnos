@@ -41,8 +41,8 @@ export async function GET(request: Request) {
       supabaseAdmin
         .from("sales")
         .select("total, payment_method")
-        .gte("created_at", from)
-        .lte("created_at", to)
+        .gte("created_at", start)
+        .lte("created_at", end!)
         .order("id", { ascending: true })
         .range(a, b)
     ),
