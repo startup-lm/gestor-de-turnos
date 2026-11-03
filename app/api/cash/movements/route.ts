@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/api/auth";
 import { requirePlanFeature } from "@/lib/flags/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
+import { createdAtBound } from "@/lib/dates/argentina";
 
 export async function GET(request: Request) {
   const admin = await requireAdmin();
@@ -36,10 +37,10 @@ export async function GET(request: Request) {
     query = query.eq("shift_id", Number(shiftId));
   }
   if (startDate) {
-    query = query.gte("created_at", `${startDate}T00:00:00Z`);
+    query = query.gte("created_at", createdAtBound(startDate, "start"));
   }
   if (endDate) {
-    query = query.lte("created_at", `${endDate}T23:59:59Z`);
+    query = query.lte("created_at", createdAtBound(endDate, "end"));
   }
 
   const { data, error } = await query;
@@ -47,6 +48,8 @@ export async function GET(request: Request) {
 
   return NextResponse.json(data ?? []);
 }
+
+const MANUAL_MOVEMENT_TYPES = ["income", "expense", "advance", "withdrawal"];
 
 export async function POST(request: Request) {
   const admin = await requireAdmin();
@@ -68,9 +71,19 @@ export async function POST(request: Request) {
     if (!type || amount === undefined || !description) {
       return errorResponse("Tipo, importe y descripción son requeridos", 400);
     }
+    // Los pagos de comisión solo los genera una liquidación (POST /api/payouts)
+    if (!MANUAL_MOVEMENT_TYPES.includes(type)) {
+      return errorResponse("Tipo de movimiento inválido", 400);
+    }
+    if (!(Number(amount) > 0)) {
+      return errorResponse("El importe debe ser mayor a cero", 400);
+    }
+    if (type === "advance" && !barber_id) {
+      return errorResponse("Elegí a qué profesional le das el adelanto", 400);
+    }
 
-    // Adelantos y pagos de comisión son parte de la liquidación; el resto es registro de gastos
-    const isPayoutMovement = type === "advance" || type === "commission_payout";
+    // Los adelantos son parte de la liquidación; el resto es registro de gastos
+    const isPayoutMovement = type === "advance";
     const planError = await requirePlanFeature(isPayoutMovement ? "commission_payouts" : "expenses");
     if (planError) return planError;
 

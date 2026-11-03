@@ -1,0 +1,75 @@
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/api/auth";
+import { requirePlanFeature } from "@/lib/flags/server";
+import { errorResponse, dbErrorResponse } from "@/lib/api/response";
+import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
+import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
+import { createdAtBound } from "@/lib/dates/argentina";
+import { computeCashSummary } from "@/lib/finance/cashSummary";
+import { isValidPeriod } from "@/lib/finance/payoutData";
+
+// GET /api/finance/cash-summary?start_date=&end_date=  (YYYY-MM-DD, días de Argentina)
+export async function GET(request: Request) {
+  const admin = await requireAdmin();
+  if (!admin) return errorResponse("No autorizado", 401);
+  const planError = await requirePlanFeature("finances");
+  if (planError) return planError;
+
+  const { searchParams } = new URL(request.url);
+  const start = searchParams.get("start_date");
+  const end = searchParams.get("end_date");
+  if (!isValidPeriod(start, end)) return errorResponse("El período no es válido", 400);
+
+  const from = createdAtBound(start, "start");
+  const to = createdAtBound(end!, "end");
+
+  const [settings, appointments, sales, movements] = await Promise.all([
+    supabaseAdmin.from("business_settings").select("payment_methods").eq("id", 1).maybeSingle(),
+    fetchAllRows<{ price: number | null; payment_method: string | null }>((a, b) =>
+      supabaseAdmin
+        .from("appointments")
+        .select("price, payment_method")
+        .eq("paid", true)
+        .is("deleted_at", null)
+        .neq("phone", "0000000000")
+        .gte("date", start)
+        .lte("date", end!)
+        .order("id", { ascending: true })
+        .range(a, b)
+    ),
+    fetchAllRows<{ total: number | null; payment_method: string | null }>((a, b) =>
+      supabaseAdmin
+        .from("sales")
+        .select("total, payment_method")
+        .gte("created_at", from)
+        .lte("created_at", to)
+        .order("id", { ascending: true })
+        .range(a, b)
+    ),
+    fetchAllRows<{ type: string; amount: number; payment_method: string | null; voided_at: string | null }>((a, b) =>
+      supabaseAdmin
+        .from("cash_movements")
+        .select("type, amount, payment_method, voided_at")
+        .gte("created_at", from)
+        .lte("created_at", to)
+        .order("id", { ascending: true })
+        .range(a, b)
+    ),
+  ]);
+
+  const error = settings.error || appointments.error || sales.error || movements.error;
+  if (error) return dbErrorResponse(error, "finance/cash-summary");
+
+  const summary = computeCashSummary({
+    methods: (settings.data?.payment_methods as string[] | null) ?? [],
+    appointments: appointments.data,
+    sales: sales.data,
+    movements: movements.data,
+  });
+
+  const expensesTotal = movements.data
+    .filter((m) => m.type === "expense" && !m.voided_at)
+    .reduce((sum, m) => sum + Number(m.amount), 0);
+
+  return NextResponse.json({ ...summary, expensesTotal });
+}

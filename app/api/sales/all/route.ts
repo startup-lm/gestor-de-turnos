@@ -3,6 +3,8 @@ import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin }   from "@/lib/supabase/supabaseAdmin";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { isAdminStaff } from "@/lib/api/ownership";
+import { createdAtBound } from "@/lib/dates/argentina";
+import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 
 interface RawRow {
   barber_id: number;
@@ -19,22 +21,21 @@ export async function GET(request: Request) {
 
   if (!start || !end) return errorResponse("start_date y end_date son requeridos", 400);
 
-  const startIso = start.includes("T") ? start : `${start}T00:00:00.000Z`;
-  const endIso = end.includes("T") ? end : `${end}T23:59:59.999Z`;
+  const startIso = createdAtBound(start, "start");
+  const endIso = createdAtBound(end, "end");
 
-  let query = supabaseAdmin
-    .from("sales")
-    .select("barber_id, total")
-    .gte("created_at", startIso)
-    .lte("created_at", endIso);
-  // Un barbero solo recibe sus propias ventas
-  if (!isAdminStaff(staff)) query = query.eq("barber_id", staff.barber.id);
-
-  const { data, error } = await query;
+  const { data: rows, error } = await fetchAllRows<RawRow>((from, to) => {
+    let query = supabaseAdmin
+      .from("sales")
+      .select("barber_id, total")
+      .gte("created_at", startIso)
+      .lte("created_at", endIso);
+    // Un barbero solo recibe sus propias ventas
+    if (!isAdminStaff(staff)) query = query.eq("barber_id", staff.barber.id);
+    return query.order("id", { ascending: true }).range(from, to);
+  });
 
   if (error) return dbErrorResponse(error, "sales/all");
-
-  const rows = (data ?? []) as RawRow[];
 
   const agg: Record< number, { totalSales: number; totalSalesRevenue: number } > = {};
 

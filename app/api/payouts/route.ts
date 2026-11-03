@@ -4,6 +4,9 @@ import { requireAdmin } from "@/lib/api/auth";
 import { requirePlanFeature } from "@/lib/flags/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
+import { computePayout } from "@/lib/finance/payout";
+import { isValidPeriod, loadPayoutData } from "@/lib/finance/payoutData";
+import { todayInArgentina } from "@/lib/dates/argentina";
 
 export async function GET(request: Request) {
   const admin = await requireAdmin();
@@ -33,85 +36,124 @@ export async function GET(request: Request) {
   const { data, error } = await query;
   if (error) return dbErrorResponse(error, "payouts");
 
+  // Incluye las anuladas (voided_at) para mostrarlas en el historial
   return NextResponse.json(data ?? []);
 }
 
+/**
+ * Registra una liquidación. Los montos se calculan acá, con los datos de la base:
+ * cualquier importe que mande el navegador se ignora.
+ */
 export async function POST(request: Request) {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
   const planError = await requirePlanFeature("commission_payouts");
   if (planError) return planError;
 
-  try {
-    const body = await request.json();
-    const {
-      barber_id,
-      period_start,
-      period_end,
-      cuts_count = 0,
-      cuts_commission_amount = 0,
-      sales_count = 0,
-      sales_commission_amount = 0,
-      advances_deducted = 0,
-      total_paid,
-      payment_method = "Efectivo",
-      payment_date,
-      reference_code,
-      receipt_notes,
-    } = body;
+  const body = await request.json().catch(() => null);
+  const barberId = Number(body?.barber_id);
+  const periodStart: string | undefined = body?.period_start;
+  const periodEnd: string | undefined = body?.period_end;
+  const advanceIds: number[] = Array.isArray(body?.advance_ids) ? body.advance_ids.map(Number) : [];
+  const paymentMethod = typeof body?.payment_method === "string" ? body.payment_method.trim() : "";
 
-    if (!barber_id || !period_start || !period_end || total_paid === undefined) {
-      return errorResponse("Faltan campos obligatorios para registrar la liquidación", 400);
-    }
+  if (!barberId) return errorResponse("Elegí un profesional", 400);
+  if (!isValidPeriod(periodStart, periodEnd)) return errorResponse("El período no es válido", 400);
+  if (!paymentMethod) return errorResponse("Elegí un medio de pago", 400);
 
-    const payDate = payment_date || new Date().toISOString().split("T")[0];
+  const { data: payoutData, error: loadError, notFound } = await loadPayoutData(barberId, periodStart, periodEnd!);
+  if (loadError) return dbErrorResponse(loadError, "payouts.post");
+  if (notFound || !payoutData) return errorResponse("Profesional no encontrado", 404);
 
-    const { data: payout, error } = await supabaseAdmin
-      .from("commission_payouts")
-      .insert({
-        barber_id: Number(barber_id),
-        period_start,
-        period_end,
-        cuts_count: Number(cuts_count),
-        cuts_commission_amount: Number(cuts_commission_amount),
-        sales_count: Number(sales_count),
-        sales_commission_amount: Number(sales_commission_amount),
-        advances_deducted: Number(advances_deducted),
-        total_paid: Number(total_paid),
-        payment_method,
-        payment_date: payDate,
-        reference_code: reference_code || null,
-        receipt_notes: receipt_notes || null,
-        paid_by: admin.email || "admin",
-      })
-      .select("id")
-      .single();
-
-    if (error) return dbErrorResponse(error, "payouts");
-
-    // Si se abona en efectivo y hay un monto pagado > 0, registrar automáticamente el egreso en caja
-    if (payment_method === "Efectivo" && Number(total_paid) > 0) {
-      try {
-        await supabaseAdmin.from("cash_movements").insert({
-          barber_id: Number(barber_id),
-          type: "commission_payout",
-          category: "comision",
-          amount: Number(total_paid),
-          payment_method: "Efectivo",
-          description: `Liquidación de comisiones período ${period_start} al ${period_end}`,
-          reference_code: `REC-${payout.id}`,
-          created_by: admin.email || "admin",
-        });
-      } catch (movementErr) {
-        console.error("Error al registrar movimiento automático de caja para liquidación:", movementErr);
-      }
-    }
-
-    revalidateTag("payouts");
-    revalidateTag("cash_movements");
-
-    return NextResponse.json({ success: true, id: payout.id });
-  } catch (err: unknown) {
-    return dbErrorResponse(err, "payouts.post");
+  if (payoutData.overlappingPayout) {
+    return errorResponse(
+      `Ya existe la liquidación #${payoutData.overlappingPayout.id} para este profesional en un período que se superpone. Anulala antes de volver a liquidar.`,
+      409
+    );
   }
+
+  // Solo se descuentan adelantos disponibles (sin anular y sin descontar) de este profesional
+  const available = payoutData.advances.filter((a) => advanceIds.includes(a.id));
+  if (available.length !== new Set(advanceIds).size) {
+    return errorResponse("Algún adelanto ya fue descontado o no corresponde a este profesional", 409);
+  }
+
+  const result = computePayout({
+    cutsCount: payoutData.cuts.count,
+    cutsRevenue: payoutData.cuts.revenue,
+    commissionRate: payoutData.barber.commission,
+    salesCount: payoutData.sales.count,
+    salesRevenue: payoutData.sales.revenue,
+    saleCommissionRate: payoutData.barber.sale_commission,
+    advancesTotal: available.reduce((sum, a) => sum + Number(a.amount), 0),
+  });
+
+  const { data: payout, error } = await supabaseAdmin
+    .from("commission_payouts")
+    .insert({
+      barber_id: barberId,
+      period_start: periodStart,
+      period_end: periodEnd,
+      cuts_count: result.cutsCount,
+      cuts_commission_amount: result.cutsCommission,
+      sales_count: result.salesCount,
+      sales_commission_amount: result.salesCommission,
+      advances_deducted: result.advancesDeducted,
+      total_paid: result.totalToPay,
+      payment_method: paymentMethod,
+      payment_date: todayInArgentina(),
+      reference_code: body?.reference_code?.trim() || null,
+      receipt_notes: body?.receipt_notes?.trim() || null,
+      paid_by: admin.email || "admin",
+    })
+    .select("*")
+    .single();
+
+  if (error || !payout) return dbErrorResponse(error, "payouts");
+
+  /** Si falla un paso posterior, se deshace todo para no dejar la caja a medias. */
+  const rollback = async () => {
+    await supabaseAdmin.from("cash_movements").update({ payout_id: null }).eq("payout_id", payout.id).eq("type", "advance");
+    await supabaseAdmin.from("cash_movements").delete().eq("payout_id", payout.id).eq("type", "commission_payout");
+    await supabaseAdmin.from("commission_payouts").delete().eq("id", payout.id);
+  };
+
+  if (available.length > 0) {
+    // Marca condicional: si otro pedido ya descontó alguno en paralelo, se detecta y se deshace
+    const { data: marked, error: markError } = await supabaseAdmin
+      .from("cash_movements")
+      .update({ payout_id: payout.id })
+      .in("id", available.map((a) => a.id))
+      .is("payout_id", null)
+      .select("id");
+
+    if (markError || (marked ?? []).length !== available.length) {
+      await rollback();
+      return errorResponse("No se pudo registrar la liquidación", 500);
+    }
+  }
+
+  if (result.totalToPay > 0) {
+    const { error: movementError } = await supabaseAdmin.from("cash_movements").insert({
+      barber_id: barberId,
+      type: "commission_payout",
+      category: "comision",
+      amount: result.totalToPay,
+      payment_method: paymentMethod,
+      description: `Liquidación de comisiones período ${periodStart} al ${periodEnd}`,
+      reference_code: `REC-${payout.id}`,
+      payout_id: payout.id,
+      created_by: admin.email || "admin",
+    });
+
+    if (movementError) {
+      await rollback();
+      return errorResponse("No se pudo registrar la liquidación", 500);
+    }
+  }
+
+  revalidateTag("payouts");
+  revalidateTag("cash_movements");
+
+  return NextResponse.json({ success: true, id: payout.id, payout, advancesExcess: result.advancesExcess });
 }

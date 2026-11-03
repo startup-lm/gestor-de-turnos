@@ -41,9 +41,20 @@ export async function getCommissionPayouts(
   }
 }
 
+/** Solo se mandan el período, los adelantos y el pago: los montos los calcula el servidor. */
+export interface CreatePayoutInput {
+  barber_id: number;
+  period_start: string;
+  period_end: string;
+  advance_ids: number[];
+  payment_method: string;
+  reference_code?: string;
+  receipt_notes?: string;
+}
+
 export async function createCommissionPayout(
-  payload: Omit<CommissionPayout, "id" | "created_at" | "barbers">
-): Promise<{ success: boolean; id?: number; error?: string }> {
+  payload: CreatePayoutInput
+): Promise<{ success: boolean; id?: number; payout?: CommissionPayout; error?: string }> {
   try {
     const res = await fetch(`${BASE}/api/payouts`, {
       method: "POST",
@@ -54,11 +65,80 @@ export async function createCommissionPayout(
     if (!res.ok) {
       return { success: false, error: json.error || "Error al registrar la liquidación" };
     }
-    return { success: true, id: json.id };
+    return { success: true, id: json.id, payout: json.payout };
   } catch (err: unknown) {
     console.error("createCommissionPayout error:", err);
     const message = err instanceof Error ? err.message : "Error de red";
     return { success: false, error: message };
+  }
+}
+
+export interface PayoutPreview {
+  barber: { id: number; name: string; commission: number; sale_commission: number; active: boolean };
+  cuts: { count: number; revenue: number };
+  sales: { count: number; revenue: number };
+  advances: CashMovement[];
+  overlappingPayout: { id: number; period_start: string; period_end: string } | null;
+}
+
+export async function getPayoutPreview(params: {
+  barberId: number;
+  startDate: string;
+  endDate: string;
+}): Promise<{ success: boolean; data?: PayoutPreview; error?: string }> {
+  const query = new URLSearchParams({
+    barber_id: String(params.barberId),
+    start_date: params.startDate,
+    end_date: params.endDate,
+  });
+  try {
+    const res = await fetch(`${BASE}/api/payouts/preview?${query.toString()}`, { cache: "no-store" });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return { success: false, error: json.error || "No se pudo calcular la liquidación" };
+    return { success: true, data: json };
+  } catch (err: unknown) {
+    console.error("getPayoutPreview error:", err);
+    return { success: false, error: "Error de red" };
+  }
+}
+
+async function postVoid(url: string, fallback: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch(url, { method: "POST" });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return { success: false, error: json.error || fallback };
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("void error:", err);
+    return { success: false, error: "Error de red" };
+  }
+}
+
+export const voidCommissionPayout = (id: number) =>
+  postVoid(`${BASE}/api/payouts/${id}/void`, "No se pudo anular la liquidación");
+
+export const voidCashMovement = (id: number) =>
+  postVoid(`${BASE}/api/cash/movements/${id}/void`, "No se pudo anular el movimiento");
+
+export interface CashSummaryResponse {
+  rows: { method: string; income: number; outcome: number; net: number }[];
+  totals: { income: number; outcome: number; net: number };
+  expensesTotal: number;
+}
+
+export async function getCashSummary(params: {
+  startDate: string;
+  endDate: string;
+}): Promise<{ success: boolean; data?: CashSummaryResponse; error?: string }> {
+  const query = new URLSearchParams({ start_date: params.startDate, end_date: params.endDate });
+  try {
+    const res = await fetch(`${BASE}/api/finance/cash-summary?${query.toString()}`, { cache: "no-store" });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return { success: false, error: json.error || "No se pudo cargar la caja" };
+    return { success: true, data: json };
+  } catch (err: unknown) {
+    console.error("getCashSummary error:", err);
+    return { success: false, error: "Error de red" };
   }
 }
 
