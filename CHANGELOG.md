@@ -6,6 +6,11 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.9.3] - 2026-11-03
+
+### Cambiado
+- El botón de cerrar sesión pasó del pie del menú de `/admin` al navbar: con la sesión iniciada, a la derecha se ve el icono de cerrar sesión en lugar del de ingresar. El pie del menú vuelve a mostrar solo el producto y la versión.
+
 ## [1.9.2] - 2026-11-03
 
 ### Corregido
