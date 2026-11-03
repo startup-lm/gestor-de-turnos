@@ -58,8 +58,41 @@ describe("toEditableSettingsPayload", () => {
     expect(result).toEqual({ business_name: "Mi local" });
   });
 
-  it("descarta la API key si viene en el payload", () => {
-    const result = toEditableSettingsPayload({ google_reviews: { place_id: "abc", api_key: "x" } });
-    expect(result.google_reviews).toEqual({ place_id: "abc" });
+  it("descarta rating, reviews y api_key si vienen en el payload", () => {
+    const result = toEditableSettingsPayload({
+      google_reviews: {
+        place_id: "abc",
+        api_key: "x",
+        rating: 5,
+        reviews: [{ id: "1", text: "Buena" }],
+      },
+    });
+    expect(result.google_reviews).toEqual({ place_id: "abc", hidden_review_ids: [] });
+  });
+
+  it("filtra elementos no strings en hidden_review_ids", () => {
+    const result = toEditableSettingsPayload({
+      google_reviews: {
+        place_id: "abc",
+        hidden_review_ids: ["a", 3 as unknown as string],
+      },
+    });
+    expect(result.google_reviews).toEqual({
+      place_id: "abc",
+      hidden_review_ids: ["a"],
+    });
+  });
+
+  it("limita hidden_review_ids a un maximo de 50 elementos", () => {
+    const sixtyIds = Array.from({ length: 60 }, (_, i) => `id-${i}`);
+    const result = toEditableSettingsPayload({
+      google_reviews: {
+        place_id: "abc",
+        hidden_review_ids: sixtyIds,
+      },
+    });
+    const reviewsConfig = result.google_reviews as { hidden_review_ids: string[] };
+    expect(reviewsConfig.hidden_review_ids).toHaveLength(50);
+    expect(reviewsConfig.hidden_review_ids).toEqual(sixtyIds.slice(0, 50));
   });
 });

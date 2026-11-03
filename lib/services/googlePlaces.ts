@@ -11,11 +11,14 @@ export interface GooglePlaceCandidate {
 interface FetchGoogleReviewsParams {
   input: string; // Puede ser un Place ID (ChIJ...), un link de Google Maps o el nombre/dirección
   apiKey?: string;
+  revalidateSeconds?: number;
 }
 
-interface FetchGoogleReviewsResult {
+export interface FetchGoogleReviewsResult {
   success: boolean;
-  data?: Partial<GoogleReviewsConfig>;
+  data?: Partial<GoogleReviewsConfig> & {
+    googleMapsUri?: string;
+  };
   error?: string;
 }
 
@@ -35,6 +38,7 @@ interface GooglePlacesNewReview {
 
 interface GooglePlacesLegacyReview {
   author_name?: string;
+  author_url?: string;
   profile_photo_url?: string;
   rating?: number;
   relative_time_description?: string;
@@ -202,6 +206,7 @@ export async function getGooglePlaceCandidate(
 export async function fetchGooglePlaceReviews({
   input,
   apiKey,
+  revalidateSeconds = 0,
 }: FetchGoogleReviewsParams): Promise<FetchGoogleReviewsResult> {
   const rawInput = input.trim();
   const key = (apiKey?.trim() || process.env.GOOGLE_PLACES_API_KEY || "").trim();
@@ -245,7 +250,7 @@ export async function fetchGooglePlaceReviews({
         "X-Goog-Api-Key": key,
         "X-Goog-FieldMask": "rating,userRatingCount,reviews,displayName,googleMapsUri",
       },
-      next: { revalidate: 0 },
+      next: { revalidate: revalidateSeconds },
     });
 
     if (res.ok) {
@@ -261,6 +266,7 @@ export async function fetchGooglePlaceReviews({
           id: r.name || `rev-new-${idx}-${Date.now()}`,
           author_name: r.authorAttribution?.displayName || "Cliente de Google",
           author_photo_url: r.authorAttribution?.photoUri || undefined,
+          author_url: r.authorAttribution?.uri || undefined,
           rating: typeof r.rating === "number" ? r.rating : 5,
           text: (r.text?.text || r.originalText?.text || "").trim(),
           relative_time: r.relativePublishTimeDescription || "",
@@ -275,6 +281,7 @@ export async function fetchGooglePlaceReviews({
           rating,
           user_ratings_total: total,
           write_review_url: writeUrl,
+          googleMapsUri: data.googleMapsUri || undefined,
           last_synced_at: new Date().toISOString(),
           reviews,
         },
@@ -292,7 +299,7 @@ export async function fetchGooglePlaceReviews({
 
     const res = await fetch(legacyUrl, {
       method: "GET",
-      next: { revalidate: 0 },
+      next: { revalidate: revalidateSeconds },
     });
 
     if (!res.ok) {
@@ -323,6 +330,7 @@ export async function fetchGooglePlaceReviews({
         id: `rev-legacy-${idx}-${r.time || Date.now()}`,
         author_name: r.author_name || "Cliente de Google",
         author_photo_url: r.profile_photo_url || undefined,
+        author_url: r.author_url || undefined,
         rating: typeof r.rating === "number" ? r.rating : 5,
         text: r.text?.trim() || "",
         relative_time: r.relative_time_description || "",
@@ -337,6 +345,7 @@ export async function fetchGooglePlaceReviews({
         rating,
         user_ratings_total: total,
         write_review_url: writeUrl,
+        googleMapsUri: result.url || undefined,
         last_synced_at: new Date().toISOString(),
         reviews,
       },

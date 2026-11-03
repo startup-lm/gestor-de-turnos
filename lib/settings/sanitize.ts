@@ -45,10 +45,22 @@ export function toEditableSettingsPayload(payload: Record<string, unknown>): Rec
   const clean: Record<string, unknown> = { ...payload };
   delete clean.id;
   for (const field of OWNER_ONLY_SETTINGS_FIELDS) delete clean[field];
-  if (clean.google_reviews && typeof clean.google_reviews === "object") {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { api_key, ...googleReviews } = clean.google_reviews as Record<string, unknown>;
-    clean.google_reviews = googleReviews;
+  if (clean.google_reviews && typeof clean.google_reviews === "object" && !Array.isArray(clean.google_reviews)) {
+    const raw = clean.google_reviews as Record<string, unknown>;
+    const sanitized: Record<string, unknown> = {};
+
+    if ("enabled" in raw) sanitized.enabled = raw.enabled;
+    if ("place_id" in raw) sanitized.place_id = raw.place_id;
+    if ("write_review_url" in raw) sanitized.write_review_url = raw.write_review_url;
+    if ("show_in_hero" in raw) sanitized.show_in_hero = raw.show_in_hero;
+    if ("show_in_home" in raw) sanitized.show_in_home = raw.show_in_home;
+    if ("show_in_about" in raw) sanitized.show_in_about = raw.show_in_about;
+
+    sanitized.hidden_review_ids = Array.isArray(raw.hidden_review_ids)
+      ? raw.hidden_review_ids.filter((id): id is string => typeof id === "string").slice(0, 50)
+      : [];
+
+    clean.google_reviews = sanitized;
   }
   return clean;
 }
