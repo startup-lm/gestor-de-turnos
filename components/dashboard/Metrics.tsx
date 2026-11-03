@@ -2,8 +2,9 @@
 
 import { useAuth } from "@/lib/auth/AuthContext";
 import React from "react";
+import Link from "next/link";
 import CountUp from "react-countup";
-import { Scissors, ShoppingBag, TrendingUp } from "lucide-react";
+import { AlertTriangle, ArrowRight, Scissors, ShoppingBag, TrendingUp } from "lucide-react";
 import { formatARS } from "@/lib/format/currency";
 
 interface Props {
@@ -17,6 +18,12 @@ interface Props {
   gananciaCortes: number;
   gananciaVentas: number;
   ingresosVentas: number;
+  /** Turnos finalizados sin cobrar en el período */
+  turnosSinCobrar: number;
+  /** Monto total adeudado de turnos sin cobrar */
+  montoSinCobrar: number;
+  /** Enlace a los turnos pendientes del período */
+  pendientesHref: string;
 }
 
 export default function Metrics({
@@ -27,11 +34,13 @@ export default function Metrics({
   gananciaCortes,
   gananciaVentas,
   ingresosVentas,
+  turnosSinCobrar,
+  montoSinCobrar,
+  pendientesHref,
 }: Readonly<Props>) {
   const { role } = useAuth();
   const isAdmin = role === "admin";
 
-  const ticketPromedio = turnos > 0 ? Math.round(ingresos / turnos) : 0;
   const gananciaTotal = gananciaCortes + gananciaVentas;
 
   // Vista para barbero no administrador
@@ -161,24 +170,41 @@ export default function Metrics({
         </div>
       </div>
 
-      {/* Ticket promedio */}
+      {/* Turnos sin cobrar */}
       <div className="kpi-card kpi-card--revenue flex flex-col justify-between gap-3.5 p-5 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <span className="block text-[11px] font-bold text-slate-400 tracking-wider leading-none mb-1.5 truncate">
-              Ticket promedio
+              Turnos sin cobrar
             </span>
-            <h4 className="text-2xl lg:text-3xl font-black text-white leading-tight truncate">
-              <CountUp start={0} end={ticketPromedio} duration={2} prefix="$" separator="." />
+            <h4
+              className={`text-2xl lg:text-3xl font-black leading-tight ${
+                turnosSinCobrar > 0 ? "text-amber-400" : "text-white"
+              }`}
+            >
+              <CountUp start={0} end={turnosSinCobrar} duration={2} separator="." />
             </h4>
+            <span className="block text-[11px] text-slate-500 mt-0.5 truncate">
+              {turnosSinCobrar > 0 ? `Suman ${formatARS(montoSinCobrar)}` : "Está todo cobrado"}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/25 text-amber-400 shadow-inner flex-shrink-0">
-            <TrendingUp className="w-5 h-5" />
+            <AlertTriangle className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="pt-2.5 border-t border-white/5 text-[11px] text-slate-400 truncate">
-          Por turno cobrado
+        <div className="pt-2.5 border-t border-white/5 flex items-center">
+          {turnosSinCobrar > 0 ? (
+            <Link
+              href={pendientesHref}
+              className="inline-flex items-center gap-1.5 min-h-[44px] text-xs font-semibold text-amber-300 hover:text-amber-200 transition-colors"
+            >
+              <span>Ver turnos</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          ) : (
+            <span className="text-[11px] text-slate-400">Nada pendiente en el período</span>
+          )}
         </div>
       </div>
     </div>

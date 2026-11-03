@@ -22,3 +22,24 @@ export function isPastUnpaid(appt: PastUnpaidFields, now: Date = new Date()): bo
   const end = appt.end_time.length === 5 ? `${appt.end_time}:00` : appt.end_time;
   return end <= nowTimeInArgentina(now);
 }
+
+type PastUnpaidSummaryFields = PastUnpaidFields & Pick<Appointment, "price">;
+
+/** Turnos del rango [from, to] ("YYYY-MM-DD") que ya terminaron sin cobrar, y cuánto suman. */
+export function summarizePastUnpaid(
+  appointments: PastUnpaidSummaryFields[],
+  from: string,
+  to: string,
+  now: Date = new Date()
+): { count: number; amount: number } {
+  let count = 0;
+  let amount = 0;
+  for (const a of appointments) {
+    const day = a.date.slice(0, 10);
+    if (day < from || day > to || !isPastUnpaid(a, now)) continue;
+    count += 1;
+    amount += a.price ?? 0;
+  }
+  return { count, amount };
+}
+
