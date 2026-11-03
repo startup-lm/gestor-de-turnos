@@ -6,10 +6,15 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
-## [1.10.1] - 2026-11-03
+## [1.10.2] - 2026-11-03
 
 ### Cambiado
 - En el Resumen de `/admin`, la tarjeta "Ticket promedio" pasa a ser "Turnos sin cobrar": cuántos turnos del período terminaron sin cobrarse, cuánto suman y un acceso para verlos. El aviso amarillo de arriba ya no se le muestra al admin; el barbero lo sigue viendo.
+
+## [1.10.1] - 2026-11-03
+
+### Cambiado
+- Barberos se lista en tabla, igual que Productos y Servicios: foto y nombre, contacto, estado y comisiones. Tocando una fila se abre la edición, desde donde se desactiva o reactiva al barbero.
 
 ## [1.10.0] - 2026-11-03
 
