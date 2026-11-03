@@ -1,14 +1,22 @@
 import { getSaleById } from "@/lib/repository/sales";
 import VentaDetailClient from "./VentaDetailClient";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
+// Datos de clientes: solo staff, se renderiza por pedido y nunca se cachea.
+export const dynamic = "force-dynamic";
+
 export default async function VentaDetailPage({ params }: Props) {
   const { id } = await params;
+  const staff = await requireBarberOrAdmin();
+  if (!staff) redirect(`/login?redirect=/venta/${id}`);
+
   const numId = Number(id);
   const sale = isNaN(numId) ? null : await getSaleById(numId);
 
