@@ -25,7 +25,6 @@ import {
   Wallet,
 } from "lucide-react";
 import { APP_VERSION } from "@/lib/version";
-import NavbarLogoutButton from "@/components/navbar/NavbarLogoutButton";
 import { PRODUCT_NAME } from "@/lib/brand";
 
 export type AdminSection =
@@ -410,12 +409,8 @@ export default function AdminSidebar({
           })}
         </div>
 
-        {/* Footer fijo: cerrar sesión a la izquierda, producto y versión a la derecha */}
-        <div className={`flex-shrink-0 pt-2.5 pb-0.5 mt-auto border-t border-white/10 ${isCollapsed ? "px-1 flex flex-col items-center gap-1.5" : "px-1 flex items-center justify-between gap-2"}`}>
-          <NavbarLogoutButton
-            iconOnly={isCollapsed}
-            className={`inline-flex items-center rounded-lg text-[11px] font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/5 transition-colors cursor-pointer !bg-transparent min-h-[32px] ${isCollapsed ? "justify-center w-9" : "px-2"}`}
-          />
+        {/* Footer fijo: producto y versión */}
+        <div className={`flex-shrink-0 pt-2.5 pb-0.5 mt-auto border-t border-white/10 px-1 flex items-center ${isCollapsed ? "justify-center" : "justify-end"}`}>
           <span
             className="text-[10px] font-mono text-slate-500 truncate"
             title={`${PRODUCT_NAME} v${APP_VERSION}`}

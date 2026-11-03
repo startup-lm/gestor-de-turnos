@@ -8,10 +8,17 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function NavbarLogoutButton({
   className = "",
+  iconClassName = "w-4 h-4",
   iconOnly = false,
   onLoggedOut,
   onCanceled,
-}: Readonly<{ className?: string; iconOnly?: boolean; onLoggedOut?: () => void; onCanceled?: () => void }>) {
+}: Readonly<{
+  className?: string;
+  iconClassName?: string;
+  iconOnly?: boolean;
+  onLoggedOut?: () => void;
+  onCanceled?: () => void;
+}>) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -36,7 +43,7 @@ export default function NavbarLogoutButton({
         aria-label="Cerrar sesión"
         title={iconOnly ? "Cerrar sesión" : undefined}
       >
-        <LogOut className={`w-4 h-4 inline ${iconOnly ? "" : "mr-2"}`} />
+        <LogOut className={`${iconClassName} inline ${iconOnly ? "" : "mr-2"}`} />
         {!iconOnly && "Cerrar sesión"}
       </button>
 
