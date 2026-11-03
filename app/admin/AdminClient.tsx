@@ -22,6 +22,31 @@ import AdminSidebar, { AdminSection, AdminModules } from "@/components/admin/sec
 import { APP_VERSION } from "@/lib/version";
 import { PRODUCT_NAME } from "@/lib/brand";
 
+const VALID_SECTIONS: readonly AdminSection[] = [
+  "metricas",
+  "finanzas",
+  "finanzas-liquidaciones",
+  "finanzas-gastos",
+  "turnos",
+  "ventas",
+  "facturas",
+  "facturacion-config",
+  "barberos",
+  "config-identidad",
+  "config-horarios",
+  "config-contacto",
+  "config-pagos",
+  "config-resenas",
+];
+
+export function normalizeTab(raw: string | null, fallback: AdminSection = "metricas"): AdminSection {
+  if (raw === "facturacion") return "facturas";
+  if (raw && (VALID_SECTIONS as readonly string[]).includes(raw)) {
+    return raw as AdminSection;
+  }
+  return fallback;
+}
+
 // Sections (Lazy Loaded on Demand with matching High-Fidelity Skeletons)
 const DashboardClient = dynamic(() => import("@/app/dashboard/DashboardClient"), {
   loading: () => <DashboardSkeleton />,
@@ -87,8 +112,8 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
   // Sin métricas en el plan, el panel arranca en la gestión de turnos
   const defaultSection: AdminSection = modules.metrics ? "metricas" : "turnos";
 
-  const tabParam = searchParams.get("tab") as AdminSection | null;
-  const initialTab = tabParam === "facturacion" ? "facturas" : tabParam || defaultSection;
+  const tabParam = searchParams.get("tab");
+  const initialTab = tabParam ? normalizeTab(tabParam, defaultSection) : defaultSection;
   const [activeSection, setActiveSection] = useState<AdminSection>(initialTab);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -96,8 +121,8 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
   // No depende de activeSection: si lo hiciera, un click volvería a la sección anterior
   // antes de que la URL se actualice.
   useEffect(() => {
-    const rawTab = (searchParams.get("tab") as AdminSection | null) || defaultSection;
-    setActiveSection(rawTab === "facturacion" ? "facturas" : rawTab);
+    const rawTab = searchParams.get("tab");
+    setActiveSection(rawTab ? normalizeTab(rawTab, defaultSection) : defaultSection);
   }, [searchParams, defaultSection]);
 
   // Protección de rol: redirigir a inicio si no es usuario autenticado
@@ -116,7 +141,6 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
     turnos: true,
     ventas: modules.sales,
     facturas: modules.arca,
-    facturacion: modules.arca,
     "facturacion-config": modules.arca,
     barberos: modules.staffManagement,
     "config-identidad": true,
@@ -128,10 +152,9 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
   const visibleSection = sectionAvailable[activeSection] ? activeSection : defaultSection;
 
   const handleSelectSection = (section: AdminSection) => {
-    const targetSection = section === "facturacion" ? "facturas" : section;
-    setActiveSection(targetSection);
+    setActiveSection(section);
     // Shallow routing: actualiza la URL y useSearchParams sin volver a pedir la página al servidor
-    window.history.replaceState(null, "", `/admin?tab=${targetSection}`);
+    window.history.replaceState(null, "", `/admin?tab=${section}`);
   };
 
   return (
@@ -171,7 +194,7 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
           )}
           {visibleSection === "turnos" && <TurnosSection />}
           {visibleSection === "ventas" && <VentasSection />}
-          {(visibleSection === "facturas" || visibleSection === "facturacion") && isAdmin && (
+          {visibleSection === "facturas" && isAdmin && (
             <FacturasSection />
           )}
           {visibleSection === "facturacion-config" && isAdmin && (

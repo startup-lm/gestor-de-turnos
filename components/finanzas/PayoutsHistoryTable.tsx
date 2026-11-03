@@ -6,6 +6,7 @@ import { CommissionPayout } from "@/lib/types/cash";
 import { getCommissionPayouts, voidCommissionPayout } from "@/lib/repository/cash";
 import { buildPayoutWhatsAppText } from "@/lib/finance/payoutText";
 import { toast } from "@/lib/store/useToastStore";
+import { formatARS } from "@/lib/format/currency";
 import {
   FileText,
   Copy,
@@ -181,11 +182,11 @@ export default function PayoutsHistoryTable({ barbers, refreshKey }: Readonly<Pr
                       </td>
                       <td className="py-3 px-4 text-right text-amber-400 font-medium">
                         {p.advances_deducted > 0
-                          ? `-$${Math.round(p.advances_deducted).toLocaleString("es-AR")}`
+                          ? `-${formatARS(p.advances_deducted)}`
                           : "—"}
                       </td>
                       <td className="py-3 px-4 text-right font-extrabold text-sm text-emerald-400">
-                        ${Math.round(p.total_paid).toLocaleString("es-AR")}
+                        {formatARS(p.total_paid)}
                       </td>
                       <td className="py-3 px-4 text-slate-300">
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[11px]">
@@ -291,7 +292,7 @@ export default function PayoutsHistoryTable({ barbers, refreshKey }: Readonly<Pr
                       )}
                     </div>
                     <span className="text-sm font-extrabold text-emerald-400">
-                      ${Math.round(p.total_paid).toLocaleString("es-AR")}
+                      {formatARS(p.total_paid)}
                     </span>
                   </div>
 
@@ -314,7 +315,7 @@ export default function PayoutsHistoryTable({ barbers, refreshKey }: Readonly<Pr
                     </div>
                     {p.advances_deducted > 0 && (
                       <div className="text-amber-400">
-                        Adelantos descontados: -${Math.round(p.advances_deducted).toLocaleString("es-AR")}
+                        Adelantos descontados: -{formatARS(p.advances_deducted)}
                       </div>
                     )}
                   </div>

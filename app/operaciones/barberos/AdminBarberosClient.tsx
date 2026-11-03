@@ -363,7 +363,7 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
             disabled={!hasChanges || submitting}
             className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 ${
               hasChanges && !submitting
-                ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
+                ? "!bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
                 : "!bg-white/5 !text-slate-500 border border-white/10 cursor-not-allowed opacity-50"
             }`}
           >
@@ -803,7 +803,7 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800/40 pb-4">
         <div>
           <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-            Gestión de barberos
+            Barberos
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Alta, edición de comisiones y estado activo del personal
@@ -815,7 +815,7 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
             onClick={startCreate}
             disabled={isAtBarberLimit}
             data-testid="btn-add-barber"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span>Nuevo barbero</span>

@@ -91,7 +91,7 @@ const formatLocalDate = (d: Date): string => {
 
 export interface TotalAndRevenueResponse {
   barberTotals: { barberId: number; totalAppt: number; totalRevenue: number }[];
-  paymentMethodTotals: { Efectivo: number; MercadoPago: number; Otros: number };
+  paymentMethodTotals: Record<string, number>;
 }
 
 export async function getTotalAndRevenueForAllBarbers(start_date: Date, end_date: Date): Promise<TotalAndRevenueResponse> {
@@ -103,13 +103,13 @@ export async function getTotalAndRevenueForAllBarbers(start_date: Date, end_date
     const res = await fetch(`${BASE}/api/appointments/all?${params}`, {
       next: { tags: ["appointments"] },
     });
-    if (!res.ok) return { barberTotals: [], paymentMethodTotals: { Efectivo: 0, MercadoPago: 0, Otros: 0 } };
+    if (!res.ok) return { barberTotals: [], paymentMethodTotals: {} };
     const text = await res.text();
-    if (!text.trim().startsWith("{")) return { barberTotals: [], paymentMethodTotals: { Efectivo: 0, MercadoPago: 0, Otros: 0 } };
+    if (!text.trim().startsWith("{")) return { barberTotals: [], paymentMethodTotals: {} };
     return JSON.parse(text);
   } catch (err) {
     console.error("getTotalAndRevenueForAllBarbers error:", err);
-    return { barberTotals: [], paymentMethodTotals: { Efectivo: 0, MercadoPago: 0, Otros: 0 } };
+    return { barberTotals: [], paymentMethodTotals: {} };
   }
 }
 

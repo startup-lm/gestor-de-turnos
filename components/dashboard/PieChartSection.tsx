@@ -7,12 +7,12 @@ import { PieChart as LucidePieChart, Award } from "lucide-react";
 
 const COLORS = [
   "var(--accent)",      // Dorado champagne
-  "#38bdf8",            // Celeste Barber
-  "#a78bfa",            // Violeta comisiones
-  "#22c55e",            // Verde esmeralda
-  "#f43f5e",            // Rosa barber pole
-  "#fb923c",            // Naranja
-  "#e879f9",            // Fucsia
+  "var(--chart-1)",     // Celeste Barber
+  "var(--chart-2)",     // Violeta comisiones
+  "var(--chart-3)",     // Verde esmeralda
+  "var(--chart-4)",     // Rosa barber pole
+  "var(--chart-5)",     // Naranja
+  "var(--chart-6)",     // Fucsia
 ];
 
 export default function PieChartSection({ data }: Readonly<{ data: PieData[] }>) {
@@ -35,7 +35,7 @@ export default function PieChartSection({ data }: Readonly<{ data: PieData[] }>)
           </div>
           <div>
             <h3 className="text-base font-bold text-white tracking-tight">
-              Distribución de Turnos por Profesional
+              Distribución de turnos por profesional
             </h3>
             <p className="text-xs text-slate-400">
               Proporción y ranking de turnos atendidos en el período
@@ -103,7 +103,7 @@ export default function PieChartSection({ data }: Readonly<{ data: PieData[] }>)
             {/* Total en el centro del Donut */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-2xl font-black text-white leading-none">{totalTurnos}</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+              <span className="text-[10px] font-bold text-slate-400 tracking-wider mt-1">
                 Turnos
               </span>
             </div>

@@ -183,7 +183,7 @@ export default function ConfigContactoSection() {
             <span>WhatsApp del local</span>
           </div>
           <p className="text-xs text-slate-400">
-            Número para recibir consultas de clientes y enviar confirmaciones automáticas de turnos:
+            Número de WhatsApp del local: los clientes lo usan para consultas y para confirmar sus turnos.
           </p>
           <div className="pt-1">
             <PhoneInput

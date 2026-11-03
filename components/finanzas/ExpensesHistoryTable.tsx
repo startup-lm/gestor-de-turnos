@@ -5,6 +5,7 @@ import { CashMovement } from "@/lib/types/cash";
 import { getCashMovements, MovementFilterParams, voidCashMovement } from "@/lib/repository/cash";
 import { formatLocalDate } from "@/lib/dates/argentina";
 import { toast } from "@/lib/store/useToastStore";
+import { formatARS } from "@/lib/format/currency";
 import {
   TrendingDown,
   HandCoins,
@@ -286,7 +287,7 @@ export default function ExpensesHistoryTable({
                         </span>
                       </td>
                       <td className={`py-3 px-4 text-right font-extrabold text-sm text-red-400 ${isVoided ? "line-through text-slate-400" : ""}`}>
-                        -${Math.round(Number(m.amount)).toLocaleString("es-AR")}
+                        -{formatARS(m.amount)}
                       </td>
                       <td className="py-3 px-4 text-center">
                         {renderAction(m)}
@@ -301,7 +302,7 @@ export default function ExpensesHistoryTable({
                     Total egresos en el período seleccionado:
                   </td>
                   <td className="py-3 px-4 text-right text-red-400 text-sm font-black">
-                    -${Math.round(totalAmount).toLocaleString("es-AR")}
+                    -{formatARS(totalAmount)}
                   </td>
                   <td className="py-3 px-4" />
                 </tr>
@@ -340,7 +341,7 @@ export default function ExpensesHistoryTable({
                       )}
                     </div>
                     <span className={`text-sm font-extrabold text-red-400 ${isVoided ? "line-through text-slate-400" : ""}`}>
-                      -${Math.round(Number(m.amount)).toLocaleString("es-AR")}
+                      -{formatARS(m.amount)}
                     </span>
                   </div>
 
@@ -417,7 +418,7 @@ export default function ExpensesHistoryTable({
             <div className="p-3.5 rounded-xl bg-red-950/20 border border-red-500/20 flex items-center justify-between text-xs">
               <span className="font-bold text-slate-300">Total egresos:</span>
               <span className="font-extrabold text-red-400 text-sm">
-                -${Math.round(totalAmount).toLocaleString("es-AR")}
+                -{formatARS(totalAmount)}
               </span>
             </div>
           </div>

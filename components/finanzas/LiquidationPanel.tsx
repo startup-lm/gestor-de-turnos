@@ -35,7 +35,7 @@ interface Props {
   onSuccess: () => void;
 }
 
-const ars = (n: number) => `$${Math.round(Number(n)).toLocaleString("es-AR")}`;
+import { formatARS as ars } from "@/lib/format/currency";
 
 const formatDay = (day: string) => {
   const [y, m, d] = day.slice(0, 10).split("-");

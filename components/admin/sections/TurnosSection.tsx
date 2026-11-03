@@ -136,7 +136,7 @@ export default function TurnosSection() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-            Gestión de turnos
+            Turnos
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Búsqueda, inspección y seguimiento de turnos
@@ -145,7 +145,7 @@ export default function TurnosSection() {
         <button
           type="button"
           onClick={() => setViewMode("block")}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer self-start sm:self-auto"
         >
           <CalendarX className="w-4 h-4 stroke-[2.5]" />
           <span>Bloquear horarios</span>

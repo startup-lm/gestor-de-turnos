@@ -3,7 +3,6 @@ import { getBarbersAppointmentsFromDates } from "@/lib/repository/appointments";
 import { Appointment } from "@/lib/types/Appointment";
 
 export type ViewMode = "day" | "week" | "month";
-export type DataType = "count" | "revenue";
 
 export interface DataPoint {
   date: string;
@@ -22,8 +21,7 @@ export function useDashboardData(
   barberId: number,
   startDate: Date,
   endDate: Date,
-  viewMode: ViewMode,
-  dataType: DataType
+  viewMode: ViewMode
 ) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
 
@@ -49,15 +47,19 @@ export function useDashboardData(
     };
   }, [barberId, startIso, endIso]);
 
-  const { total, chartData } = useMemo(() => {
+  const { totalCount, totalRevenue, chartData } = useMemo(() => {
     if (barberId === -1 || appointments.length === 0) {
-      return { total: barberId === -1 ? null : 0, chartData: [] };
+      return {
+        totalCount: barberId === -1 ? null : 0,
+        totalRevenue: barberId === -1 ? null : 0,
+        chartData: [],
+      };
     }
 
-    const tot =
-      dataType === "revenue"
-        ? appointments.reduce((sum, a) => sum + (a.price ?? 0), 0)
-        : appointments.length;
+    const count = appointments.length;
+    const revenue = appointments
+      .filter((a) => a.paid === true)
+      .reduce((sum, a) => sum + (a.price ?? 0), 0);
 
     const grouped: Record<string, { count: number; revenue: number; label: string }> = {};
 
@@ -89,7 +91,7 @@ export function useDashboardData(
         label = `${month.charAt(0).toUpperCase() + month.slice(1)} ${year}`;
       }
 
-      const price = appt.price || 0;
+      const price = appt.paid ? (appt.price || 0) : 0;
       if (grouped[key]) {
         grouped[key].count += 1;
         grouped[key].revenue += price;
@@ -102,8 +104,8 @@ export function useDashboardData(
       .map(([date, { count, revenue, label }]) => ({ date, count, revenue, label }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    return { total: tot, chartData: dataPoints };
-  }, [appointments, barberId, dataType, viewMode]);
+    return { totalCount: count, totalRevenue: revenue, chartData: dataPoints };
+  }, [appointments, barberId, viewMode]);
 
-  return { total, chartData };
+  return { totalCount, totalRevenue, chartData };
 }

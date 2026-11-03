@@ -387,7 +387,7 @@ export function ConfigFormSkeleton() {
 }
 
 /**
- * Skeleton para Facturación Fiscal (ArcaPage)
+ * Skeleton para Facturación Fiscal (FacturasSection)
  */
 export function ArcaSkeleton() {
   return (
