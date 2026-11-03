@@ -6,6 +6,14 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.8.1] - 2026-11-03
+
+### Cambiado
+- **Menú lateral de `/admin` ajustable:** el borde derecho se arrastra para ensancharlo o achicarlo (entre 180 y 360 px), y cada navegador recuerda el ancho elegido. Arrastrándolo hasta el borde se colapsa, y doble clic lo vuelve al ancho por defecto, que ahora es más angosto (220 px). También se ajusta con las flechas del teclado.
+
+### Eliminado
+- Botones "Ver todas en Google" y "Dejar una reseña" al pie de la sección de reseñas de Google.
+
 ## [1.8.0] - 2026-11-03
 
 Revisión integral del panel `/admin`: seguridad, cálculo de plata, código duplicado y experiencia de uso.
