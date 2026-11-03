@@ -6,8 +6,16 @@
   --secondary: #F3F4F6;         /* gris muy claro para fondos y botones */
 
   --accent: #DFBA73;            /* dorado champaña vibrante y premium */
+  --accent-hover: #E8CA8C;
   --accent-red: #DC2626;        /* rojo tipo barber pole */
   --accent-blue: #2563EB;       /* azul intenso tipo barber pole */
+
+  --chart-1: #38bdf8;
+  --chart-2: #a78bfa;
+  --chart-3: #22c55e;
+  --chart-4: #f43f5e;
+  --chart-5: #fb923c;
+  --chart-6: #e879f9;
 
   --heading-color: var(--secondary);
 

@@ -7,12 +7,12 @@ import { PieChart as LucidePieChart, Award } from "lucide-react";
 
 const COLORS = [
   "var(--accent)",      // Dorado champagne
-  "#38bdf8",            // Celeste Barber
-  "#a78bfa",            // Violeta comisiones
-  "#22c55e",            // Verde esmeralda
-  "#f43f5e",            // Rosa barber pole
-  "#fb923c",            // Naranja
-  "#e879f9",            // Fucsia
+  "var(--chart-1)",     // Celeste Barber
+  "var(--chart-2)",     // Violeta comisiones
+  "var(--chart-3)",     // Verde esmeralda
+  "var(--chart-4)",     // Rosa barber pole
+  "var(--chart-5)",     // Naranja
+  "var(--chart-6)",     // Fucsia
 ];
 
 export default function PieChartSection({ data }: Readonly<{ data: PieData[] }>) {

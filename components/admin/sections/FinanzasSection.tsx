@@ -15,6 +15,7 @@ import {
   presetFromClosingFrequency,
 } from "@/lib/dates/presets";
 import DatePresetSelector from "@/components/admin/DatePresetSelector";
+import { formatARS } from "@/lib/format/currency";
 import {
   Wallet,
   Coins,
@@ -252,7 +253,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
               {isNegative ? "Saldo deudor" : "Superávit"}
             </span>
             <span className="text-slate-400 text-[11px] font-medium">
-              Margen: {profitMargin}%{operatingExpenses > 0 ? ` · Gastos: -$${Math.round(operatingExpenses).toLocaleString("es-AR")}` : ""}
+              Margen: {profitMargin}%{operatingExpenses > 0 ? ` · Gastos: -${formatARS(operatingExpenses)}` : ""}
             </span>
           </div>
         </div>
@@ -274,8 +275,8 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
           </div>
 
           <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
-            <span>Cortes: ${Math.round(totalTurnosRevenue).toLocaleString("es-AR")}</span>
-            <span>Ventas: ${Math.round(totalSalesRevenue).toLocaleString("es-AR")}</span>
+            <span>Cortes: {formatARS(totalTurnosRevenue)}</span>
+            <span>Ventas: {formatARS(totalSalesRevenue)}</span>
           </div>
         </div>
 
@@ -296,8 +297,8 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
           </div>
 
           <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
-            <span>Por turnos: ${Math.round(totalCommissions).toLocaleString("es-AR")}</span>
-            <span>Por ventas: ${Math.round(totalSalesCommission).toLocaleString("es-AR")}</span>
+            <span>Por turnos: {formatARS(totalCommissions)}</span>
+            <span>Por ventas: {formatARS(totalSalesCommission)}</span>
           </div>
         </div>
 
@@ -345,7 +346,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
               </div>
               {cashSummary && !cashSummaryError && (
                 <span className="text-xs font-semibold text-slate-300 hidden sm:inline-block">
-                  Total neto: ${Math.round(cashSummary.totals.net).toLocaleString("es-AR")}
+                  Total neto: {formatARS(cashSummary.totals.net)}
                 </span>
               )}
             </div>
@@ -384,10 +385,10 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                             <span
                               className={`text-xl font-extrabold ${style.textColor} block truncate`}
                             >
-                              ${Math.round(row.net).toLocaleString("es-AR")}
+                              {formatARS(row.net)}
                             </span>
                             <span className="text-[11px] text-slate-400 block truncate">
-                              Ingresos ${Math.round(row.income).toLocaleString("es-AR")} · Egresos ${Math.round(row.outcome).toLocaleString("es-AR")}
+                              Ingresos {formatARS(row.income)} · Egresos {formatARS(row.outcome)}
                             </span>
                           </div>
                         </div>
@@ -442,7 +443,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                   <span className="text-xs font-medium text-slate-300">Turnos y barbería</span>
                 </div>
                 <span className="text-sm font-bold text-white">
-                  ${Math.round(totalTurnosRevenue).toLocaleString("es-AR")}
+                  {formatARS(totalTurnosRevenue)}
                 </span>
               </div>
 
@@ -453,7 +454,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                   <span className="text-xs font-medium text-slate-300">Venta de productos</span>
                 </div>
                 <span className="text-sm font-bold text-white">
-                  ${Math.round(totalSalesRevenue).toLocaleString("es-AR")}
+                  {formatARS(totalSalesRevenue)}
                 </span>
               </div>
 
@@ -464,7 +465,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                   <span className="text-xs font-medium text-red-300">Liquidación de personal</span>
                 </div>
                 <span className="text-sm font-bold text-red-400">
-                  -${Math.round(totalCommissionsAll).toLocaleString("es-AR")}
+                  -{formatARS(totalCommissionsAll)}
                 </span>
               </div>
 
@@ -476,7 +477,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                     <span className="text-xs font-medium text-amber-300">Gastos del local</span>
                   </div>
                   <span className="text-sm font-bold text-amber-400">
-                    -${Math.round(operatingExpenses).toLocaleString("es-AR")}
+                    -{formatARS(operatingExpenses)}
                   </span>
                 </div>
               )}
@@ -554,28 +555,28 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                         {cortes}
                       </td>
                       <td className="py-3.5 px-3 text-right font-medium text-white">
-                        ${Math.round(facturadoCortes).toLocaleString("es-AR")}
+                        {formatARS(facturadoCortes)}
                       </td>
                       <td className="py-3.5 px-3 text-right text-slate-300">
                         <span className="text-[10px] text-slate-500 mr-1">
                           ({Math.round(commRateCortes * 100)}%)
                         </span>
-                        ${Math.round(aLiquidarCortes).toLocaleString("es-AR")}
+                        {formatARS(aLiquidarCortes)}
                       </td>
                       <td className="py-3.5 px-3 text-right font-medium text-white">
-                        ${Math.round(facturadoVentas).toLocaleString("es-AR")}
+                        {formatARS(facturadoVentas)}
                       </td>
                       <td className="py-3.5 px-3 text-right text-slate-300">
                         <span className="text-[10px] text-slate-500 mr-1">
                           ({Math.round(commRateVentas * 100)}%)
                         </span>
-                        ${Math.round(aLiquidarVentas).toLocaleString("es-AR")}
+                        {formatARS(aLiquidarVentas)}
                       </td>
                       <td className="py-3.5 px-3 text-right font-extrabold text-red-400 text-sm">
-                        ${Math.round(totalALiquidar).toLocaleString("es-AR")}
+                        {formatARS(totalALiquidar)}
                       </td>
                       <td className="py-3.5 px-3 text-right font-extrabold text-emerald-400 text-sm">
-                        ${Math.round(margenLocal).toLocaleString("es-AR")}
+                        {formatARS(margenLocal)}
                       </td>
                     </tr>
                   );

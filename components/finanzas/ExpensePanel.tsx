@@ -5,6 +5,7 @@ import { createCashMovement } from "@/lib/repository/cash";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { DEFAULT_PAYMENT_METHODS } from "@/lib/flags";
 import { toast } from "@/lib/store/useToastStore";
+import { formatARS } from "@/lib/format/currency";
 import {
   TrendingDown,
   Check,
@@ -101,7 +102,7 @@ export default function ExpensePanel({ onClose, onSuccess }: Readonly<Props>) {
         return;
       }
 
-      toast.success(`Gasto de $${Math.round(numAmount).toLocaleString("es-AR")} registrado correctamente`);
+      toast.success(`Gasto de ${formatARS(numAmount)} registrado correctamente`);
       onSuccess();
     } catch (err) {
       console.error(err);

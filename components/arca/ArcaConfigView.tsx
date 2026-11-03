@@ -112,7 +112,7 @@ export default function ArcaConfigView({
             disabled={!hasConfigChanges || savingConfig}
             className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md min-h-[40px] ${
               hasConfigChanges && !savingConfig
-                ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer active:scale-95"
+                ? "!bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer active:scale-95"
                 : "!bg-white/5 !text-slate-500 border border-white/10 cursor-not-allowed opacity-50"
             }`}
           >

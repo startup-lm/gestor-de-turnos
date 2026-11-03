@@ -6,6 +6,7 @@ import { createCashMovement } from "@/lib/repository/cash";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { DEFAULT_PAYMENT_METHODS } from "@/lib/flags";
 import { toast } from "@/lib/store/useToastStore";
+import { formatARS } from "@/lib/format/currency";
 import {
   HandCoins,
   Check,
@@ -101,7 +102,7 @@ export default function AdvancePanel({
         return;
       }
 
-      toast.success(`Adelanto de $${Math.round(numAmount).toLocaleString("es-AR")} registrado correctamente`);
+      toast.success(`Adelanto de ${formatARS(numAmount)} registrado correctamente`);
       onSuccess();
     } catch (err) {
       console.error(err);

@@ -922,7 +922,7 @@ export default function AppointmentDetailsSplitPanel({
               }
               className={`w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl transition-all text-xs font-black active:scale-95 ${
                 hasChanges && !loadingUpdate && !isLocked
-                  ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-md shadow-[var(--accent)]/20 cursor-pointer animate-pulse"
+                  ? "!bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 shadow-md shadow-[var(--accent)]/20 cursor-pointer animate-pulse"
                   : "!bg-[var(--foreground)]/5 !text-[var(--foreground)]/30 border border-[var(--foreground)]/10 cursor-not-allowed"
               }`}
             >

@@ -456,7 +456,7 @@ export default function BookingSplitPanel({
             id="btn-reservar-submit"
             type="submit"
             disabled={isDisabled || loading}
-            className="w-full flex items-center justify-center gap-2.5 bg-[var(--accent)] hover:bg-[#E8CA8C] text-slate-950 font-extrabold py-3.5 px-5 rounded-xl shadow-lg shadow-[var(--accent)]/20 border border-[var(--accent)]/40 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed text-sm md:text-base cursor-pointer"
+            className="w-full flex items-center justify-center gap-2.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-slate-950 font-extrabold py-3.5 px-5 rounded-xl shadow-lg shadow-[var(--accent)]/20 border border-[var(--accent)]/40 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed text-sm md:text-base cursor-pointer"
           >
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />

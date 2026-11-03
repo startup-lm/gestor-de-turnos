@@ -210,7 +210,7 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
             <Bar
               dataKey={isRevenue ? "revenueVentas" : "ventas"}
               name={isRevenue ? "Facturación Ventas ($)" : "Ventas (Cant.)"}
-              fill="#38bdf8"
+              fill="var(--chart-1)"
               radius={[6, 6, 0, 0]}
               maxBarSize={38}
             />
