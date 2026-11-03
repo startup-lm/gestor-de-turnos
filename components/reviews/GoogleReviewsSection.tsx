@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Star, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { useKeenSlider, KeenSliderInstance } from "keen-slider/react";
 import "keen-slider/keen-slider.min.css";
 import { KeenAutoplayPlugin } from "@/utils/autoplayPlugin";
@@ -188,34 +188,6 @@ export default function GoogleReviewsSection({
           <p className="text-sm text-slate-400">
             Aún no hay reseñas cargadas para mostrar. ¡Sé el primero en dejarnos tu opinión en Google!
           </p>
-        </div>
-      )}
-
-      {/* Enlaces al pie */}
-      {(googleMapsUri || writeUrl) && (
-        <div className="mt-8 pt-6 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
-          {googleMapsUri && (
-            <a
-              href={googleMapsUri}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-slate-900/80 border border-slate-700/80 hover:bg-slate-800 hover:border-slate-600 transition-all active:scale-95 shadow-sm"
-            >
-              <span>Ver todas en Google</span>
-              <ExternalLink className="w-4 h-4 text-slate-400" />
-            </a>
-          )}
-          {writeUrl && (
-            <a
-              href={writeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 min-h-[44px] rounded-xl text-xs sm:text-sm font-bold text-slate-950 bg-[var(--accent)] hover:opacity-95 transition-all shadow-md active:scale-95 shadow-[var(--accent)]/15"
-            >
-              <span>Dejar una reseña</span>
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          )}
         </div>
       )}
     </section>
