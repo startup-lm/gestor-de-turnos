@@ -501,11 +501,11 @@ export function BarbersGridSkeleton() {
         <Skeleton className="h-9 w-36 rounded-xl bg-slate-800/60" />
       </div>
 
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 justify-items-center sm:justify-items-start">
+      <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] justify-items-center sm:justify-items-start">
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="w-[300px] sm:w-[320px] min-h-[350px] border border-white/10 rounded-2xl p-5 flex flex-col items-center justify-between bg-slate-900/40"
+            className="w-full max-w-[320px] min-h-[350px] border border-white/10 rounded-2xl p-5 flex flex-col items-center justify-between bg-slate-900/40"
           >
             <div className="w-full flex justify-between mb-2">
               <Skeleton className="h-8 w-8 rounded-lg bg-slate-800/50" />

@@ -671,7 +671,7 @@ export default function BarberosSection({ barbers }: Readonly<Props>) {
   const renderBarberCard = (barber: Barber) => (
     <div
       key={barber.id}
-      className={`group relative w-[300px] sm:w-[320px] min-h-[350px] border border-[var(--foreground)]/10 rounded-2xl p-5 flex flex-col items-center text-center bg-gradient-to-b from-[var(--foreground)]/[0.07] to-[var(--foreground)]/[0.02] backdrop-blur-md shadow-lg hover:border-[var(--accent)]/40 hover:shadow-xl hover:shadow-[var(--accent)]/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden ${
+      className={`group relative w-full max-w-[320px] min-h-[350px] border border-[var(--foreground)]/10 rounded-2xl p-5 flex flex-col items-center text-center bg-gradient-to-b from-[var(--foreground)]/[0.07] to-[var(--foreground)]/[0.02] backdrop-blur-md shadow-lg hover:border-[var(--accent)]/40 hover:shadow-xl hover:shadow-[var(--accent)]/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden ${
         !barber.active ? "opacity-75" : ""
       }`}
     >
@@ -820,7 +820,7 @@ export default function BarberosSection({ barbers }: Readonly<Props>) {
       </div>
 
       {/* Grilla de Barberos Activos */}
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 justify-items-center sm:justify-items-start">
+      <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] justify-items-center sm:justify-items-start">
         {activeBarbers.length > 0 ? (
           activeBarbers.map((barber) => renderBarberCard(barber))
         ) : (
@@ -840,7 +840,7 @@ export default function BarberosSection({ barbers }: Readonly<Props>) {
             </p>
           </div>
 
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 justify-items-center sm:justify-items-start">
+          <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] justify-items-center sm:justify-items-start">
             {inactiveBarbers.map((barber) => renderBarberCard(barber))}
           </div>
         </div>
