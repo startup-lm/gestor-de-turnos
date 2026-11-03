@@ -18,6 +18,7 @@ Liquidaciones y comisiones confiables, `/admin` como único lugar de gestión y 
 - **Control de stock en ventas** (planes estándar y premium): cada venta descuenta las unidades vendidas, y editarla o borrarla las devuelve. En "Nueva venta" cada producto muestra cuántas unidades quedan, los que no tienen stock no se pueden elegir y la cantidad no puede superar lo disponible. Si dos ventas se llevan el último producto a la vez, solo una se registra.
 - **Mi perfil en `/admin`:** cada barbero edita su foto, sus datos y su contraseña desde el menú lateral.
 - **Cerrar sesión en el pie del menú lateral**, junto al nombre del producto y la versión.
+- **Aviso de turnos pasados sin cobrar** en Resumen: cuenta los turnos del período que ya terminaron y no se cobraron (incluye clientes que no vinieron), y "Ver turnos" abre la agenda filtrada en esos turnos.
 
 ### Corregido
 - **Liquidaciones de períodos abiertos:** no se puede liquidar un período que termina después de hoy. Si el período elegido sigue abierto, se liquida hasta hoy y se avisa.
@@ -33,11 +34,13 @@ Liquidaciones y comisiones confiables, `/admin` como único lugar de gestión y 
 - **Criterio de asignación de turnos** disponible también en el plan estándar.
 - El ícono de usuario del header solo aparece para invitados y lleva a ingresar.
 - "Horarios y atención" pasa a llamarse "Horarios y reservas".
+- **Métricas pasa a llamarse Resumen** y muestra la actividad del local: turnos, productos vendidos y ticket promedio. Los totales de plata (facturación y comisiones) quedan solo en Balance.
 
 ### Eliminado
 - Botones "Ver todas en Google" y "Dejar una reseña" al pie de la sección de reseñas de Google.
 - Rutas viejas que solo redirigían o duplicaban pantallas de `/admin`: `/dashboard`, `/configuracion`, `/operaciones/*` (incluida la página duplicada de barberos), `/turnos/[id]`, `/ventas/[id]`, `/barbers/[id]`, `/productos/nuevo` y `/servicios/nuevo`.
 - Menú desplegable del usuario en el header.
+- En Balance, la tarjeta "Operaciones totales" y el bloque "Estructura de ingresos", que repetían los montos de las tarjetas de arriba.
 
 ## [1.8.0] - 2026-11-03
 

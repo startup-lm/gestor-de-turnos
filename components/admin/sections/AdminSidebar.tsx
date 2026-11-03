@@ -75,11 +75,11 @@ export interface NavGroup {
 export const NAV_GROUPS: NavGroup[] = [
   {
     id: "metricas",
-    label: "Métricas",
+    label: "Resumen",
     items: [
       {
         section: "metricas",
-        label: "Métricas",
+        label: "Resumen",
         icon: TrendingUp,
         visible: (modules) => modules.metrics,
       },

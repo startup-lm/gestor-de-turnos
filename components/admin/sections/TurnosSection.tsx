@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { CalendarX, Calendar } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { CalendarX, Calendar, X } from "lucide-react";
+import { isPastUnpaid } from "@/lib/appointments/pastUnpaid";
 import { Appointment } from "@/lib/types/Appointment";
 import AppointmentsTable from "@/components/admin/AppointmentsTable";
 import BlockDateSplitPanel from "@/components/admin/BlockDateSplitPanel";
@@ -16,7 +18,17 @@ function formatDateISO(d: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
 export default function TurnosSection() {
+  // El aviso de Resumen llega con ?pendientes=1&desde=…&hasta=…[&barbero=…]
+  const searchParams = useSearchParams();
+  const linkStart = searchParams.get("desde") ?? "";
+  const linkEnd = searchParams.get("hasta") ?? "";
+  const fromPendingLink = searchParams.get("pendientes") === "1" && ISO_DAY.test(linkStart) && ISO_DAY.test(linkEnd);
+  const linkBarberId = Number(searchParams.get("barbero")) || 0;
+  const [onlyPastUnpaid, setOnlyPastUnpaid] = useState(fromPendingLink);
+
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
@@ -25,7 +37,7 @@ export default function TurnosSection() {
   const requestIdRef = useRef(0);
 
   // Period filter state - Default: "Esta semana"
-  const [preset, setPreset] = useState<PeriodPreset>("week");
+  const [preset, setPreset] = useState<PeriodPreset>(fromPendingLink ? "custom" : "week");
 
   // Calculate default week dates (Monday to Sunday)
   const defaultWeekDates = useMemo(() => {
@@ -42,8 +54,18 @@ export default function TurnosSection() {
     };
   }, []);
 
-  const [customStart, setCustomStart] = useState<string>(defaultWeekDates.start);
-  const [customEnd, setCustomEnd] = useState<string>(defaultWeekDates.end);
+  const [customStart, setCustomStart] = useState<string>(fromPendingLink ? linkStart : defaultWeekDates.start);
+  const [customEnd, setCustomEnd] = useState<string>(fromPendingLink ? linkEnd : defaultWeekDates.end);
+
+  const visibleAppointments = useMemo(
+    () =>
+      onlyPastUnpaid
+        ? appointments.filter(
+            (a) => (linkBarberId === 0 || a.barber_id === linkBarberId) && a.phone !== "0000000000" && isPastUnpaid(a)
+          )
+        : appointments,
+    [appointments, onlyPastUnpaid, linkBarberId]
+  );
 
   const getActiveRange = useCallback((): { start?: string; end?: string } => {
     const now = new Date();
@@ -231,6 +253,20 @@ export default function TurnosSection() {
           </div>
         </div>
 
+        {onlyPastUnpaid && (
+          <div className="pt-3 border-t border-[var(--foreground)]/10">
+            <button
+              type="button"
+              onClick={() => setOnlyPastUnpaid(false)}
+              aria-label="Quitar filtro de turnos pasados sin cobrar"
+              className="inline-flex items-center gap-1.5 px-3 min-h-[44px] rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-200 text-xs font-semibold hover:bg-amber-500/20 transition-colors cursor-pointer"
+            >
+              <span>Pasados sin cobrar</span>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Inputs de rango personalizado cuando está activo */}
         {preset === "custom" && (
           <div className="pt-3 border-t border-[var(--foreground)]/10 flex flex-wrap items-center gap-3 animate-in fade-in duration-200">
@@ -267,7 +303,7 @@ export default function TurnosSection() {
             No se pudieron cargar los turnos. Probá de nuevo.
           </div>
         ) : (
-          <AppointmentsTable appointments={appointments} />
+          <AppointmentsTable appointments={visibleAppointments} />
         )}
       </div>
     </div>

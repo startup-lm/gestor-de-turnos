@@ -2,6 +2,9 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import { AlertTriangle, ArrowRight } from "lucide-react";
+import { formatLocalDate } from "@/lib/dates/argentina";
 import { useDashboardData, ViewMode } from "@/lib/hooks/useDashboardData";
 import DashboardToolbar from "@/components/dashboard/DashboardToolbar";
 import Metrics from "@/components/dashboard/Metrics";
@@ -11,7 +14,6 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useBarberCutsData } from "@/lib/hooks/useBarberCutsdata";
 import { useSalesDashboardData } from "@/lib/hooks/useSalesDashboardData";
 import { useTotalRevenueForAllSales } from "@/lib/hooks/useTotalSalesRevenue";
-import { useTotalCommissions } from "@/lib/hooks/useTotalComission";
 
 const ChartSection = dynamic(() => import("@/components/dashboard/ChartSection"), {
   ssr: false,
@@ -46,8 +48,13 @@ export default function MetricasSection({ initialBarbers }: Readonly<Props>) {
   const [viewMode, setViewMode] = useState<ViewMode>("day");
 
   // Hooks de turnos y cortes (una sola llamada)
-  const { totalCount: turnosTotales, paidCount: turnosCobrados, totalRevenue: ingresosTotales, chartData } =
-    useDashboardData(selectedBarberId, startDate, endDate, viewMode);
+  const {
+    totalCount: turnosTotales,
+    paidCount: turnosCobrados,
+    totalRevenue: ingresosTotales,
+    chartData,
+    pastUnpaidCount,
+  } = useDashboardData(selectedBarberId, startDate, endDate, viewMode);
 
   // Hooks de ventas de productos
   const { chartData: salesChartData } = useSalesDashboardData(selectedBarberId, startDate, endDate, viewMode);
@@ -60,8 +67,6 @@ export default function MetricasSection({ initialBarbers }: Readonly<Props>) {
     totalSalesRevenue: allSalesRevenue,
     salesByBarber,
   } = useTotalRevenueForAllSales(startDate, endDate);
-  const totalCutsCommission = useTotalCommissions(barberTotals);
-  const totalCommissionsAll = totalCutsCommission + totalSalesCommission;
 
   // Ventas y comisiones del barbero elegido (las comisiones vienen del servidor con el % congelado)
   const { ventasCount, ingresosVentas, comisionVentas } = useMemo(() => {
@@ -81,8 +86,9 @@ export default function MetricasSection({ initialBarbers }: Readonly<Props>) {
   const comisionCortes = barberTotals.find((t) => t.barberId === selectedBarberId)?.totalCommission ?? 0;
 
   const ingresos = ingresosTotales ?? 0;
-  const selectedBarber = barbers.find((b) => b.id === selectedBarberId);
-  const comision = selectedBarber?.commission ?? 0;
+  const pendientesHref = `/admin?tab=turnos&pendientes=1&desde=${formatLocalDate(startDate)}&hasta=${formatLocalDate(endDate)}${
+    selectedBarberId > 0 ? `&barbero=${selectedBarberId}` : ""
+  }`;
 
   const isDataLoading = turnosTotales === null;
 
@@ -116,11 +122,11 @@ export default function MetricasSection({ initialBarbers }: Readonly<Props>) {
       {/* Cabecera Principal */}
       <div className="border-b border-white/10 pb-4">
         <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
-          Métricas
+          Resumen
         </h2>
         <p className="text-xs text-slate-400 mt-0.5">
           {isAdmin
-            ? "Rendimiento del negocio, volumen de servicios, ventas de productos y métricas por profesional"
+            ? "Actividad del local: turnos, ventas de productos y reparto por profesional. Los montos están en Balance"
             : "Tus turnos realizados, ventas generadas y comisiones acumuladas"}
         </p>
       </div>
@@ -136,18 +142,36 @@ export default function MetricasSection({ initialBarbers }: Readonly<Props>) {
         showAll={isAdmin}
       />
 
-      {/* 4 KPIs Ejecutivos */}
+      {/* Turnos que ya pasaron y nadie cobró (incluye clientes que no vinieron) */}
+      {pastUnpaidCount > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/25">
+          <div className="flex items-start gap-2.5 text-sm text-amber-200">
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-400" />
+            <span>
+              {pastUnpaidCount === 1
+                ? "Tenés 1 turno pasado sin cobrar en este período"
+                : `Tenés ${pastUnpaidCount} turnos pasados sin cobrar en este período`}
+            </span>
+          </div>
+          <Link
+            href={pendientesHref}
+            className="inline-flex items-center justify-center gap-1.5 px-4 min-h-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-200 text-sm font-semibold transition-colors self-start sm:self-auto"
+          >
+            <span>Ver turnos</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
+
+      {/* KPIs de actividad */}
       <Metrics
         turnos={turnosCobrados}
         turnosAgendados={turnosTotales ?? 0}
         ventas={ventasCount}
         ingresos={ingresos}
-        comision={comision}
         gananciaCortes={comisionCortes}
         gananciaVentas={comisionVentas}
         ingresosVentas={ingresosVentas}
-        selectedBarberId={selectedBarberId}
-        totalCommissionsAll={totalCommissionsAll}
       />
 
       {/* Gráfico de Evolución Temporal */}

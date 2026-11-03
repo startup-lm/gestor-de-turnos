@@ -3,7 +3,7 @@
 import { useAuth } from "@/lib/auth/AuthContext";
 import React from "react";
 import CountUp from "react-countup";
-import { Scissors, ShoppingBag, TrendingUp, DollarSign, Wallet, Award } from "lucide-react";
+import { Scissors, ShoppingBag, TrendingUp } from "lucide-react";
 import { formatARS } from "@/lib/format/currency";
 
 interface Props {
@@ -13,14 +13,10 @@ interface Props {
   turnosAgendados: number;
   ventas: number;
   ingresos: number;
-  /** % de comisión vigente del barbero elegido (solo para mostrar) */
-  comision: number;
   /** Comisiones del barbero elegido, calculadas en el servidor con el % congelado */
   gananciaCortes: number;
   gananciaVentas: number;
   ingresosVentas: number;
-  selectedBarberId?: number;
-  totalCommissionsAll?: number;
 }
 
 export default function Metrics({
@@ -28,29 +24,15 @@ export default function Metrics({
   turnosAgendados,
   ventas,
   ingresos,
-  comision,
   gananciaCortes,
   gananciaVentas,
   ingresosVentas,
-  selectedBarberId = 0,
-  totalCommissionsAll = 0,
 }: Readonly<Props>) {
   const { role } = useAuth();
   const isAdmin = role === "admin";
 
-  const facturacionTotal = ingresos + ingresosVentas;
   const ticketPromedio = turnos > 0 ? Math.round(ingresos / turnos) : 0;
-
-  const isGlobalView = selectedBarberId === 0;
-
-  // Ganancias individuales
   const gananciaTotal = gananciaCortes + gananciaVentas;
-
-  // En vista global, comisiones totales a pagar
-  const comisionesFinales = isGlobalView ? totalCommissionsAll : gananciaTotal;
-  const margenRetencion = facturacionTotal > 0
-    ? Math.max(0, Math.round(((facturacionTotal - comisionesFinales) / facturacionTotal) * 100))
-    : 0;
 
   // Vista para barbero no administrador
   if (!isAdmin) {
@@ -125,32 +107,10 @@ export default function Metrics({
     );
   }
 
-  // Vista para Administrador: 4 KPIs Ejecutivos
+  // Vista para administrador: actividad del local (los montos totales viven en Balance)
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full">
-      {/* 🌟 KPI 1: FACTURACIÓN TOTAL */}
-      <div className="kpi-card kpi-card--revenue flex flex-col justify-between gap-3.5 p-5 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <span className="block text-[11px] font-bold text-slate-400 tracking-wider leading-none mb-1.5 truncate">
-              Facturación total
-            </span>
-            <h4 className="text-2xl lg:text-3xl font-black text-white leading-tight truncate">
-              <CountUp start={0} end={facturacionTotal} duration={2} prefix="$" separator="." />
-            </h4>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/25 text-amber-400 shadow-inner flex-shrink-0">
-            <DollarSign className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="pt-2.5 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
-          <span className="truncate">Cortes: {formatARS(ingresos)}</span>
-          <span className="truncate">Ventas: {formatARS(ingresosVentas)}</span>
-        </div>
-      </div>
-
-      {/* 💈 KPI 2: CORTES Y SERVICIOS */}
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+      {/* Cortes y servicios */}
       <div className="kpi-card kpi-card--cuts flex flex-col justify-between gap-3.5 p-5 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
@@ -176,7 +136,7 @@ export default function Metrics({
         </div>
       </div>
 
-      {/* 🛍️ KPI 3: VENTAS Y PRODUCTOS */}
+      {/* Venta de productos */}
       <div className="kpi-card kpi-card--sales flex flex-col justify-between gap-3.5 p-5 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
@@ -201,29 +161,24 @@ export default function Metrics({
         </div>
       </div>
 
-      {/* 🪙 KPI 4: LIQUIDACIÓN / RENDIMIENTO */}
-      <div className="kpi-card kpi-card--net flex flex-col justify-between gap-3.5 p-5 min-w-0">
+      {/* Ticket promedio */}
+      <div className="kpi-card kpi-card--revenue flex flex-col justify-between gap-3.5 p-5 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <span className="block text-[11px] font-bold text-slate-400 tracking-wider leading-none mb-1.5 truncate">
-              {isGlobalView ? "Comisiones a liquidar" : "Ganancia del profesional"}
+              Ticket promedio
             </span>
-            <h4 className="text-2xl lg:text-3xl font-black text-emerald-400 leading-tight truncate">
-              <CountUp start={0} end={comisionesFinales} duration={2} prefix="$" separator="." />
+            <h4 className="text-2xl lg:text-3xl font-black text-white leading-tight truncate">
+              <CountUp start={0} end={ticketPromedio} duration={2} prefix="$" separator="." />
             </h4>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/25 text-emerald-400 shadow-inner flex-shrink-0">
-            {isGlobalView ? <Wallet className="w-5 h-5" /> : <Award className="w-5 h-5" />}
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/25 text-amber-400 shadow-inner flex-shrink-0">
+            <TrendingUp className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="pt-2.5 border-t border-white/5 flex items-center justify-between text-[11px]">
-          <span className="text-slate-400 truncate">
-            {isGlobalView ? `Margen local: ${margenRetencion}%` : `Ticket prom: ${formatARS(ticketPromedio)}`}
-          </span>
-          <span className="font-semibold text-slate-300 text-xs">
-            {isGlobalView ? `Ticket: ${formatARS(ticketPromedio)}` : `Comisión: ${(comision * 100).toFixed(0)}%`}
-          </span>
+        <div className="pt-2.5 border-t border-white/5 text-[11px] text-slate-400 truncate">
+          Por turno cobrado
         </div>
       </div>
     </div>

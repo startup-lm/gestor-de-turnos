@@ -20,18 +20,13 @@ import { roleLabel } from "@/lib/format/roles";
 import {
   Wallet,
   Coins,
-  TrendingUp,
   CreditCard,
-  Scissors,
-  ShoppingBag,
   ArrowUpRight,
   ArrowDownRight,
   AlertTriangle,
   Users,
-  Percent,
   Banknote,
   ArrowRightLeft,
-  TrendingDown,
 } from "lucide-react";
 
 interface Props {
@@ -98,7 +93,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
   const ownerWithdrawals = cashSummary?.withdrawalsTotal ?? 0;
 
   const { summary, barberTotals } = useBarberCutsData(startDate, endDate, barbers);
-  const { totalSalesRevenue, totalSales, totalSalesCommission, salesByBarber } =
+  const { totalSalesRevenue, totalSalesCommission, salesByBarber } =
     useTotalRevenueForAllSales(startDate, endDate);
   const totalCommissions = useTotalCommissions(barberTotals);
 
@@ -217,7 +212,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
       />
 
       {/* 4 KPIs Financieros Clave */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* KPI 1: Ganancia Neta */}
         <div
           className={`kpi-card ${
@@ -306,34 +301,11 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
             <span>Por ventas: {formatARS(totalSalesCommission)}</span>
           </div>
         </div>
-
-        {/* KPI 4: Volumen Operativo */}
-        <div className="kpi-card kpi-card--sales flex flex-col justify-between gap-4 p-5 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <span className="block text-[11px] font-bold text-slate-400 tracking-wider leading-none mb-1.5">
-                Operaciones totales
-              </span>
-              <h3 className="text-2xl lg:text-3xl font-extrabold text-white">
-                <CountUp start={0} end={summary.totalAppt + totalSales} duration={2} separator="." />
-              </h3>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center border border-sky-500/20 text-sky-400 shadow-inner flex-shrink-0">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
-            <span>{summary.totalAppt} cortes</span>
-            <span>{totalSales} productos</span>
-          </div>
-        </div>
       </div>
 
-      {/* Sección Doble: Medios de Pago + Desglose Operativo */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Caja por medio de pago (2 columnas en LG) */}
-        <div className="lg:col-span-2 dashboard-card p-6 flex flex-col justify-between">
+      {/* Caja por medio de pago (en el bloque de caja pasa a ser "Cobros y caja") */}
+      <div>
+        <div className="dashboard-card p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
               <div className="flex items-center gap-2.5">
@@ -424,69 +396,6 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                 )}
               </>
             ) : null}
-          </div>
-        </div>
-
-        {/* Resumen de Margen & Estructura (1 columna en LG) */}
-        <div className="dashboard-card p-6 flex flex-col justify-between">
-          <div>
-            <div className="border-b border-white/10 pb-4 mb-5">
-              <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-                <Percent className="w-4 h-4 text-[var(--accent)]" />
-                <span>Estructura de ingresos</span>
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Proporción de facturación neta vs. egresos
-              </p>
-            </div>
-
-            <div className="space-y-3.5">
-              {/* Facturación Turnos */}
-              <div className="p-3.5 rounded-xl bg-slate-900/50 border border-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <Scissors className="w-4 h-4 text-violet-400" />
-                  <span className="text-xs font-medium text-slate-300">Turnos y barbería</span>
-                </div>
-                <span className="text-sm font-bold text-white">
-                  {formatARS(totalTurnosRevenue)}
-                </span>
-              </div>
-
-              {/* Facturación Ventas */}
-              <div className="p-3.5 rounded-xl bg-slate-900/50 border border-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <ShoppingBag className="w-4 h-4 text-sky-400" />
-                  <span className="text-xs font-medium text-slate-300">Venta de productos</span>
-                </div>
-                <span className="text-sm font-bold text-white">
-                  {formatARS(totalSalesRevenue)}
-                </span>
-              </div>
-
-              {/* Total Comisiones a Barberos */}
-              <div className="p-3.5 rounded-xl bg-red-950/20 border border-red-500/20 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <Users className="w-4 h-4 text-red-400" />
-                  <span className="text-xs font-medium text-red-300">Liquidación de personal</span>
-                </div>
-                <span className="text-sm font-bold text-red-400">
-                  -{formatARS(totalCommissionsAll)}
-                </span>
-              </div>
-
-              {/* Gastos Operativos si el módulo está activo */}
-              {isExpensesEnabled && operatingExpenses > 0 && (
-                <div className="p-3.5 rounded-xl bg-amber-950/20 border border-amber-500/20 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <TrendingDown className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-medium text-amber-300">Gastos del local</span>
-                  </div>
-                  <span className="text-sm font-bold text-amber-400">
-                    -{formatARS(operatingExpenses)}
-                  </span>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>

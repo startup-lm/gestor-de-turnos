@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { getBarbersAppointmentsFromDates } from "@/lib/repository/appointments";
+import { isPastUnpaid } from "@/lib/appointments/pastUnpaid";
+import { formatLocalDate } from "@/lib/dates/argentina";
 import { Appointment } from "@/lib/types/Appointment";
 
 export type ViewMode = "day" | "week" | "month";
@@ -108,5 +110,12 @@ export function useDashboardData(
   }, [appointments, barberId, viewMode]);
 
   // totalCount: todos los turnos agendados; paidCount: solo los cobrados (los que suman a la facturación)
-  return { totalCount, paidCount, totalRevenue, chartData };
+  // Turnos que ya terminaron y nadie cobró, solo los días del período elegido
+  const pastUnpaidCount = useMemo(() => {
+    const from = formatLocalDate(startDate);
+    const to = formatLocalDate(endDate);
+    return appointments.filter((a) => a.date >= from && a.date <= to && isPastUnpaid(a)).length;
+  }, [appointments, startDate, endDate]);
+
+  return { totalCount, paidCount, totalRevenue, chartData, pastUnpaidCount };
 }
