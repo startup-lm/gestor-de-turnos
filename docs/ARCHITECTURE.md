@@ -45,8 +45,8 @@ El estado inter-fase (Component-to-Component) se confía a Hooks locales (`useSt
 
 | Flag | basic | standard | premium |
 |---|---|---|---|
-| `arca`, `metrics`, `sales`, `commission_payouts`, `staff_management`, `google_reviews` | — | ✓ | ✓ |
-| `finances`, `expenses`, `booking_rules` (criterio de asignación) | — | — | ✓ |
+| `arca`, `metrics`, `sales`, `commission_payouts`, `staff_management`, `google_reviews`, `booking_rules` (criterio de asignación) | — | ✓ | ✓ |
+| `finances`, `expenses` | — | — | ✓ |
 | Profesionales | 1 | 4 | sin límite |
 | Medios de cobro | por defecto | 3 | sin límite |
 

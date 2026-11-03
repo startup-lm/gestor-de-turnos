@@ -30,7 +30,7 @@ export const getBarbers = async (): Promise<Barber[]> => {
   }
 };
 
-/** Solo servidor, en páginas protegidas para staff (/admin, /operaciones). */
+/** Solo servidor, en páginas protegidas para staff (/admin). */
 export const getBarbersWithPrivateFields = async (): Promise<Barber[]> => queryActiveBarbers(BARBER_PRIVATE_FIELDS, true);
 
 export const getAllBarbersWithPrivateFields = async (): Promise<Barber[]> => queryActiveBarbers(BARBER_PRIVATE_FIELDS, false);

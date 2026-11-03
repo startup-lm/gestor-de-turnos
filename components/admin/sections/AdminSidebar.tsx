@@ -11,7 +11,6 @@ import {
   Clock,
   MessageCircle,
   CreditCard,
-  ShieldCheck,
   Settings,
   ChevronDown,
   Coins,
@@ -20,8 +19,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Star,
+  Package,
+  Scissors,
+  UserCircle,
 } from "lucide-react";
 import { APP_VERSION } from "@/lib/version";
+import NavbarLogoutButton from "@/components/navbar/NavbarLogoutButton";
 import { PRODUCT_NAME } from "@/lib/brand";
 
 export type AdminSection =
@@ -34,6 +37,9 @@ export type AdminSection =
   | "facturas"
   | "facturacion-config"
   | "barberos"
+  | "productos"
+  | "servicios"
+  | "mi-perfil"
   | "config-identidad"
   | "config-horarios"
   | "config-contacto"
@@ -120,6 +126,18 @@ export const NAV_GROUPS: NavGroup[] = [
         visible: (modules) => modules.sales,
       },
       {
+        section: "productos",
+        label: "Productos",
+        icon: Package,
+        visible: (_modules, isAdmin) => isAdmin,
+      },
+      {
+        section: "servicios",
+        label: "Servicios",
+        icon: Scissors,
+        visible: (_modules, isAdmin) => isAdmin,
+      },
+      {
         section: "barberos",
         label: "Barberos",
         icon: Users,
@@ -157,7 +175,7 @@ export const NAV_GROUPS: NavGroup[] = [
       },
       {
         section: "config-horarios",
-        label: "Horarios y atención",
+        label: "Horarios y reservas",
         icon: Clock,
         visible: (_modules, isAdmin) => isAdmin,
       },
@@ -178,6 +196,18 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Reseñas de Google",
         icon: Star,
         visible: (modules, isAdmin) => isAdmin && modules.googleReviews,
+      },
+    ],
+  },
+  {
+    id: "cuenta",
+    label: "Cuenta",
+    items: [
+      {
+        section: "mi-perfil",
+        label: "Mi perfil",
+        icon: UserCircle,
+        visible: () => true,
       },
     ],
   },
@@ -371,23 +401,18 @@ export default function AdminSidebar({
           })}
         </div>
 
-        {/* Footer fijo al fondo de la pantalla del navegador */}
-        <div className={`flex-shrink-0 pt-2.5 pb-0.5 mt-auto border-t border-white/10 ${isCollapsed ? "px-1 flex flex-col items-center justify-center gap-1.5" : "px-2 flex items-center justify-between"}`}>
-          {!isCollapsed ? (
-            <>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400 min-w-0">
-                <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)] flex-shrink-0" />
-                <span className="truncate text-[11px]">{PRODUCT_NAME}</span>
-              </div>
-              <span className="text-[10px] font-mono font-medium text-slate-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 flex-shrink-0" title={`Versión de ${PRODUCT_NAME}`}>
-                v{APP_VERSION}
-              </span>
-            </>
-          ) : (
-            <span className="text-[9px] font-mono font-bold text-slate-400 bg-white/5 px-1 py-0.5 rounded border border-white/10 text-center" title={`Versión ${APP_VERSION}`}>
-              v{APP_VERSION}
-            </span>
-          )}
+        {/* Footer fijo: cerrar sesión a la izquierda, producto y versión a la derecha */}
+        <div className={`flex-shrink-0 pt-2.5 pb-0.5 mt-auto border-t border-white/10 ${isCollapsed ? "px-1 flex flex-col items-center gap-1.5" : "px-1 flex items-center justify-between gap-2"}`}>
+          <NavbarLogoutButton
+            iconOnly={isCollapsed}
+            className={`inline-flex items-center rounded-lg text-[11px] font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/5 transition-colors cursor-pointer !bg-transparent min-h-[32px] ${isCollapsed ? "justify-center w-9" : "px-2"}`}
+          />
+          <span
+            className="text-[10px] font-mono text-slate-500 truncate"
+            title={`${PRODUCT_NAME} v${APP_VERSION}`}
+          >
+            {isCollapsed ? `v${APP_VERSION}` : `${PRODUCT_NAME} v${APP_VERSION}`}
+          </span>
         </div>
       </div>
     </>

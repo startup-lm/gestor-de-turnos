@@ -42,15 +42,8 @@ export async function middleware(request: NextRequest) {
   const isProtectedPath =
     pathname === "/admin" ||
     pathname.startsWith("/admin/") ||
-    pathname === "/configuracion" ||
-    pathname.startsWith("/configuracion/") ||
-    pathname === "/operaciones" ||
-    pathname.startsWith("/operaciones/") ||
-    pathname === "/dashboard" ||
-    pathname.startsWith("/dashboard/") ||
     pathname.startsWith("/turno/") ||
-    pathname.startsWith("/venta/") ||
-    pathname.startsWith("/ventas/");
+    pathname.startsWith("/venta/");
 
   if (isProtectedPath && !user) {
     const url = request.nextUrl.clone();
@@ -66,14 +59,7 @@ export const config = {
   matcher: [
     "/admin",
     "/admin/:path*",
-    "/configuracion",
-    "/configuracion/:path*",
-    "/operaciones",
-    "/operaciones/:path*",
-    "/dashboard",
-    "/dashboard/:path*",
     "/turno/:path*",
     "/venta/:path*",
-    "/ventas/:path*",
   ],
 };

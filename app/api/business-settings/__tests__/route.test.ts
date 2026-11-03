@@ -69,8 +69,8 @@ describe("PUT /api/business-settings con límites del plan", () => {
     expect(upsert).toHaveBeenCalledWith({ id: 1, business_name: "Mi local" });
   });
 
-  it("premium guarda el criterio de asignación", async () => {
-    withPlan("premium");
+  it("standard guarda el criterio de asignación", async () => {
+    withPlan("standard");
     const upsert = mockUpsert();
 
     await put({ assignment_criteria: "balanced" });

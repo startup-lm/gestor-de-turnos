@@ -41,6 +41,7 @@ const STANDARD_FEATURES: Record<string, boolean> = {
   sales: true,
   commission_payouts: true,
   staff_management: true,
+  booking_rules: true,
 };
 
 export const PLAN_FEATURES: Record<PlanName, Record<string, boolean>> = {
@@ -50,7 +51,6 @@ export const PLAN_FEATURES: Record<PlanName, Record<string, boolean>> = {
     ...STANDARD_FEATURES,
     finances: true,
     expenses: true,
-    booking_rules: true,
   },
 };
 

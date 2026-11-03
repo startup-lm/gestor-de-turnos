@@ -62,11 +62,8 @@ El sistema está diseñado para que todos sus valores de negocio (nombre, horari
 
 ### 3. Modelo de Seguridad y Validación de Rutas (Multicapa)
 Para proteger la integridad de los datos financieros, personales y de agenda, implementamos una estrategia de seguridad multicapa:
-* **Capa de Servidor (`middleware.ts`):** Protege las rutas raíz `/admin` y `/dashboard` (y sus subrutas). Comprueba si existe un token de sesión válido usando `supabase.auth.getUser()` en el servidor. Si no existe, realiza una redirección segura a `/` impidiendo que se descargue código de páginas privadas.
-* **Capa de Cliente (Layout Guards):** Los archivos [app/admin/layout.tsx](file:///Users/mauriciooubina/Desktop/Workspace/gestor-de-turnos/app/admin/layout.tsx) y [app/dashboard/layout.tsx](file:///Users/mauriciooubina/Desktop/Workspace/gestor-de-turnos/app/dashboard/layout.tsx) encapsulan a todas las subrutas cliente:
-  * El guard de `/admin` restringe el paso si `role !== 'admin'`.
-  * El guard de `/dashboard` restringe el paso si `role !== 'admin' && role !== 'barber'`.
-  * Si el contexto de autenticación asíncrono está resolviendo el rol del usuario, muestra un componente de carga (`Spinner`) evitando destellos de información sensible, y redirige mediante `router.replace("/")` si no se cumplen los requisitos.
+* **Capa de Servidor (`middleware.ts`):** Protege `/admin` y las pantallas de detalle del personal (`/turno/[id]`, `/venta/[id]`). Comprueba si existe un token de sesión válido usando `supabase.auth.getUser()` en el servidor. Si no existe, redirige a `/login` impidiendo que se descargue código de páginas privadas.
+* **Capa de Página (`app/admin/page.tsx`):** Carga los datos con `requireBarberOrAdmin()`. Dentro de `/admin`, cada sección valida el rol: un barbero ve sus turnos, ventas, métricas y su perfil; el resto es solo del admin.
 * **Guard de Recuperación de Contraseña (`app/recuperar-contrasena`):** Realiza un chequeo inmediato en el montaje mediante `auth.getSession()`. Si no hay una sesión activa de restauración, redirige de inmediato al inicio.
 
 ### 4. Soporte PWA (Progressive Web App)

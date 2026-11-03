@@ -488,7 +488,7 @@ export function PageSkeleton() {
 }
 
 /**
- * Skeleton para la Grilla de Barberos (AdminBarberosClient)
+ * Skeleton para la Grilla de Barberos (BarberosSection)
  */
 export function BarbersGridSkeleton() {
   return (

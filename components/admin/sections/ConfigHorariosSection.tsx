@@ -131,7 +131,7 @@ export default function ConfigHorariosSection() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-            Horarios y atención
+            Horarios y reservas
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Configurá los días de apertura, franja horaria, intervalo de turnos y criterio de asignación

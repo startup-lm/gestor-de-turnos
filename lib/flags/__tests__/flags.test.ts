@@ -7,8 +7,16 @@ import {
   PLAN_FEATURES,
 } from "@/lib/flags";
 
-const STANDARD = ["arca", "google_reviews", "metrics", "sales", "commission_payouts", "staff_management"];
-const PREMIUM_ONLY = ["finances", "expenses", "booking_rules"];
+const STANDARD = [
+  "arca",
+  "google_reviews",
+  "metrics",
+  "sales",
+  "commission_payouts",
+  "staff_management",
+  "booking_rules",
+];
+const PREMIUM_ONLY = ["finances", "expenses"];
 
 describe("isFeatureEnabled", () => {
   it("por defecto, toda funcionalidad debe nacer apagada (false)", () => {
@@ -37,12 +45,12 @@ describe("planes comerciales", () => {
     }
   });
 
-  it("standard incluye ARCA, métricas, ventas, liquidaciones, profesionales y reseñas", () => {
+  it("standard incluye ARCA, métricas, ventas, liquidaciones, profesionales, reseñas y criterios de turno", () => {
     for (const flag of STANDARD) expect(isFeatureEnabled(flag, null, "standard")).toBe(true);
     for (const flag of PREMIUM_ONLY) expect(isFeatureEnabled(flag, null, "standard")).toBe(false);
   });
 
-  it("premium incluye todo lo de standard más finanzas, gastos y criterios de turno", () => {
+  it("premium incluye todo lo de standard más finanzas y gastos", () => {
     for (const flag of [...STANDARD, ...PREMIUM_ONLY]) {
       expect(isFeatureEnabled(flag, null, "premium")).toBe(true);
     }

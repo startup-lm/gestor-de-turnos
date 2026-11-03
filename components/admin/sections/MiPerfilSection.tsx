@@ -24,7 +24,7 @@ import { toast } from "@/lib/store/useToastStore";
 import InputPassword from "@/components/input/InputPassword";
 import logo from "@/public/images/logo.png";
 
-export default function BarberClient({ barber }: { barber: Barber }) {
+export default function MiPerfilSection({ barber }: Readonly<{ barber: Barber }>) {
   const router = useRouter();
 
   const [name, setName] = useState(barber.name);
@@ -122,17 +122,17 @@ export default function BarberClient({ barber }: { barber: Barber }) {
   const cleanInstagram = norm(instagram).replace(/^@/, "");
 
   return (
-    <div className="w-full max-w-[1720px] mx-auto px-4 md:px-8 py-8 md:py-12">
+    <div className="w-full animate-in fade-in duration-300">
       {/* Top Header */}
       <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-extrabold text-[var(--foreground)] tracking-tight">
+            <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
               Mi perfil
-            </h1>
+            </h2>
             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/20 capitalize flex items-center gap-1.5">
               <Briefcase className="w-3.5 h-3.5" />
-              {barber.role === "admin" ? "Administrador" : "Barbero del Local"}
+              {barber.role === "admin" ? "Administrador" : "Barbero del local"}
             </span>
             {barber.active !== false ? (
               <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">

@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import logo from "@/public/images/logo.png";
 import { Barber } from "@/lib/types/Barbers";
-import { useAuth } from "@/lib/auth/AuthContext";
 import {
   getBarberByEmail,
   addBarber,
@@ -44,9 +43,8 @@ type ViewMode = "list" | "create" | "edit";
 const CUT_COMMISSION_PRESETS = [30, 40, 50, 60, 70];
 const SALE_COMMISSION_PRESETS = [0, 5, 10, 15, 20];
 
-export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
+export default function BarberosSection({ barbers }: Readonly<Props>) {
   const router = useRouter();
-  const { role, user } = useAuth();
   const { limits } = useBusinessContext();
   const activeBarbers = useMemo(() => barbers.filter((b) => b.active !== false), [barbers]);
   const inactiveBarbers = useMemo(() => barbers.filter((b) => b.active === false), [barbers]);
@@ -101,13 +99,6 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
     }
     return false;
   }, [viewMode, selectedBarber, name, email, instagram, password, commission, saleCommission, active, imageFile, existingImage]);
-
-  useEffect(() => {
-    if (role === "guest" && user) return;
-    if (role && role !== "admin") {
-      router.replace("/operaciones");
-    }
-  }, [role, user, router]);
 
   const resetForm = () => {
     setName("");

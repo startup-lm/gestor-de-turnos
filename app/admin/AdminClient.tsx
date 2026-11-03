@@ -37,6 +37,9 @@ const VALID_SECTIONS: readonly AdminSection[] = [
   "facturas",
   "facturacion-config",
   "barberos",
+  "productos",
+  "servicios",
+  "mi-perfil",
   "config-identidad",
   "config-horarios",
   "config-contacto",
@@ -53,7 +56,7 @@ export function normalizeTab(raw: string | null, fallback: AdminSection = "metri
 }
 
 // Sections (Lazy Loaded on Demand with matching High-Fidelity Skeletons)
-const DashboardClient = dynamic(() => import("@/app/dashboard/DashboardClient"), {
+const MetricasSection = dynamic(() => import("@/components/admin/sections/MetricasSection"), {
   loading: () => <DashboardSkeleton />,
 });
 const FinanzasSection = dynamic(() => import("@/components/admin/sections/FinanzasSection"), {
@@ -77,8 +80,17 @@ const FacturasSection = dynamic(() => import("@/components/admin/sections/Factur
 const ArcaConfigSection = dynamic(() => import("@/components/admin/sections/ArcaConfigSection"), {
   loading: () => <ConfigFormSkeleton />,
 });
-const AdminBarberosClient = dynamic(() => import("@/app/operaciones/barberos/AdminBarberosClient"), {
+const BarberosSection = dynamic(() => import("@/components/admin/sections/BarberosSection"), {
   loading: () => <BarbersGridSkeleton />,
+});
+const ProductosSection = dynamic(() => import("@/components/admin/sections/ProductosSection"), {
+  loading: () => <SectionSkeleton />,
+});
+const ServiciosSection = dynamic(() => import("@/components/admin/sections/ServiciosSection"), {
+  loading: () => <SectionSkeleton />,
+});
+const MiPerfilSection = dynamic(() => import("@/components/admin/sections/MiPerfilSection"), {
+  loading: () => <SectionSkeleton />,
 });
 const ConfigIdentidadSection = dynamic(() => import("@/components/admin/sections/ConfigIdentidadSection"), {
   loading: () => <ConfigFormSkeleton />,
@@ -96,7 +108,7 @@ const ConfigResenasSection = dynamic(() => import("@/components/admin/sections/C
   loading: () => <ConfigFormSkeleton />,
 });
 
-export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>) {
+export default function AdminClient({ barbers, me }: Readonly<{ barbers: Barber[]; me: Barber | null }>) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { role, user, isLoadingAuth } = useAuth();
@@ -148,6 +160,9 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
     facturas: modules.arca,
     "facturacion-config": modules.arca,
     barberos: modules.staffManagement,
+    productos: true,
+    servicios: true,
+    "mi-perfil": true,
     "config-identidad": true,
     "config-horarios": true,
     "config-contacto": true,
@@ -212,7 +227,7 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
         className="flex-1 min-w-0 w-full overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10"
       >
         <div className="w-full max-w-[1720px] mx-auto">
-          {visibleSection === "metricas" && <DashboardClient initialBarbers={activeBarbers} />}
+          {visibleSection === "metricas" && <MetricasSection initialBarbers={activeBarbers} />}
           {visibleSection === "finanzas" && isAdmin && <FinanzasSection barbers={barbers} />}
           {visibleSection === "finanzas-liquidaciones" && isAdmin && (
             <LiquidacionesSection barbers={barbers} />
@@ -228,7 +243,10 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
           {visibleSection === "facturacion-config" && isAdmin && (
             <ArcaConfigSection />
           )}
-          {visibleSection === "barberos" && isAdmin && <AdminBarberosClient barbers={barbers} />}
+          {visibleSection === "barberos" && isAdmin && <BarberosSection barbers={barbers} />}
+          {visibleSection === "productos" && isAdmin && <ProductosSection />}
+          {visibleSection === "servicios" && isAdmin && <ServiciosSection />}
+          {visibleSection === "mi-perfil" && me && <MiPerfilSection barber={me} />}
 
           {/* Secciones de Configuración Directas en Pantalla */}
           {visibleSection === "config-identidad" && isAdmin && <ConfigIdentidadSection />}

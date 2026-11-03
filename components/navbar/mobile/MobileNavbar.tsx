@@ -9,13 +9,12 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import MobileAuthButtons from "./MobileAuthButtons";
 import MobileMenuButton from "./MobileMenuButton";
 import MobileMenuHeader from "./MobileMenuHeader";
-import { UserRoundCog } from "lucide-react";
 import { NavPath } from "@/utils/paths";
 
 export default function MobileNavbar({ paths }: Readonly<{ paths: NavPath[]; }>) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { role, barberId } = useAuth();
+  const { role } = useAuth();
   const path = usePathname();
   const closeMenu = () => setMenuOpen(false);
 
@@ -95,30 +94,6 @@ export default function MobileNavbar({ paths }: Readonly<{ paths: NavPath[]; }>)
                     </li>
                   );
                 })}
-                {role !== "guest" && (
-                  <li className="w-full">
-                    <Link
-                      id="mobile-nav-profile"
-                      href={`/barbers/${barberId}`}
-                      onClick={closeMenu}
-                      prefetch
-                      className={`!flex !items-center !w-full !text-left !px-4 !py-3 !rounded-xl !text-sm !font-medium !transition-all !duration-200 ${
-                        path === `/barbers/${barberId}`
-                          ? "!bg-[var(--accent)]/10 !text-[var(--accent)] !border-l-2 !border-[var(--accent)]"
-                          : "!text-slate-300 hover:!text-white hover:!bg-slate-900/40 !border-l-2 !border-transparent"
-                      }`}
-                    >
-                      <UserRoundCog
-                        className={`w-4 h-4 mr-3 !inline-block ${
-                          path === `/barbers/${barberId}`
-                            ? "!text-[var(--accent)]"
-                            : "!text-slate-400"
-                        }`}
-                      />
-                      Mi Perfil
-                    </Link>
-                  </li>
-                )}
               </ul>
 
               <MobileAuthButtons role={role} closeMenu={closeMenu} />

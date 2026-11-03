@@ -6,7 +6,12 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { LogOut } from "lucide-react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 
-export default function NavbarLogoutButton({ className = "", onLoggedOut, onCanceled,}: Readonly< { className?: string; onLoggedOut?: () => void; onCanceled?: () => void; } >) {
+export default function NavbarLogoutButton({
+  className = "",
+  iconOnly = false,
+  onLoggedOut,
+  onCanceled,
+}: Readonly<{ className?: string; iconOnly?: boolean; onLoggedOut?: () => void; onCanceled?: () => void }>) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -24,9 +29,15 @@ export default function NavbarLogoutButton({ className = "", onLoggedOut, onCanc
 
   return (
     <>
-      <button id="btn-navbar-logout" onClick={() => setConfirmOpen(true)} className={className} aria-label="Cerrar sesión" >
-        <LogOut className="w-4 h-4 mr-2 inline" />
-        Cerrar sesión
+      <button
+        id="btn-navbar-logout"
+        onClick={() => setConfirmOpen(true)}
+        className={className}
+        aria-label="Cerrar sesión"
+        title={iconOnly ? "Cerrar sesión" : undefined}
+      >
+        <LogOut className={`w-4 h-4 inline ${iconOnly ? "" : "mr-2"}`} />
+        {!iconOnly && "Cerrar sesión"}
       </button>
 
       {confirmOpen && (

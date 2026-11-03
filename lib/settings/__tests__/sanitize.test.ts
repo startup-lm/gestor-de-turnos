@@ -18,7 +18,7 @@ describe("toPublicBusinessSettings", () => {
 
 describe("applyPlanToSettings", () => {
   it("sin criterios de turno en el plan, la asignación vuelve a aleatoria", () => {
-    const result = applyPlanToSettings({ plan: "standard", assignment_criteria: "balanced" });
+    const result = applyPlanToSettings({ plan: "basic", assignment_criteria: "balanced" });
     expect(result.assignment_criteria).toBe("random");
   });
 

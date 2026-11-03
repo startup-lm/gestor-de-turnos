@@ -8,12 +8,15 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ## [1.9.0] - 2026-11-03
 
-Liquidaciones y comisiones confiables, y menú de `/admin` ajustable. **Requiere aplicar la migración `20261105000000_payout_links_and_commission_snapshot.sql`.**
+Liquidaciones y comisiones confiables, `/admin` como único lugar de gestión y menú ajustable. **Requiere aplicar la migración `20261105000000_payout_links_and_commission_snapshot.sql`.**
 
 ### Agregado
 - **Liquidaciones atadas a turnos y ventas:** cada turno o venta cobrado queda marcado con la liquidación que lo pagó. Un cobro atrasado de un período ya liquidado entra en la próxima liquidación, que lo avisa ("Incluye 2 cobros atrasados"), en vez de perderse.
 - **Comisión congelada:** cada turno y venta guarda el % del barbero al momento de cobrarse. Si después cambia el %, Métricas, Balance y las liquidaciones de meses anteriores no se recalculan.
 - Filtro "Solo retiros del dueño" en Gastos y total retirado en Balance.
+- **Productos y servicios en `/admin`:** el alta, la edición y la baja se hacen desde Operaciones → Productos y Servicios. La lista de productos muestra el stock y marca los que no tienen.
+- **Mi perfil en `/admin`:** cada barbero edita su foto, sus datos y su contraseña desde el menú lateral.
+- **Cerrar sesión en el pie del menú lateral**, junto al nombre del producto y la versión.
 
 ### Corregido
 - **Liquidaciones de períodos abiertos:** no se puede liquidar un período que termina después de hoy. Si el período elegido sigue abierto, se liquida hasta hoy y se avisa.
@@ -25,9 +28,15 @@ Liquidaciones y comisiones confiables, y menú de `/admin` ajustable. **Requiere
 
 ### Cambiado
 - **Menú lateral de `/admin` ajustable:** el borde derecho se arrastra para ensancharlo o achicarlo (entre 180 y 360 px), y cada navegador recuerda el ancho elegido. Arrastrándolo hasta el borde se colapsa, y doble clic lo vuelve al ancho por defecto, que ahora es más angosto (220 px). También se ajusta con las flechas del teclado.
+- **Catálogo público de solo lectura:** `/productos` y `/servicios` (y su detalle) ya no tienen botones de edición.
+- **Criterio de asignación de turnos** disponible también en el plan estándar.
+- El ícono de usuario del header solo aparece para invitados y lleva a ingresar.
+- "Horarios y atención" pasa a llamarse "Horarios y reservas".
 
 ### Eliminado
 - Botones "Ver todas en Google" y "Dejar una reseña" al pie de la sección de reseñas de Google.
+- Rutas viejas que solo redirigían o duplicaban pantallas de `/admin`: `/dashboard`, `/configuracion`, `/operaciones/*` (incluida la página duplicada de barberos), `/turnos/[id]`, `/ventas/[id]`, `/barbers/[id]`, `/productos/nuevo` y `/servicios/nuevo`.
+- Menú desplegable del usuario en el header.
 
 ## [1.8.0] - 2026-11-03
 

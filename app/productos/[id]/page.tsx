@@ -24,7 +24,7 @@ export default async function ProductoDetailPage({ params }: Props) {
           href="/productos"
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[var(--accent)] text-black font-semibold text-sm hover:opacity-90 transition-opacity"
         >
-          <ArrowLeft className="w-4 h-4" /> Volver a Productos
+          <ArrowLeft className="w-4 h-4" /> Volver a productos
         </Link>
       </div>
     );

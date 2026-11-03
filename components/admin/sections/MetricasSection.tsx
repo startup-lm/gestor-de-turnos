@@ -26,7 +26,7 @@ interface Props {
   initialBarbers: Barber[];
 }
 
-export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
+export default function MetricasSection({ initialBarbers }: Readonly<Props>) {
   const { barberId, role } = useAuth();
   const isAdmin = role === "admin";
   const activeBarbers = useMemo(() => initialBarbers.filter((b) => b.active !== false), [initialBarbers]);

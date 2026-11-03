@@ -1,70 +1,29 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import Card from "@/components/card/Card";
 import { Product } from "@/lib/types/Product";
-import { deleteProduct } from "@/lib/repository/products";
-import { useAuth } from "@/lib/auth/AuthContext";
-import { toast } from "@/lib/store/useToastStore";
-import { Plus } from "lucide-react";
 
 interface Props {
   products: Product[];
 }
 
+/** Catálogo público: solo lectura. El alta y la edición viven en /admin. */
 export default function ProductosClient({ products }: Readonly<Props>) {
   const router = useRouter();
-  const { role } = useAuth();
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-
-  const handleDelete = async (id: number) => {
-    setDeletingId(id);
-    try {
-      const success = await deleteProduct(id);
-      if (success) {
-        toast.success("Producto eliminado con éxito");
-        router.refresh();
-      } else {
-        toast.error("Error al eliminar el producto");
-      }
-    } catch (err) {
-      console.error("Error eliminando producto:", err);
-      toast.error("Error inesperado al eliminar el producto");
-    } finally {
-      setDeletingId(null);
-    }
-  };
 
   return (
     <div className="w-full flex flex-col items-center">
       {/* Cabecera Principal */}
-      <div className="mb-8 md:mb-10 w-full relative flex flex-col items-center text-center">
-        <div className="w-full max-w-2xl text-center mx-auto">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[var(--foreground)]">
-            Nuestros Productos
-          </h1>
-          <p className="text-sm md:text-base text-slate-400 mt-2 px-2">
-            Línea exclusiva de pomadas, ceras y cuidado capilar seleccionados por nuestros barberos
-          </p>
-        </div>
-
-        {role === "admin" && (
-          <div className="mt-4 md:mt-0 md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2">
-            <Link
-              href="/productos/nuevo"
-              data-testid="btn-add-product"
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Nuevo producto</span>
-            </Link>
-          </div>
-        )}
+      <div className="mb-8 md:mb-10 w-full max-w-2xl text-center mx-auto">
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[var(--foreground)]">
+          Nuestros productos
+        </h1>
+        <p className="text-sm md:text-base text-slate-400 mt-2 px-2">
+          Línea exclusiva de pomadas, ceras y cuidado capilar seleccionados por nuestros barberos
+        </p>
       </div>
 
-      {/* Grilla de Productos */}
       {products.length === 0 ? (
         <div className="text-center py-16 px-4">
           <p className="text-slate-400 text-sm">
@@ -80,10 +39,7 @@ export default function ProductosClient({ products }: Readonly<Props>) {
                 price={p.price}
                 description={p.description}
                 image={p.image}
-                onEdit={() => router.push(`/productos/${p.id}`)}
-                onDelete={() => handleDelete(p.id)}
                 onCardClick={() => router.push(`/productos/${p.id}`)}
-                isDeleting={deletingId === p.id}
               />
             </div>
           ))}
