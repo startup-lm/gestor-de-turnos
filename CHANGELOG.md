@@ -38,6 +38,7 @@ Liquidaciones y comisiones confiables, `/admin` como único lugar de gestión y 
 - "Horarios y atención" pasa a llamarse "Horarios y reservas".
 - **Métricas pasa a llamarse Resumen** y muestra la actividad del local: turnos, productos vendidos y ticket promedio. Los totales de plata (facturación y comisiones) quedan solo en Balance.
 - "Medios de pago" pasa a llamarse **"Cobros y caja"**, y su frecuencia de cierre ahora también es el recordatorio para cerrar la caja. En Balance, "Caja por medio de pago" pasa a llamarse "Saldo por medio de pago".
+- **Configuración de reseñas más simple:** se mantienen el vínculo con el local, el interruptor para mostrar las reseñas y la moderación de cada una. Se sacaron el campo del enlace para dejar opiniones, "Lugares de publicación" y la previsualización en vivo; las reseñas de Google ya se muestran donde corresponde sin configurar nada más.
 
 ### Eliminado
 - Botones "Ver todas en Google" y "Dejar una reseña" al pie de la sección de reseñas de Google.
