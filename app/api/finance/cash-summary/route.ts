@@ -67,9 +67,11 @@ export async function GET(request: Request) {
     movements: movements.data,
   });
 
-  const expensesTotal = movements.data
-    .filter((m) => m.type === "expense" && !m.voided_at)
-    .reduce((sum, m) => sum + Number(m.amount), 0);
+  const totalOf = (type: string) =>
+    movements.data
+      .filter((m) => m.type === type && !m.voided_at)
+      .reduce((sum, m) => sum + Number(m.amount), 0);
 
-  return NextResponse.json({ ...summary, expensesTotal });
+  // Los retiros del dueño salen de la caja pero no son gastos: no restan de la ganancia
+  return NextResponse.json({ ...summary, expensesTotal: totalOf("expense"), withdrawalsTotal: totalOf("withdrawal") });
 }

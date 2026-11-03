@@ -58,7 +58,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const {
-      type,
+      type: requestedType,
       category,
       amount,
       payment_method = "Efectivo",
@@ -67,6 +67,9 @@ export async function POST(request: Request) {
       barber_id,
       shift_id,
     } = body;
+
+    // Un retiro del dueño nunca se guarda como gasto, aunque lo pida un cliente viejo
+    const type = category === "retiro_dueno" && requestedType === "expense" ? "withdrawal" : requestedType;
 
     if (!type || amount === undefined || !description) {
       return errorResponse("Tipo, importe y descripción son requeridos", 400);

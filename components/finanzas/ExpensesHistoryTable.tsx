@@ -66,6 +66,7 @@ export default function ExpensesHistoryTable({
           ? data.filter(
               (m) =>
                 m.type === "expense" ||
+                m.type === "withdrawal" ||
                 m.type === "advance" ||
                 m.type === "commission_payout"
             )
@@ -125,6 +126,14 @@ export default function ExpensesHistoryTable({
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-500/15 border border-violet-500/30 text-violet-300 text-[10px] font-bold">
           <Receipt className="w-3 h-3" />
           <span>Pago de comisión</span>
+        </span>
+      );
+    }
+    if (type === "withdrawal") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/15 border border-sky-500/30 text-sky-300 text-[10px] font-bold">
+          <HandCoins className="w-3 h-3" />
+          <span>Retiro del dueño</span>
         </span>
       );
     }
@@ -212,6 +221,7 @@ export default function ExpensesHistoryTable({
           >
             <option value="all">Todos los egresos y adelantos</option>
             <option value="expense">Solo gastos del local</option>
+            <option value="withdrawal">Solo retiros del dueño</option>
             <option value="advance">Solo adelantos a barberos</option>
             <option value="commission_payout">Solo pagos de liquidaciones</option>
           </select>

@@ -88,7 +88,8 @@ export default function ExpensePanel({ onClose, onSuccess }: Readonly<Props>) {
     setIsSubmitting(true);
     try {
       const res = await createCashMovement({
-        type: "expense",
+        // Retirar ganancia no es un costo del negocio: resta de la caja, no de la ganancia
+        type: category === "retiro_dueno" ? "withdrawal" : "expense",
         category,
         amount: numAmount,
         payment_method: paymentMethod,
