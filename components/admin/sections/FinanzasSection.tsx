@@ -193,7 +193,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-5">
         <div>
           <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
-            Finanzas y balance de caja
+            Balance
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Estado de resultados, comisiones generadas, ganancia neta y medios de pago

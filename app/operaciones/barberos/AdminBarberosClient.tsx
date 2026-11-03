@@ -803,7 +803,7 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800/40 pb-4">
         <div>
           <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-            Gestión de barberos
+            Barberos
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Alta, edición de comisiones y estado activo del personal

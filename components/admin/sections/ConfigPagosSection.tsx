@@ -209,7 +209,7 @@ export default function ConfigPagosSection() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-            {isFinancesEnabled ? "Medios de pago y caja" : "Medios de pago"}
+            Medios de pago
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             {isFinancesEnabled

@@ -39,7 +39,7 @@ export default function LiquidacionesSection({ barbers }: Readonly<Props>) {
               <Receipt className="w-4 h-4" />
             </div>
             <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
-              Historial de liquidaciones
+              Liquidaciones
             </h2>
           </div>
           <p className="text-xs text-slate-400">

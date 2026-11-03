@@ -62,7 +62,7 @@ export default function GastosSection({ barbers }: Readonly<Props>) {
               <TrendingDown className="w-4 h-4" />
             </div>
             <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
-              Gastos y egresos del local
+              Gastos
             </h2>
           </div>
           <p className="text-xs text-slate-400">

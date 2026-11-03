@@ -86,7 +86,7 @@ export default function ArcaConfigView({
           )}
           <div className="flex items-center gap-3">
             <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
-              Configuración Fiscal ARCA
+              Configuración ARCA
             </h2>
             {status && (
               <span

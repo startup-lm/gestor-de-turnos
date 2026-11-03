@@ -340,9 +340,9 @@ export default function ConfigResenasSection() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-wide">
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
               Reseñas de Google
-            </h1>
+            </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Conectá la ficha de Google Maps de tu local para mostrar tu calificación y opiniones reales en tu web.

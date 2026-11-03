@@ -501,7 +501,7 @@ export default function FacturasSection() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-              Comprobantes fiscales
+              Comprobantes
             </h2>
             <p className="text-xs text-slate-400 mt-1">
               Historial y registro de facturación electrónica ARCA con CAE
@@ -765,7 +765,7 @@ export default function FacturasSection() {
         <div>
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-              Comprobantes fiscales
+              Comprobantes
             </h2>
             {status?.environment && (
               <span
