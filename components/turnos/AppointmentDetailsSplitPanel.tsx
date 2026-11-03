@@ -20,6 +20,7 @@ import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
 import ArcaDocFields from "@/components/arca/ArcaDocFields";
+import { CONSUMIDOR_FINAL } from "@/lib/arca/receiverConditions";
 import { toast } from "@/lib/store/useToastStore";
 import InlineConfirm from "@/components/ui/InlineConfirm";
 import {
@@ -117,6 +118,7 @@ export default function AppointmentDetailsSplitPanel({
   const [emitInvoice, setEmitInvoice] = useState(false);
   const [docType, setDocType] = useState<ArcaDocType>(99);
   const [docNumber, setDocNumber] = useState("");
+  const [receiverCondition, setReceiverCondition] = useState(CONSUMIDOR_FINAL);
 
   // Estados locales para la Opción A: alternar entre vista lectura y selector interactivo
   const [isEditingService, setIsEditingService] = useState(false);
@@ -283,6 +285,7 @@ export default function AppointmentDetailsSplitPanel({
         customerName: client || undefined,
         docType,
         docNumber: docNumber.trim() || undefined,
+        receiverIvaCondition: receiverCondition,
         sourceType: "appointment",
         sourceId: appointment.id,
       });
@@ -474,6 +477,8 @@ export default function AppointmentDetailsSplitPanel({
                       onDocTypeChange={setDocType}
                       docNumber={docNumber}
                       onDocNumberChange={setDocNumber}
+                      receiverCondition={receiverCondition}
+                      onReceiverConditionChange={setReceiverCondition}
                     />
                   </div>
                 )}
@@ -1012,7 +1017,7 @@ export default function AppointmentDetailsSplitPanel({
                 </span>
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
                   <CheckCircle2 className="w-3 h-3" />
-                  {invoice.status === "mock" ? "Demo" : "Aprobado"}
+                  Aprobado
                 </span>
               </div>
 

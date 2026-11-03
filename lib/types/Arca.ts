@@ -1,4 +1,4 @@
-export type ArcaEnvironment = "mock" | "homo" | "prod";
+export type ArcaEnvironment = "homo" | "prod";
 
 export type ArcaConfig = {
   environment: ArcaEnvironment;
@@ -42,7 +42,7 @@ export type ArcaEmitInput = {
   customerName?: string;
   docType?: ArcaDocType;
   docNumber?: string;
-  voucherType?: number;
+  receiverIvaCondition?: number;
   sourceType?: ArcaSourceType;
   sourceId?: number;
 };
@@ -74,4 +74,13 @@ export type ArcaInvoiceRecord = {
   doc_type: number | null;
   doc_number: string | null;
   invoice_type: number | null;
+  receiver_iva_condition: number | null;
+  error_message: string | null;
+};
+
+export type ArcaInvoiceStatus = "pending" | "approved" | "rejected" | "error";
+
+export type ArcaTestResult = {
+  success: boolean;
+  steps: { label: string; ok: boolean; detail: string }[];
 };

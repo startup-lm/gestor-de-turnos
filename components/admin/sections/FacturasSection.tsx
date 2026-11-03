@@ -19,6 +19,7 @@ import type {
   ArcaStatus,
 } from "@/lib/types/Arca";
 import ArcaDocFields from "@/components/arca/ArcaDocFields";
+import { CONSUMIDOR_FINAL } from "@/lib/arca/receiverConditions";
 import { Appointment } from "@/lib/types/Appointment";
 import {
   Receipt,
@@ -38,9 +39,15 @@ import {
 // ─── Constantes ────────────────────────────────────────────────────────────
 
 const ENV_LABELS: Record<ArcaEnvironment, string> = {
-  mock: "Demo",
   homo: "Homologación",
   prod: "Producción",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  approved: "Aprobado",
+  rejected: "Rechazado",
+  pending: "En proceso",
+  error: "Sin respuesta",
 };
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -147,14 +154,13 @@ function InvoiceRow({ inv }: { inv: ArcaInvoiceRecord }) {
   const [expanded, setExpanded] = useState(false);
 
   const statusColor =
-    inv.status === "mock"
-      ? "bg-yellow-500/10 text-yellow-300 border-yellow-500/20"
-      : inv.status === "approved"
+    inv.status === "approved"
       ? "bg-green-500/10 text-green-300 border-green-500/20"
+      : inv.status === "pending" || inv.status === "error"
+      ? "bg-yellow-500/10 text-yellow-300 border-yellow-500/20"
       : "bg-red-500/10 text-red-300 border-red-500/20";
 
-  const statusLabel =
-    inv.status === "mock" ? "Demo" : inv.status === "approved" ? "Aprobado" : "Rechazado";
+  const statusLabel = STATUS_LABELS[inv.status] ?? inv.status;
 
   return (
     <>
@@ -237,6 +243,13 @@ function InvoiceRow({ inv }: { inv: ArcaInvoiceRecord }) {
                 </div>
               )}
             </div>
+            {inv.error_message && (
+              <p className="mt-3 text-xs text-red-300 break-words">
+                {inv.status === "error"
+                  ? "ARCA no respondió: puede haberlo autorizado igual. Revisalo en el portal de ARCA antes de volver a facturar."
+                  : `Motivo: ${inv.error_message}`}
+              </p>
+            )}
           </td>
         </tr>
       )}
@@ -257,7 +270,7 @@ export default function FacturasSection() {
     data: status,
     loading: loadingStatus,
   } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);
-  const isMock = config?.environment === "mock" || status?.environment === "mock";
+  const isHomo = (status?.environment ?? config?.environment) === "homo";
 
   // Período de facturación ARCA (diario, semanal, quincenal, mensual, personalizado)
   const [periodPreset, setPeriodPreset] = useState<ArcaPeriod>("monthly");
@@ -332,6 +345,7 @@ export default function FacturasSection() {
   const [emitCustomerName, setEmitCustomerName] = useState("");
   const [emitDocType, setEmitDocType] = useState<ArcaDocType>(99);
   const [emitDocNumber, setEmitDocNumber] = useState("");
+  const [emitReceiverCondition, setEmitReceiverCondition] = useState(CONSUMIDOR_FINAL);
   const [emitting, setEmitting] = useState(false);
 
   // Filtros de comprobantes emitidos
@@ -466,6 +480,7 @@ export default function FacturasSection() {
         customerName: emitCustomerName.trim() || undefined,
         docType: emitDocType,
         docNumber: emitDocNumber.trim() || undefined,
+        receiverIvaCondition: emitReceiverCondition,
         sourceType: "manual",
       });
 
@@ -481,6 +496,7 @@ export default function FacturasSection() {
         setEmitCustomerName("");
         setEmitDocNumber("");
         setEmitDocType(99);
+        setEmitReceiverCondition(CONSUMIDOR_FINAL);
         await Promise.all([loadInvoices(), loadPeriodAppointments()]);
         setViewMode("list");
       }
@@ -517,10 +533,10 @@ export default function FacturasSection() {
   if (viewMode === "emit") {
     return (
       <div className="space-y-6 animate-in fade-in duration-300 w-full">
-        {isMock && (
+        {isHomo && (
           <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-medium">
             <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
-            <span>Modo demo: los comprobantes son de prueba y no tienen validez fiscal.</span>
+            <span>Homologación: los comprobantes son de prueba en ARCA y no tienen validez fiscal.</span>
           </div>
         )}
         {/* Cabecera con botón Volver arriba a la izquierda estilo estándar de /admin */}
@@ -733,6 +749,8 @@ export default function FacturasSection() {
               onDocTypeChange={setEmitDocType}
               docNumber={emitDocNumber}
               onDocNumberChange={setEmitDocNumber}
+              receiverCondition={emitReceiverCondition}
+              onReceiverConditionChange={setEmitReceiverCondition}
               numberClassName="md:col-span-3"
             />
 
@@ -754,10 +772,10 @@ export default function FacturasSection() {
   // ── MODO 1: LISTADO DE COMPROBANTES (VISTA PRINCIPAL POR DEFECTO) ────────
   return (
     <div className="space-y-6 animate-in fade-in duration-300 w-full">
-      {isMock && (
+      {isHomo && (
         <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-medium">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
-          <span>Modo demo: los comprobantes son de prueba y no tienen validez fiscal.</span>
+          <span>Homologación: los comprobantes son de prueba en ARCA y no tienen validez fiscal.</span>
         </div>
       )}
       {/* Cabecera Estilo Ventas */}
@@ -936,9 +954,9 @@ export default function FacturasSection() {
                 className="w-full border rounded-lg px-2 py-1.5 text-xs bg-transparent border-[var(--foreground)]/15"
               >
                 <option value="">Todos</option>
-                <option value="mock">Demo</option>
                 <option value="approved">Aprobado</option>
                 <option value="rejected">Rechazado</option>
+                <option value="error">Sin respuesta</option>
               </select>
             </div>
             <div>

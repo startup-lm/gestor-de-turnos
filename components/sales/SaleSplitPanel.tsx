@@ -12,6 +12,7 @@ import { createSale } from "@/lib/repository/sales";
 import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
 import ArcaDocFields from "@/components/arca/ArcaDocFields";
+import { CONSUMIDOR_FINAL } from "@/lib/arca/receiverConditions";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { DEFAULT_PAYMENT_METHODS } from "@/lib/flags";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -81,6 +82,7 @@ export default function SaleSplitPanel({
   const [emitInvoice, setEmitInvoice] = useState(false);
   const [docType, setDocType] = useState<ArcaDocType>(99);
   const [docNumber, setDocNumber] = useState("");
+  const [receiverCondition, setReceiverCondition] = useState(CONSUMIDOR_FINAL);
 
   useEffect(() => {
     if (selectedProductId === -1) {
@@ -138,6 +140,7 @@ export default function SaleSplitPanel({
           total,
           docType,
           docNumber: docNumber.trim() || undefined,
+          receiverIvaCondition: receiverCondition,
           sourceType: "sale",
           sourceId: createResult.id,
         });
@@ -410,6 +413,8 @@ export default function SaleSplitPanel({
                       onDocTypeChange={setDocType}
                       docNumber={docNumber}
                       onDocNumberChange={setDocNumber}
+                      receiverCondition={receiverCondition}
+                      onReceiverConditionChange={setReceiverCondition}
                     />
                   </div>
                 )}

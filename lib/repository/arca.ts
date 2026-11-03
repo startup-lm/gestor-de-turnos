@@ -5,6 +5,7 @@ import type {
   ArcaEmitResult,
   ArcaInvoiceRecord,
   ArcaStatus,
+  ArcaTestResult,
 } from "@/lib/types/Arca";
 
 import { getBaseUrl } from "@/utils/getBaseUrl";
@@ -24,7 +25,19 @@ export async function updateArcaConfig(payload: ArcaConfigUpdate): Promise<ArcaC
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error("No se pudo guardar configuración ARCA");
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json?.error ?? "No se pudo guardar la configuración ARCA");
+  }
+  return res.json();
+}
+
+export async function testArcaConnection(): Promise<ArcaTestResult> {
+  const res = await fetch(`${BASE}/api/arca/test`, { method: "POST" });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json?.error ?? "No se pudo probar la conexión con ARCA");
+  }
   return res.json();
 }
 

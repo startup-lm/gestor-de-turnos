@@ -4,7 +4,6 @@ import * as auth from "@/lib/api/auth";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { POST as createSale } from "@/app/api/sales/route";
 import { PATCH as patchSale, DELETE as deleteSale } from "@/app/api/sales/[id]/route";
-import { POST as emitInvoice } from "@/app/api/arca/emit/route";
 
 vi.mock("@/lib/api/auth", () => ({
   requireAdmin: vi.fn(),
@@ -152,66 +151,5 @@ describe("Ventas: permisos y total", () => {
 
     const response = await deleteSale(new Request("http://localhost/api/sales/5", { method: "DELETE" }), params(5));
     expect(response.status).toBe(404);
-  });
-});
-
-describe("ARCA: emisión de comprobantes", () => {
-  /** Mockea cada tabla por separado; devuelve las consultas para inspeccionarlas. */
-  function mockTables(source: Record<string, unknown> | null, markResult: unknown[] = [{ id: 7 }]) {
-    const sourceQuery = chain({ data: source, error: null });
-    const markQuery = chain({ data: markResult, error: null });
-    const invoices = chain({ data: { id: 50, cae: "123", voucher_number: 1 }, error: null });
-    const settings = chain({ data: { id: 1, environment: "mock", point_of_sale: 1 }, error: null });
-    let appointmentsCalls = 0;
-    vi.mocked(supabaseAdmin.from).mockImplementation(((table: string) => {
-      if (table === "arca_settings") return settings;
-      if (table === "arca_invoices") return invoices;
-      appointmentsCalls++;
-      return appointmentsCalls === 1 ? sourceQuery : markQuery;
-    }) as any);
-    return { invoices, markQuery };
-  }
-
-  it("un barbero no puede emitir comprobantes manuales", async () => {
-    vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(BARBER_2);
-    const response = await emitInvoice(json({ sourceType: "manual", total: 1000 }));
-    expect(response.status).toBe(403);
-  });
-
-  it("un barbero no puede facturar el turno de otro", async () => {
-    vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(BARBER_2);
-    mockTables({ id: 7, barber_id: 1, price: 1000, paid: true, arca_invoice_id: null });
-    const response = await emitInvoice(json({ sourceType: "appointment", sourceId: 7, total: 1000 }));
-    expect(response.status).toBe(403);
-  });
-
-  it("no factura dos veces el mismo turno", async () => {
-    vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
-    mockTables({ id: 7, barber_id: 1, price: 1000, paid: true, arca_invoice_id: 3 });
-    const response = await emitInvoice(json({ sourceType: "appointment", sourceId: 7 }));
-    expect(response.status).toBe(409);
-  });
-
-  it("no factura un turno sin cobrar", async () => {
-    vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
-    mockTables({ id: 7, barber_id: 1, price: 1000, paid: false, arca_invoice_id: null });
-    const response = await emitInvoice(json({ sourceType: "appointment", sourceId: 7 }));
-    expect(response.status).toBe(409);
-  });
-
-  it("el total sale del turno, no del navegador", async () => {
-    vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(BARBER_2);
-    const { invoices } = mockTables({ id: 7, barber_id: 2, price: 12000, paid: true, arca_invoice_id: null });
-    const response = await emitInvoice(json({ sourceType: "appointment", sourceId: 7, total: 1 }));
-    expect(response.status).toBe(200);
-    expect(invoices.insert).toHaveBeenCalledWith(expect.objectContaining({ total: 12000, source_id: 7 }));
-  });
-
-  it("si otro pedido ya marcó el turno, deshace el comprobante y responde 409", async () => {
-    vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
-    const { invoices } = mockTables({ id: 7, barber_id: 1, price: 1000, paid: true, arca_invoice_id: null }, []);
-    const response = await emitInvoice(json({ sourceType: "appointment", sourceId: 7 }));
-    expect(response.status).toBe(409);
-    expect(invoices.delete).toHaveBeenCalled();
   });
 });

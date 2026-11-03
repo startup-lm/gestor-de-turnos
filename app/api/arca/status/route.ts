@@ -4,8 +4,8 @@ import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
 
 const DEFAULT_STATUS = {
-  environment: "mock",
-  ready: true,
+  environment: "homo",
+  ready: false,
   cuit: null,
   point_of_sale: null,
   has_cert: false,
@@ -29,14 +29,8 @@ export async function GET() {
 
   const hasCert = !!data.cert_pem;
   const hasKey = !!data.key_pem;
-  const ready =
-    data.environment === "mock" ||
-    (!!data.cuit &&
-      !!data.point_of_sale &&
-      hasCert &&
-      hasKey &&
-      !!data.wsaa_url &&
-      !!data.wsfe_url);
+  // Las URLs no son obligatorias: si están vacías se usan las oficiales de ARCA
+  const ready = !!data.cuit && !!data.point_of_sale && hasCert && hasKey;
 
   return NextResponse.json({
     environment: data.environment,

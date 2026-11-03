@@ -11,6 +11,8 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 Liquidaciones y comisiones confiables, `/admin` como único lugar de gestión y menú ajustable. **Requiere aplicar las migraciones `20261105000000_payout_links_and_commission_snapshot.sql` y `20261106000000_cash_register.sql`.**
 
 ### Agregado
+- **Facturación real con ARCA:** se emite Factura C contra los web services de ARCA (WSAA y WSFE), en homologación o producción. El número de comprobante lo da ARCA (`FECompUltimoAutorizado`), se informa la condición frente al IVA del receptor (`CondicionIVAReceptorId`) y los turnos se facturan como servicios y las ventas como productos. Si ARCA rechaza un comprobante, queda en Facturas como "Rechazado" con el motivo, y el turno o la venta se pueden volver a facturar.
+- **Probar conexión** en Configuración ARCA: verifica los servidores de ARCA, el certificado y el punto de venta sin emitir nada.
 - **Liquidaciones atadas a turnos y ventas:** cada turno o venta cobrado queda marcado con la liquidación que lo pagó. Un cobro atrasado de un período ya liquidado entra en la próxima liquidación, que lo avisa ("Incluye 2 cobros atrasados"), en vez de perderse.
 - **Comisión congelada:** cada turno y venta guarda el % del barbero al momento de cobrarse. Si después cambia el %, Métricas, Balance y las liquidaciones de meses anteriores no se recalculan.
 - Filtro "Solo retiros del dueño" en Gastos y total retirado en Balance.
@@ -41,6 +43,7 @@ Liquidaciones y comisiones confiables, `/admin` como único lugar de gestión y 
 - **Configuración de reseñas más simple:** se mantienen el vínculo con el local, el interruptor para mostrar las reseñas y la moderación de cada una. Se sacaron el campo del enlace para dejar opiniones, "Lugares de publicación" y la previsualización en vivo; las reseñas de Google ya se muestran donde corresponde sin configurar nada más.
 
 ### Eliminado
+- Modo demo de facturación (CAE inventado). Para probar se usa homologación de ARCA.
 - Botones "Ver todas en Google" y "Dejar una reseña" al pie de la sección de reseñas de Google.
 - Rutas viejas que solo redirigían o duplicaban pantallas de `/admin`: `/dashboard`, `/configuracion`, `/operaciones/*` (incluida la página duplicada de barberos), `/turnos/[id]`, `/ventas/[id]`, `/barbers/[id]`, `/productos/nuevo` y `/servicios/nuevo`.
 - Menú desplegable del usuario en el header.

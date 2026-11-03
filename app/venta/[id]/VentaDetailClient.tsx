@@ -13,6 +13,7 @@ import { updateSale, deleteSale } from "@/lib/repository/sales";
 import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
 import ArcaDocFields from "@/components/arca/ArcaDocFields";
+import { CONSUMIDOR_FINAL } from "@/lib/arca/receiverConditions";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { toast } from "@/lib/store/useToastStore";
@@ -98,6 +99,7 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
   const [emitInvoice, setEmitInvoice] = useState(false);
   const [docType, setDocType] = useState<ArcaDocType>(99);
   const [docNumber, setDocNumber] = useState("");
+  const [receiverCondition, setReceiverCondition] = useState(CONSUMIDOR_FINAL);
 
   const total = price * quantity;
 
@@ -169,6 +171,7 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
           total,
           docType,
           docNumber: docNumber.trim() || undefined,
+          receiverIvaCondition: receiverCondition,
           sourceType: "sale",
           sourceId: initialSale.id,
         });
@@ -519,7 +522,7 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
                         </span>
                         <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
                           <CheckCircle2 className="w-3 h-3" />
-                          {invoice?.status === "mock" ? "Demo" : "Aprobado"}
+                          Aprobado
                         </span>
                       </div>
 
@@ -626,6 +629,8 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
                           onDocTypeChange={setDocType}
                           docNumber={docNumber}
                           onDocNumberChange={setDocNumber}
+                          receiverCondition={receiverCondition}
+                          onReceiverConditionChange={setReceiverCondition}
                         />
                       </div>
                     )}

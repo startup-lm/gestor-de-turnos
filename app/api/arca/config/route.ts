@@ -4,8 +4,10 @@ import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { isServerFeatureEnabled } from "@/lib/flags/server";
 import { requireAdmin } from "@/lib/api/auth";
 
+const ENVIRONMENTS = ["homo", "prod"];
+
 const DEFAULT_CONFIG = {
-  environment: "mock",
+  environment: "homo",
   cuit: null,
   point_of_sale: null,
   wsaa_url: null,
@@ -16,11 +18,16 @@ const DEFAULT_CONFIG = {
 };
 
 function sanitize(data: Record<string, unknown>) {
-  const { cert_pem, key_pem, key_passphrase, ...rest } = data as {
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  const { cert_pem, key_pem, key_passphrase, wsaa_token, wsaa_sign, wsaa_expires_at, ...rest } = data as {
     cert_pem?: string | null;
     key_pem?: string | null;
     key_passphrase?: string | null;
+    wsaa_token?: string | null;
+    wsaa_sign?: string | null;
+    wsaa_expires_at?: string | null;
   };
+  /* eslint-enable @typescript-eslint/no-unused-vars */
   return {
     ...rest,
     has_cert: !!cert_pem,
@@ -54,20 +61,51 @@ export async function PUT(req: Request) {
   const enabled = await isServerFeatureEnabled("arca");
   if (!enabled) return errorResponse("Not Found", 404);
 
-  const payload = await req.json();
+  const payload = await req.json().catch(() => null);
+  if (!payload || typeof payload !== "object") return errorResponse("Datos inválidos", 400);
+
   const update: Record<string, unknown> = {
     id: 1,
     updated_at: new Date().toISOString(),
   };
 
-  if ("environment" in payload) update.environment = payload.environment;
-  if ("cuit" in payload) update.cuit = payload.cuit;
-  if ("pointOfSale" in payload) update.point_of_sale = payload.pointOfSale;
+  if ("environment" in payload) {
+    if (!ENVIRONMENTS.includes(payload.environment)) return errorResponse("Entorno de ARCA inválido", 400);
+    update.environment = payload.environment;
+  }
+  if ("cuit" in payload) {
+    const cuit = payload.cuit ? String(payload.cuit).replace(/\D/g, "") : null;
+    if (cuit && cuit.length !== 11) return errorResponse("El CUIT tiene que tener 11 números", 400);
+    update.cuit = cuit;
+  }
+  if ("pointOfSale" in payload) {
+    const pos = payload.pointOfSale == null ? null : Number(payload.pointOfSale);
+    if (pos != null && (!Number.isInteger(pos) || pos < 1 || pos > 99999)) {
+      return errorResponse("El punto de venta tiene que ser un número entre 1 y 99999", 400);
+    }
+    update.point_of_sale = pos;
+  }
   if ("wsaaUrl" in payload) update.wsaa_url = payload.wsaaUrl;
   if ("wsfeUrl" in payload) update.wsfe_url = payload.wsfeUrl;
   if ("certPem" in payload && payload.certPem) update.cert_pem = payload.certPem;
   if ("keyPem" in payload && payload.keyPem) update.key_pem = payload.keyPem;
   if ("keyPassphrase" in payload) update.key_passphrase = payload.keyPassphrase || null;
+
+  // El ticket de acceso depende del certificado, la clave y el entorno: si cambian, se pide otro
+  const { data: current, error: currentError } = await supabaseAdmin
+    .from("arca_settings")
+    .select("environment, cuit, cert_pem, key_pem, key_passphrase, wsaa_url")
+    .eq("id", 1)
+    .maybeSingle();
+  if (currentError) return dbErrorResponse(currentError, "arca/config");
+
+  const ticketKeys = ["environment", "cuit", "cert_pem", "key_pem", "key_passphrase", "wsaa_url"] as const;
+  const stored = (current ?? {}) as Record<string, unknown>;
+  if (ticketKeys.some((k) => k in update && (update[k] ?? null) !== (stored[k] ?? null))) {
+    update.wsaa_token = null;
+    update.wsaa_sign = null;
+    update.wsaa_expires_at = null;
+  }
 
   const { data, error } = await supabaseAdmin
     .from("arca_settings")

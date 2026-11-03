@@ -5,8 +5,8 @@ import { ConfigFormSkeleton } from "@/components/loading/Skeleton";
 import { toast } from "@/lib/store/useToastStore";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import ArcaConfigView from "@/components/arca/ArcaConfigView";
-import { getArcaConfig, getArcaStatus, updateArcaConfig } from "@/lib/repository/arca";
-import type { ArcaConfig, ArcaEnvironment, ArcaStatus } from "@/lib/types/Arca";
+import { getArcaConfig, getArcaStatus, testArcaConnection, updateArcaConfig } from "@/lib/repository/arca";
+import type { ArcaConfig, ArcaEnvironment, ArcaStatus, ArcaTestResult } from "@/lib/types/Arca";
 
 export default function ArcaConfigSection() {
   const {
@@ -20,7 +20,7 @@ export default function ArcaConfigSection() {
     refetch: refetchStatus,
   } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);
 
-  const [environment, setEnvironment] = useState<ArcaEnvironment>("mock");
+  const [environment, setEnvironment] = useState<ArcaEnvironment>("homo");
   const [cuit, setCuit] = useState("");
   const [pointOfSale, setPointOfSale] = useState("");
   const [wsaaUrl, setWsaaUrl] = useState("");
@@ -29,10 +29,12 @@ export default function ArcaConfigSection() {
   const [keyPem, setKeyPem] = useState("");
   const [keyPassphrase, setKeyPassphrase] = useState("");
   const [savingConfig, setSavingConfig] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<ArcaTestResult | null>(null);
 
   useEffect(() => {
     if (!config) return;
-    setEnvironment(config.environment ?? "mock");
+    setEnvironment(config.environment ?? "homo");
     setCuit(config.cuit ?? "");
     setPointOfSale(config.point_of_sale ? String(config.point_of_sale) : "");
     setWsaaUrl(config.wsaa_url ?? "");
@@ -41,7 +43,7 @@ export default function ArcaConfigSection() {
 
   const hasConfigChanges = useMemo(() => {
     if (!config) return false;
-    const initialEnv = config.environment ?? "mock";
+    const initialEnv = config.environment ?? "homo";
     const initialCuit = config.cuit ?? "";
     const initialPos = config.point_of_sale ? String(config.point_of_sale) : "";
     const initialWsaa = config.wsaa_url ?? "";
@@ -83,13 +85,26 @@ export default function ArcaConfigSection() {
       setCertPem("");
       setKeyPem("");
       setKeyPassphrase("");
+      setTestResult(null);
       toast.success("Configuración ARCA guardada con éxito");
       await Promise.all([refetchConfig(), refetchStatus()]);
     } catch (err) {
-      console.error(err);
-      toast.error("Error al guardar configuración ARCA");
+      toast.error(err instanceof Error ? err.message : "No se pudo guardar la configuración ARCA");
     } finally {
       setSavingConfig(false);
+    }
+  };
+
+  const handleTest = async () => {
+    setTesting(true);
+    try {
+      const result = await testArcaConnection();
+      setTestResult(result);
+      if (result.success) toast.success("Conexión con ARCA verificada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo probar la conexión con ARCA");
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -121,6 +136,9 @@ export default function ArcaConfigSection() {
       hasConfigChanges={hasConfigChanges}
       readyLabel={readyLabel}
       onSave={handleSaveConfig}
+      testing={testing}
+      testResult={testResult}
+      onTest={handleTest}
     />
   );
 }

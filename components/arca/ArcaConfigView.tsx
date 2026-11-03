@@ -1,21 +1,23 @@
 "use client";
 
 import React from "react";
-import type { ArcaConfig, ArcaEnvironment, ArcaStatus } from "@/lib/types/Arca";
+import type { ArcaConfig, ArcaEnvironment, ArcaStatus, ArcaTestResult } from "@/lib/types/Arca";
 import {
   ArrowLeft,
   Building2,
+  CheckCircle2,
   Globe,
   KeyRound,
+  PlugZap,
   ShieldCheck,
   Save,
   Loader2,
+  XCircle,
 } from "lucide-react";
 
 const ENV_LABELS: Record<ArcaEnvironment, string> = {
-  mock: "Demo (Simulador local)",
-  homo: "Homologación (Pruebas AFIP)",
-  prod: "Producción (Comprobantes oficiales)",
+  homo: "Homologación (pruebas de ARCA)",
+  prod: "Producción (comprobantes oficiales)",
 };
 
 interface ArcaConfigViewProps {
@@ -41,6 +43,9 @@ interface ArcaConfigViewProps {
   hasConfigChanges: boolean;
   readyLabel: string;
   onSave: (e: React.FormEvent) => Promise<void>;
+  testing: boolean;
+  testResult: ArcaTestResult | null;
+  onTest: () => Promise<void>;
   onBack?: () => void;
 }
 
@@ -67,6 +72,9 @@ export default function ArcaConfigView({
   hasConfigChanges,
   readyLabel,
   onSave,
+  testing,
+  testResult,
+  onTest,
   onBack,
 }: Readonly<ArcaConfigViewProps>) {
   return (
@@ -101,7 +109,7 @@ export default function ArcaConfigView({
             )}
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Parámetros fiscales, certificados digitales y credenciales para conexión con Web Services de ARCA / AFIP
+            Datos fiscales y certificado para emitir Factura C con los web services de ARCA
           </p>
         </div>
 
@@ -143,25 +151,24 @@ export default function ArcaConfigView({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                Entorno de Facturación <span className="text-rose-400">*</span>
+                Entorno de facturación <span className="text-rose-400">*</span>
               </label>
               <select
                 value={environment}
                 onChange={(e) => setEnvironment(e.target.value as ArcaEnvironment)}
                 className="w-full border rounded-xl px-3 py-2 text-sm bg-[var(--background)] border-[var(--foreground)]/15 text-[var(--foreground)] focus:border-[var(--accent)] outline-none"
               >
-                <option value="mock">{ENV_LABELS.mock}</option>
                 <option value="homo">{ENV_LABELS.homo}</option>
                 <option value="prod">{ENV_LABELS.prod}</option>
               </select>
               <p className="text-[11px] text-slate-400 mt-1">
-                Elegí Mock para pruebas sin AFIP, Homologación para testing con AFIP, o Producción para comprobantes reales.
+                Homologación para probar con ARCA sin validez fiscal; producción para facturas reales.
               </p>
             </div>
 
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                CUIT del Emisor <span className="text-rose-400">*</span>
+                CUIT del emisor <span className="text-rose-400">*</span>
               </label>
               <input
                 value={cuit}
@@ -176,7 +183,7 @@ export default function ArcaConfigView({
 
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                Punto de Venta <span className="text-rose-400">*</span>
+                Punto de venta <span className="text-rose-400">*</span>
               </label>
               <input
                 value={pointOfSale}
@@ -185,7 +192,7 @@ export default function ArcaConfigView({
                 placeholder="1"
               />
               <p className="text-[11px] text-slate-400 mt-1">
-                Número de punto de venta habilitado para Factura Electrónica Web Service.
+                Punto de venta de ARCA dado de alta como "Factura electrónica - Web services".
               </p>
             </div>
           </div>
@@ -206,7 +213,7 @@ export default function ArcaConfigView({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-medium text-slate-300">Certificado Digital (PEM)</label>
+                <label className="text-xs font-medium text-slate-300">Certificado digital (PEM)</label>
                 {config && (
                   <span
                     className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
@@ -232,7 +239,7 @@ export default function ArcaConfigView({
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-medium text-slate-300">Clave Privada (PEM)</label>
+                <label className="text-xs font-medium text-slate-300">Clave privada (PEM)</label>
                 {config && (
                   <span
                     className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
@@ -291,27 +298,71 @@ export default function ArcaConfigView({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">WSAA URL (Autenticación)</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">URL de WSAA (autenticación)</label>
               <input
                 value={wsaaUrl}
                 onChange={(e) => setWsaaUrl(e.target.value)}
                 className="w-full border rounded-xl px-3 py-2 text-sm bg-transparent border-[var(--foreground)]/15 text-[var(--foreground)] placeholder:text-slate-600 focus:border-[var(--accent)] outline-none"
-                placeholder="https://.../LoginCms (Dejar vacío para usar default)"
+                placeholder="https://.../LoginCms (vacío: la oficial de ARCA)"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">WSFE URL (Facturación)</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">URL de WSFE (facturación)</label>
               <input
                 value={wsfeUrl}
                 onChange={(e) => setWsfeUrl(e.target.value)}
                 className="w-full border rounded-xl px-3 py-2 text-sm bg-transparent border-[var(--foreground)]/15 text-[var(--foreground)] placeholder:text-slate-600 focus:border-[var(--accent)] outline-none"
-                placeholder="https://.../wsfev1/service.asmx (Dejar vacío para usar default)"
+                placeholder="https://.../wsfev1/service.asmx (vacío: la oficial de ARCA)"
               />
             </div>
           </div>
         </section>
       </form>
+
+      {/* Sección 4: Probar conexión */}
+      <section className="bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 rounded-2xl p-5 shadow-lg space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--foreground)]/10">
+          <div className="flex items-center gap-2.5">
+            <PlugZap className="w-4 h-4 text-[var(--accent)]" />
+            <div>
+              <h3 className="text-sm font-bold text-[var(--foreground)]">Probar conexión</h3>
+              <p className="text-xs text-slate-400">
+                {hasConfigChanges
+                  ? "Guardá los cambios antes de probar"
+                  : "Verifica los servidores de ARCA, el certificado y el punto de venta sin emitir nada"}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onTest}
+            disabled={testing || hasConfigChanges}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs md:text-sm font-semibold min-h-[44px] border border-[var(--accent)]/40 text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed self-start sm:self-auto"
+          >
+            {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlugZap className="w-4 h-4" />}
+            <span>Probar conexión</span>
+          </button>
+        </div>
+
+        {testResult && (
+          <ul className="space-y-2 text-sm">
+            {testResult.steps.map((step) => (
+              <li key={step.label} className="flex items-start gap-2.5">
+                {step.ok ? (
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-400" />
+                ) : (
+                  <XCircle className="w-4 h-4 mt-0.5 shrink-0 text-rose-400" />
+                )}
+                <div className="min-w-0">
+                  <p className="font-medium text-[var(--foreground)]">{step.label}</p>
+                  <p className="text-xs text-slate-400 break-words">{step.detail}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
