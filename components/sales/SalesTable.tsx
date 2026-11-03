@@ -221,7 +221,7 @@ export default function SalesTable() {
 
             <button
               type="submit"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg !bg-[var(--accent)] !text-slate-950 text-xs font-bold hover:!bg-[#E8CA8C] transition-all cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg !bg-[var(--accent)] !text-slate-950 text-xs font-bold hover:opacity-90 transition-all cursor-pointer shadow-sm"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Aplicar filtro
@@ -268,6 +268,7 @@ export default function SalesTable() {
                 <th className="px-4 py-3.5">Precio</th>
                 <th className="px-4 py-3.5">Cant.</th>
                 <th className="px-4 py-3.5">Total</th>
+                <th className="px-4 py-3.5">Medio de pago</th>
                 <th className="px-4 py-3.5">Detalles</th>
                 {ARCA_ENABLED && <th className="px-4 py-3.5">Factura</th>}
               </tr>
@@ -309,6 +310,10 @@ export default function SalesTable() {
 
                     <td className="px-4 py-3 font-bold text-[var(--accent)]">
                       ${sale.total.toLocaleString("es-AR")}
+                    </td>
+
+                    <td className="px-4 py-3 text-slate-300">
+                      {sale.payment_method ?? "—"}
                     </td>
 
                     <td className="px-4 py-3 text-slate-400">
