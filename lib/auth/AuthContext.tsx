@@ -22,31 +22,15 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [user, setUser] = useState<any>(() => {
-    if (typeof window !== "undefined") {
-      const stored = loadStoredAuth();
-      if (stored?.user) return stored.user;
-    }
-    return null;
-  });
-
-  const [role, setRole] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const stored = loadStoredAuth();
-      if (stored?.role) return stored.role;
-    }
-    return "guest";
-  });
-
-  const [barberId, setBarberId] = useState<number>(() => {
-    if (typeof window !== "undefined") {
-      const stored = loadStoredAuth();
-      if (stored?.barberId !== undefined) return stored.barberId;
-    }
-    return -1;
-  });
+  // El primer render tiene que ser igual en el servidor y en el navegador (si no, React descarta
+  // el HTML y el menú salta). La sesión guardada se lee recién en el efecto de montaje.
+  const [user, setUser] = useState<any>(null);
+  const [role, setRole] = useState<string>("guest");
+  const [barberId, setBarberId] = useState<number>(-1);
 
   const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(true);
+  // Hasta leer la sesión guardada no se escribe: si no, el estado inicial de invitado la pisaría
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const stored = loadStoredAuth();
@@ -55,6 +39,7 @@ export function AuthProvider({
       setRole(stored.role);
       setBarberId(stored.barberId);
     }
+    setHydrated(true);
 
     supabaseClient.auth.getUser().then(({ data: { user: supaUser } }) => {
       setUser(supaUser);
@@ -96,8 +81,9 @@ export function AuthProvider({
   }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
     saveStoredAuth({ user, role, barberId });
-  }, [user, role, barberId]);
+  }, [hydrated, user, role, barberId]);
 
   const signIn = useCallback(
     async (email: string, password: string): Promise<{ error?: string }> => {
