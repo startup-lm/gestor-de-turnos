@@ -161,7 +161,7 @@ export default function SaleSplitPanel({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
+            className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             <span>Volver a ventas</span>
@@ -201,14 +201,14 @@ export default function SaleSplitPanel({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Columna Izquierda: Datos de la Venta */}
           <div className="lg:col-span-7 bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 border border-white/10 rounded-2xl p-6 backdrop-blur-md shadow-lg space-y-5">
-            <div className="flex items-center gap-2 text-[var(--accent)] text-sm font-bold uppercase tracking-wider border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2 text-[var(--accent)] text-sm font-bold tracking-wider border-b border-white/10 pb-3">
               <ShoppingBag className="w-4 h-4" />
               <span>Detalle de la venta</span>
             </div>
 
             {/* Selector de Producto */}
             <div>
-              <label htmlFor="sale-panel-product" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+              <label htmlFor="sale-panel-product" className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
                 Producto *
               </label>
               <select
@@ -231,7 +231,7 @@ export default function SaleSplitPanel({
 
             {/* Selector de Barbero */}
             <div>
-              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
                 Barbero / vendedor
               </label>
               <BarberSelector
@@ -246,7 +246,7 @@ export default function SaleSplitPanel({
             {/* Fila: Precio y Cantidad */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="sale-panel-price" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                <label htmlFor="sale-panel-price" className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
                   Precio unitario ($)
                 </label>
                 <input
@@ -261,7 +261,7 @@ export default function SaleSplitPanel({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
                   Cantidad
                 </label>
                 <div className="flex items-center gap-2">
@@ -318,7 +318,7 @@ export default function SaleSplitPanel({
 
             {/* Observaciones */}
             <div>
-              <label htmlFor="sale-panel-details" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+              <label htmlFor="sale-panel-details" className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
                 Observaciones (opcional)
               </label>
               <textarea
@@ -337,7 +337,7 @@ export default function SaleSplitPanel({
             {/* Tarjeta Destacada de Total */}
             <div className="bg-gradient-to-b from-[var(--accent)]/15 to-[var(--accent)]/5 border border-[var(--accent)]/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
               <div>
-                <span className="text-[11px] font-bold text-[var(--accent)] uppercase tracking-wider block mb-1">
+                <span className="text-[11px] font-bold text-[var(--accent)] tracking-wider block mb-1">
                   Total a cobrar
                 </span>
                 <p className="text-xs text-slate-400">

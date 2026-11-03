@@ -164,7 +164,7 @@ export default function SalesTable() {
                   : "!text-slate-400 hover:!text-white hover:!bg-white/5"
               }`}
             >
-              Mes anterior
+              Mes pasado
             </button>
             <button
               type="button"

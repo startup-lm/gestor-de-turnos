@@ -20,6 +20,22 @@ interface Props {
   refreshKey?: number;
 }
 
+function formatDateTime(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    return `${match[3]}/${match[2]}/${match[1]}`;
+  }
+  const dateObj = new Date(dateStr);
+  if (isNaN(dateObj.getTime())) return dateStr;
+  const d = String(dateObj.getDate()).padStart(2, "0");
+  const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const y = dateObj.getFullYear();
+  const hr = String(dateObj.getHours()).padStart(2, "0");
+  const min = String(dateObj.getMinutes()).padStart(2, "0");
+  return `${d}/${m}/${y}, ${hr}:${min}`;
+}
+
 export default function ExpensesHistoryTable({
   startDate,
   endDate,
@@ -236,14 +252,7 @@ export default function ExpensesHistoryTable({
               </thead>
               <tbody className="divide-y divide-white/5">
                 {movements.map((m) => {
-                  const dateObj = new Date(m.created_at);
-                  const formattedDate = dateObj.toLocaleDateString("es-AR", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  });
+                  const formattedDate = formatDateTime(m.created_at);
                   const isVoided = !!m.voided_at;
 
                   return (
@@ -313,13 +322,7 @@ export default function ExpensesHistoryTable({
           {/* LISTA MOBILE */}
           <div className="lg:hidden space-y-3">
             {movements.map((m) => {
-              const dateObj = new Date(m.created_at);
-              const formattedDate = dateObj.toLocaleDateString("es-AR", {
-                day: "2-digit",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-              });
+              const formattedDate = formatDateTime(m.created_at);
               const isVoided = !!m.voided_at;
               const isConfirming = confirmingVoidId === m.id;
               const isVoiding = voidingId === m.id;

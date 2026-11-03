@@ -7,6 +7,7 @@ import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { DEFAULT_PAYMENT_METHODS } from "@/lib/flags";
 import { toast } from "@/lib/store/useToastStore";
 import { formatARS } from "@/lib/format/currency";
+import { roleLabel } from "@/lib/format/roles";
 import {
   HandCoins,
   Check,
@@ -152,7 +153,7 @@ export default function AdvancePanel({
           >
             {barbers.map((b) => (
               <option key={b.id} value={b.id}>
-                {b.name} ({b.role})
+                {b.name} ({roleLabel(b.role)})
               </option>
             ))}
           </select>

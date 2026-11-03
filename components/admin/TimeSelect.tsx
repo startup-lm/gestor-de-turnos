@@ -14,7 +14,7 @@ export default function TimeSelect({ label, value, options, onChange, className 
   return (
     <div className={className}>
       {label && (
-        <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+        <label className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
           {label}
         </label>
       )}

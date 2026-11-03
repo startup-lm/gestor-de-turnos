@@ -166,7 +166,7 @@ export default function DashboardToolbar({
 
         {/* Presets de Fecha (Hoy, Semana, Mes, Mes pasado, Personalizado) */}
         <div className="flex items-center flex-wrap gap-1.5">
-          <div className="inline-flex items-center p-1 rounded-xl bg-slate-950/50 border border-white/10 text-xs">
+          <div className="flex flex-wrap items-center p-1 rounded-xl bg-slate-950/50 border border-white/10 text-xs">
             <button
               type="button"
               onClick={() => handleSelectPreset("today")}
@@ -203,7 +203,7 @@ export default function DashboardToolbar({
             <button
               type="button"
               onClick={() => handleSelectPreset("last_month")}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer hidden sm:inline-block ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
                 preset === "last_month"
                   ? "!bg-[var(--accent)] !text-slate-950 font-bold shadow-sm"
                   : "!text-slate-400 hover:!text-white hover:!bg-white/5"
