@@ -12,6 +12,7 @@ import { DetailFormSkeleton } from "@/components/loading/Skeleton";
 import { updateSale, deleteSale } from "@/lib/repository/sales";
 import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
+import ArcaDocFields from "@/components/arca/ArcaDocFields";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { toast } from "@/lib/store/useToastStore";
@@ -38,13 +39,6 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
-  { value: 99, label: "Consumidor final" },
-  { value: 96, label: "DNI" },
-  { value: 80, label: "CUIT" },
-  { value: 86, label: "CUIL" },
-];
-
 interface Props {
   initialSale: SaleWithRelations;
 }
@@ -69,10 +63,10 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
   // Un barbero no puede pasarle la venta a otro: el selector le muestra solo a él
   const { role, barberId } = useAuth();
   const isAdmin = role === "admin";
-  const selectableBarbers = useMemo(
-    () => (isAdmin ? barbers ?? [] : (barbers ?? []).filter((b) => b.id === barberId)),
-    [isAdmin, barbers, barberId]
-  );
+  const selectableBarbers = useMemo(() => {
+    const active = (barbers ?? []).filter((b) => b.active !== false);
+    return isAdmin ? active : active.filter((b) => b.id === barberId);
+  }, [isAdmin, barbers, barberId]);
 
   // Form states initialized with initialSale
   const [selectedProductId, setSelectedProductId] = useState<number>(initialSale.product_id);
@@ -589,38 +583,13 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
 
                     {emitInvoice && (
                       <div className="space-y-4 pt-3 border-t border-white/10 animate-in fade-in duration-200">
-                        <div>
-                          <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
-                            Tipo de documento
-                          </label>
-                          <select
-                            value={docType}
-                            onChange={(e) => setDocType(Number(e.target.value) as ArcaDocType)}
-                            className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-2.5 text-xs outline-none"
-                          >
-                            {DOC_TYPES.map((dt) => (
-                              <option key={dt.value} value={dt.value} style={{ color: "black" }}>
-                                {dt.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {docType !== 99 && (
-                          <div>
-                            <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
-                              Número de documento
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              value={docNumber}
-                              onChange={(e) => setDocNumber(e.target.value)}
-                              placeholder="Sin puntos ni guiones"
-                              className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-2.5 text-xs outline-none"
-                            />
-                          </div>
-                        )}
+                        <ArcaDocFields
+                          idPrefix="venta-detail"
+                          docType={docType}
+                          onDocTypeChange={setDocType}
+                          docNumber={docNumber}
+                          onDocNumberChange={setDocNumber}
+                        />
                       </div>
                     )}
                   </>

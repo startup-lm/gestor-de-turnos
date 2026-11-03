@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Barber } from "@/lib/types/Barbers";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -72,6 +72,7 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
   const { role, user, isLoadingAuth } = useAuth();
   const { isEnabled, limits } = useBusinessContext();
   const isAdmin = role === "admin";
+  const activeBarbers = useMemo(() => barbers.filter((b) => b.active !== false), [barbers]);
   const modules: AdminModules = {
     metrics: isEnabled("metrics"),
     sales: isEnabled("sales"),
@@ -160,7 +161,7 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
         className="flex-1 min-w-0 w-full overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10"
       >
         <div className="w-full max-w-[1720px] mx-auto">
-          {visibleSection === "metricas" && <DashboardClient initialBarbers={barbers} />}
+          {visibleSection === "metricas" && <DashboardClient initialBarbers={activeBarbers} />}
           {visibleSection === "finanzas" && isAdmin && <FinanzasSection barbers={barbers} />}
           {visibleSection === "finanzas-liquidaciones" && isAdmin && (
             <LiquidacionesSection barbers={barbers} />

@@ -19,6 +19,7 @@ import { updateAppointment } from "@/lib/repository/appointments";
 import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
+import ArcaDocFields from "@/components/arca/ArcaDocFields";
 import { toast } from "@/lib/store/useToastStore";
 import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
 import {
@@ -42,13 +43,6 @@ import {
   FileText,
   Loader2,
 } from "lucide-react";
-
-const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
-  { value: 99, label: "Consumidor final" },
-  { value: 96, label: "DNI" },
-  { value: 80, label: "CUIT" },
-  { value: 86, label: "CUIL" },
-];
 
 function getPaymentMethodIcon(name: string) {
   const lower = name.toLowerCase();
@@ -87,6 +81,7 @@ export default function AppointmentDetailsSplitPanel({
 
   // Estados para conmutar a la vista de cobro integrada en el panel (sin modal)
   const [isCheckoutView, setIsCheckoutView] = useState(false);
+  const [paidInfo, setPaidInfo] = useState<{ price: number; payment_method: string } | null>(null);
   const [checkoutPrice, setCheckoutPrice] = useState<number>(appointment.price || 0);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("Efectivo");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -143,7 +138,8 @@ export default function AppointmentDetailsSplitPanel({
     handleUpdate,
   } = useAppointmentDetailsLogic(appointment, barbers);
 
-  const isDeleteDisabled = !isBlockedRange && (appointment.paid || !!appointment.arca_invoice_id);
+  const isPaid = appointment.paid || !!paidInfo;
+  const isDeleteDisabled = !isBlockedRange && (isPaid || !!appointment.arca_invoice_id);
   const isLocked = !isBlockedRange && !!appointment.arca_invoice_id;
 
   if (loadingFetch) {
@@ -226,9 +222,7 @@ export default function AppointmentDetailsSplitPanel({
     }
 
     // Actualizar estado local
-    appointment.paid = true;
-    appointment.price = checkoutPrice;
-    appointment.payment_method = selectedPaymentMethod;
+    setPaidInfo({ price: checkoutPrice, payment_method: selectedPaymentMethod });
     setPrice(checkoutPrice);
 
     // Emitir comprobante ARCA si el toggle está activado
@@ -423,39 +417,13 @@ export default function AppointmentDetailsSplitPanel({
 
                 {emitInvoice && (
                   <div className="p-3 space-y-2.5 bg-emerald-950/20 border-t border-emerald-500/20">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Tipo de documento
-                      </label>
-                      <select
-                        id="arca-doc-type"
-                        value={docType}
-                        onChange={(e) => setDocType(Number(e.target.value) as ArcaDocType)}
-                        className="!bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/10 rounded-lg p-2 w-full block text-xs"
-                      >
-                        {DOC_TYPES.map((d) => (
-                          <option key={d.value} value={d.value} style={{ color: "black" }}>
-                            {d.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {docType !== 99 && (
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                          Número de documento
-                        </label>
-                        <input
-                          id="arca-doc-number"
-                          type="text"
-                          value={docNumber}
-                          onChange={(e) => setDocNumber(e.target.value)}
-                          placeholder={docType === 80 ? "20-XXXXXXXX-X" : "XX.XXX.XXX"}
-                          className="!bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/10 rounded-lg p-2 w-full block text-xs"
-                        />
-                      </div>
-                    )}
+                    <ArcaDocFields
+                      idPrefix="appointment"
+                      docType={docType}
+                      onDocTypeChange={setDocType}
+                      docNumber={docNumber}
+                      onDocNumberChange={setDocNumber}
+                    />
                   </div>
                 )}
               </div>
@@ -508,7 +476,7 @@ export default function AppointmentDetailsSplitPanel({
                   <Clock className="w-3 h-3" />
                   Bloqueo
                 </span>
-              ) : appointment.paid ? (
+              ) : isPaid ? (
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
                   <CheckCircle className="w-3 h-3" />
                   Cobrado
@@ -675,7 +643,7 @@ export default function AppointmentDetailsSplitPanel({
                   <div className="space-y-1.5 mt-1">
                     <BarberSelector
                       id="appt-barber"
-                      barbers={barbers ?? []}
+                      barbers={barbers?.filter((b) => b.active !== false) ?? []}
                       selectedBarberId={selectedBarberId}
                       onChange={(id) => {
                         setSelectedBarberId(id);
@@ -854,7 +822,7 @@ export default function AppointmentDetailsSplitPanel({
               />
 
               {/* Si ya está pagado, campo de monto cobrado con padding forzado */}
-              {appointment.paid && (
+              {isPaid && (
                 <div className="pt-2 border-t border-[var(--foreground)]/10">
                   <label
                     htmlFor="appt-price"
@@ -870,7 +838,7 @@ export default function AppointmentDetailsSplitPanel({
                       id="appt-price"
                       type="number"
                       disabled={isLocked}
-                      value={price}
+                      value={paidInfo?.price ?? price}
                       onChange={(e) => setPrice(Number(e.target.value))}
                       className={`!bg-[var(--background)] !text-[var(--foreground)] !border-[var(--foreground)]/10 focus:!border-[var(--accent)]/50 focus:!ring-1 focus:!ring-[var(--accent)]/50 transition-all rounded-xl !py-2.5 !pr-3 !pl-8 w-full block text-xs shadow-inner font-bold ${
                         isLocked ? "opacity-60 cursor-not-allowed" : ""
@@ -884,7 +852,7 @@ export default function AppointmentDetailsSplitPanel({
         </div>
 
         {/* BOTÓN HERO: Cobrar turno si está pendiente */}
-        {!appointment.paid && !isBlockedRange && (
+        {!isPaid && !isBlockedRange && (
           <div className="pt-0.5">
             <button
               type="button"
@@ -900,14 +868,15 @@ export default function AppointmentDetailsSplitPanel({
         )}
 
         {/* Banner si ya está cobrado */}
-        {appointment.paid && (
+        {isPaid && (
           <div className="flex items-center justify-between p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25">
             <div className="flex items-center gap-2.5 text-emerald-400">
               <CheckCircle className="w-5 h-5" />
               <div>
                 <span className="text-xs font-bold block leading-tight">Turno cobrado</span>
                 <span className="text-[11px] text-emerald-400/80 font-medium">
-                  Monto registrado: ${price?.toLocaleString("es-AR")}
+                  Monto registrado: ${(paidInfo?.price ?? price)?.toLocaleString("es-AR")}
+                  {(paidInfo?.payment_method || appointment.payment_method) ? ` · ${paidInfo?.payment_method || appointment.payment_method}` : ""}
                 </span>
               </div>
             </div>
@@ -931,7 +900,7 @@ export default function AppointmentDetailsSplitPanel({
               title={
                 appointment.arca_invoice_id
                   ? "No se puede eliminar un turno que ya posee comprobante fiscal emitido ante ARCA"
-                  : appointment.paid
+                  : isPaid
                   ? "No se puede eliminar un turno que ya fue cobrado"
                   : undefined
               }
