@@ -6,6 +6,14 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.10.0] - 2026-11-03
+
+### Agregado
+- Caja muestra el resumen del día por medio de pago (entró, salió y debería haber), con flechas para ver días anteriores. Flags `custom_payment_methods`, `advances` y `cash_closing`, apagados.
+
+### Cambiado
+- Los medios de cobro son Efectivo y Mercado Pago. Los adelantos a profesionales y el cierre de caja con arqueo quedan ocultos. La caja la ve solo el admin.
+
 ## [1.9.1] - 2026-11-03
 
 ### Corregido
