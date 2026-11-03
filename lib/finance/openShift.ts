@@ -21,10 +21,10 @@ export async function getOpenShift() {
 /**
  * Período de caja en el que entra un cobro, venta o movimiento nuevo.
  * No hay que abrir la caja: si no hay período en curso, el primer movimiento lo crea.
- * Con la caja desactivada en el plan, no se ata a ninguno (shiftId null).
+ * Con el cierre de caja desactivado en el plan, no se ata a ninguno (shiftId null).
  */
 export async function currentShiftId(createdBy: string): Promise<{ shiftId: number | null; error: unknown }> {
-  if (!(await isServerFeatureEnabled("cash_register"))) return { shiftId: null, error: null };
+  if (!(await isServerFeatureEnabled("cash_closing"))) return { shiftId: null, error: null };
 
   const { shift, error } = await getOpenShift();
   if (error) return { shiftId: null, error };

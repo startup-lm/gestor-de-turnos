@@ -99,9 +99,9 @@ type PagosDraft = {
 export default function ConfigPagosSection() {
   const { isEnabled, limits } = useBusinessContext();
   const isFinancesEnabled = isEnabled("finances");
-  const isCashRegisterEnabled = isEnabled("cash_register");
+  const isCashClosingEnabled = isEnabled("cash_closing");
   // La frecuencia sirve de recordatorio para cerrar la caja y de período por defecto en Balance
-  const showsClosingFrequency = isFinancesEnabled || isCashRegisterEnabled;
+  const showsClosingFrequency = isFinancesEnabled || isCashClosingEnabled;
   const maxPaymentMethods = limits.maxPaymentMethods;
 
   const [newMethod, setNewMethod] = useState("");
@@ -219,7 +219,7 @@ export default function ConfigPagosSection() {
             <span>Frecuencia de cierre de caja</span>
           </div>
           <p className="text-xs text-slate-400">
-            {isCashRegisterEnabled
+            {isCashClosingEnabled
               ? "Cada cuánto contás la plata y cerrás la caja. Si se pasa el plazo, la sección Caja te lo recuerda. "
               : ""}
             {isFinancesEnabled

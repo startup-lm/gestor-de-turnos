@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api/auth";
-import { requirePlanFeature } from "@/lib/flags/server";
+import { getServerPlanContext, PLAN_FORBIDDEN_MESSAGE } from "@/lib/flags/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
@@ -14,8 +14,9 @@ import type { BusinessSettings } from "@/lib/types/BusinessSettings";
 export async function GET(request: Request) {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
-  const planError = await requirePlanFeature("finances");
-  if (planError) return planError;
+  const { isEnabled } = await getServerPlanContext();
+  // Balance (finances) y la caja diaria (cash_register) usan este resumen
+  if (!isEnabled("finances") && !isEnabled("cash_register")) return errorResponse(PLAN_FORBIDDEN_MESSAGE, 403);
 
   const { searchParams } = new URL(request.url);
   const start = searchParams.get("start_date");

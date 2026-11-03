@@ -43,3 +43,10 @@ export function createdAtBound(value: string, edge: "start" | "end"): string {
 export function dateColumnBound(value: string): string {
   return value.slice(0, 10);
 }
+
+/** Suma (o resta) días a un día "YYYY-MM-DD", sin depender de la zona horaria. */
+export function addDaysToDay(day: string, delta: number): string {
+  const date = new Date(`${day}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + delta);
+  return date.toISOString().slice(0, 10);
+}
