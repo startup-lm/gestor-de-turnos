@@ -16,6 +16,7 @@ import {
 } from "@/lib/dates/presets";
 import DatePresetSelector from "@/components/admin/DatePresetSelector";
 import { formatARS } from "@/lib/format/currency";
+import { roleLabel } from "@/lib/format/roles";
 import {
   Wallet,
   Coins,
@@ -243,17 +244,19 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
           </div>
 
           <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
-            <span
-              className={`font-bold text-[10px] px-2 py-0.5 rounded-md border ${
-                isNegative
-                  ? "bg-red-500/10 border-red-500/30 text-red-400"
-                  : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-              }`}
-            >
-              {isNegative ? "Saldo deudor" : "Superávit"}
-            </span>
+            {Math.round(netProfit) !== 0 && (
+              <span
+                className={`font-bold text-[10px] px-2 py-0.5 rounded-md border ${
+                  Math.round(netProfit) < 0
+                    ? "bg-red-500/10 border-red-500/30 text-red-400"
+                    : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                }`}
+              >
+                {Math.round(netProfit) < 0 ? "Déficit" : "Superávit"}
+              </span>
+            )}
             <span className="text-slate-400 text-[11px] font-medium">
-              Margen: {profitMargin}%{operatingExpenses > 0 ? ` · Gastos: -${formatARS(operatingExpenses)}` : ""}
+              Margen: {profitMargin}%{Math.round(operatingExpenses) > 0 ? ` · Gastos: -${formatARS(operatingExpenses)}` : ""}
             </span>
           </div>
         </div>
@@ -547,7 +550,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                           </div>
                           <div>
                             <span className="font-semibold text-white block">{barber.name}</span>
-                            <span className="text-[10px] text-slate-500">{barber.role}</span>
+                            <span className="text-[10px] text-slate-500">{roleLabel(barber.role)}</span>
                           </div>
                         </div>
                       </td>

@@ -22,6 +22,14 @@ interface Props {
   refreshKey?: number;
 }
 
+function formatDate(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return dateStr;
+  const [, y, m, d] = match;
+  return `${d}/${m}/${y}`;
+}
+
 export default function PayoutsHistoryTable({ barbers, refreshKey }: Readonly<Props>) {
   const [payouts, setPayouts] = useState<CommissionPayout[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,20 +176,20 @@ export default function PayoutsHistoryTable({ barbers, refreshKey }: Readonly<Pr
                         </div>
                       </td>
                       <td className="py-3 px-4 text-slate-300">
-                        {p.payment_date}
+                        {formatDate(p.payment_date)}
                       </td>
                       <td className="py-3 px-4 font-semibold text-white">
                         {p.barbers?.name || "Profesional"}
                       </td>
                       <td className="py-3 px-4 text-slate-400 text-[11px]">
-                        {p.period_start} al {p.period_end}
+                        {formatDate(p.period_start)} al {formatDate(p.period_end)}
                       </td>
                       <td className="py-3 px-4 text-center text-slate-300">
                         <span className="font-semibold">{p.cuts_count}</span> cortes •{" "}
                         <span className="font-semibold">{p.sales_count}</span> prod.
                       </td>
                       <td className="py-3 px-4 text-right text-amber-400 font-medium">
-                        {p.advances_deducted > 0
+                        {Math.round(p.advances_deducted) > 0
                           ? `-${formatARS(p.advances_deducted)}`
                           : "—"}
                       </td>
@@ -299,11 +307,11 @@ export default function PayoutsHistoryTable({ barbers, refreshKey }: Readonly<Pr
                   <div className="text-[11px] text-slate-400 space-y-1">
                     <div>
                       <span>Período: </span>
-                      <strong className="text-slate-300">{p.period_start} al {p.period_end}</strong>
+                      <strong className="text-slate-300">{formatDate(p.period_start)} al {formatDate(p.period_end)}</strong>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span>Fecha de pago: </span>
-                      <strong className="text-slate-300">{p.payment_date}</strong> •
+                      <strong className="text-slate-300">{formatDate(p.payment_date)}</strong> •
                       <span className="inline-flex items-center gap-1 text-slate-300">
                         {p.payment_method === "Efectivo" ? (
                           <Banknote className="w-3 h-3 text-amber-400" />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArcaSkeleton, SalesTableSkeleton } from "@/components/loading/Skeleton";
+import { ArcaSkeleton } from "@/components/loading/Skeleton";
 import SendButton from "@/components/buttons/SendButton";
 import { toast } from "@/lib/store/useToastStore";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
@@ -135,7 +135,7 @@ function MetricCard({
         <Icon className="w-5 h-5" />
       </div>
       <div>
-        <p className="text-xs font-medium opacity-70 uppercase tracking-wider">{label}</p>
+        <p className="text-xs font-medium opacity-70 tracking-wider">{label}</p>
         <p className="text-xl font-bold">{value}</p>
         {sub && <p className="text-[10px] opacity-60 mt-0.5">{sub}</p>}
       </div>
@@ -209,30 +209,30 @@ function InvoiceRow({ inv }: { inv: ArcaInvoiceRecord }) {
           <td colSpan={8} className="px-4 py-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div>
-                <p className="text-[var(--foreground)]/40 uppercase tracking-wider text-[10px] mb-0.5">Punto de venta</p>
+                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Punto de venta</p>
                 <p className="font-medium">{inv.point_of_sale ?? "—"}</p>
               </div>
               <div>
-                <p className="text-[var(--foreground)]/40 uppercase tracking-wider text-[10px] mb-0.5">Tipo comprobante</p>
+                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Tipo comprobante</p>
                 <p className="font-medium">{inv.invoice_type ?? inv.voucher_type ?? "—"}</p>
               </div>
               <div>
-                <p className="text-[var(--foreground)]/40 uppercase tracking-wider text-[10px] mb-0.5">Tipo documento</p>
+                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Tipo documento</p>
                 <p className="font-medium">
                   {inv.doc_type ? `${DOC_TYPE_LABELS[inv.doc_type] ?? inv.doc_type}` : "—"}
                 </p>
               </div>
               <div>
-                <p className="text-[var(--foreground)]/40 uppercase tracking-wider text-[10px] mb-0.5">Nro. documento</p>
+                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Nro. documento</p>
                 <p className="font-medium">{inv.doc_number ?? "—"}</p>
               </div>
               <div>
-                <p className="text-[var(--foreground)]/40 uppercase tracking-wider text-[10px] mb-0.5">Vto. CAE</p>
+                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Vto. CAE</p>
                 <p className="font-medium">{inv.cae_due_date ?? "—"}</p>
               </div>
               {inv.source_id && (
                 <div>
-                  <p className="text-[var(--foreground)]/40 uppercase tracking-wider text-[10px] mb-0.5">ID origen</p>
+                  <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">ID origen</p>
                   <p className="font-medium">#{inv.source_id}</p>
                 </div>
               )}
@@ -971,7 +971,13 @@ export default function FacturasSection() {
           </div>
         )}
 
-        {loadingInvoices && <SalesTableSkeleton />}
+        {loadingInvoices && (
+          <div className="space-y-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-12 rounded-xl bg-white/5 animate-pulse" />
+            ))}
+          </div>
+        )}
 
         {!loadingInvoices && invoices.length === 0 && (
           <p className="text-sm text-gray-400 text-center py-6">
