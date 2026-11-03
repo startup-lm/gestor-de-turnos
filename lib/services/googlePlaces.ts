@@ -203,6 +203,15 @@ export async function getGooglePlaceCandidate(
  * Consulta la API de Google Places para obtener información oficial de reseñas.
  * Resuelve automáticamente links o nombres si no se pasa un Place ID directo.
  */
+/**
+ * Id de una reseña cuando Google no da uno propio. No puede depender de la posición:
+ * Google reordena las reseñas por relevancia y el id oculto apuntaría a otra.
+ */
+export function stableReviewId(prefix: string, publishTime?: string, author?: string): string {
+  const authorPart = (author ?? "anonimo").trim().toLowerCase().replace(/\s+/g, "-");
+  return `${prefix}-${publishTime ?? "sin-fecha"}-${authorPart}`;
+}
+
 export async function fetchGooglePlaceReviews({
   input,
   apiKey,
@@ -262,8 +271,9 @@ export async function fetchGooglePlaceReviews({
       const rawReviews: GooglePlacesNewReview[] = Array.isArray(data.reviews) ? data.reviews : [];
       const reviews: GoogleReviewItem[] = rawReviews
         .filter((r) => Boolean((r.text?.text || r.originalText?.text || "").trim()))
-        .map((r, idx) => ({
-          id: r.name || `rev-new-${idx}-${Date.now()}`,
+        .map((r) => ({
+          // El id tiene que ser estable entre consultas: con él se recuerdan las reseñas ocultas
+          id: r.name || stableReviewId("rev-new", r.publishTime, r.authorAttribution?.displayName),
           author_name: r.authorAttribution?.displayName || "Cliente de Google",
           author_photo_url: r.authorAttribution?.photoUri || undefined,
           author_url: r.authorAttribution?.uri || undefined,
@@ -326,8 +336,8 @@ export async function fetchGooglePlaceReviews({
     const rawReviews: GooglePlacesLegacyReview[] = Array.isArray(result.reviews) ? result.reviews : [];
     const reviews: GoogleReviewItem[] = rawReviews
       .filter((r) => Boolean(r.text?.trim()))
-      .map((r, idx) => ({
-        id: `rev-legacy-${idx}-${r.time || Date.now()}`,
+      .map((r) => ({
+        id: stableReviewId("rev-legacy", r.time != null ? String(r.time) : undefined, r.author_name),
         author_name: r.author_name || "Cliente de Google",
         author_photo_url: r.profile_photo_url || undefined,
         author_url: r.author_url || undefined,
