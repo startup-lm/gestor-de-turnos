@@ -5,11 +5,14 @@ import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { isAdminStaff } from "@/lib/api/ownership";
 import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 import { normalizeMethod } from "@/lib/finance/cashSummary";
+import { commissionOf } from "@/lib/finance/commission";
+import { getAllBarberRates } from "@/lib/finance/barberRates";
 
 interface RawRow {
   barber_id: number;
   price:     number | null;
   payment_method: string | null;
+  commission_rate: number | null;
 }
 
 export async function GET(request: Request) {
@@ -26,7 +29,7 @@ export async function GET(request: Request) {
   const { data: rows, error } = await fetchAllRows<RawRow>((from, to) => {
     let query = supabaseAdmin
       .from("appointments")
-      .select("barber_id, price, payment_method")
+      .select("barber_id, price, payment_method, commission_rate")
       .is("deleted_at", null)
       .eq("paid", true)
       .gte("date", start)
@@ -39,13 +42,18 @@ export async function GET(request: Request) {
 
   if (error) return dbErrorResponse(error, "appointments/all");
 
-  const agg: Record< number, { totalAppt: number; totalRevenue: number } > = {};
+  const { rates, error: ratesError } = await getAllBarberRates();
+  if (ratesError) return dbErrorResponse(ratesError, "appointments/all");
+
+  const agg: Record< number, { totalAppt: number; totalRevenue: number; totalCommission: number } > = {};
   const paymentMethodTotals: Record<string, number> = {};
 
-  rows.forEach(({ barber_id, price, payment_method }) => {
-    if (!agg[barber_id]) agg[barber_id] = {  totalAppt: 0, totalRevenue: 0 };
+  rows.forEach(({ barber_id, price, payment_method, commission_rate }) => {
+    if (!agg[barber_id]) agg[barber_id] = {  totalAppt: 0, totalRevenue: 0, totalCommission: 0 };
     agg[barber_id].totalAppt++;
     agg[barber_id].totalRevenue += price ?? 0;
+    // Con el % congelado al cobrar: cambiar el % del barbero no recalcula lo viejo
+    agg[barber_id].totalCommission += commissionOf(price, commission_rate, rates.get(barber_id)?.commission ?? 0);
 
     if (price) {
       const method = normalizeMethod(payment_method);
@@ -54,10 +62,11 @@ export async function GET(request: Request) {
   });
 
   const barberTotals = Object.entries(agg).map(
-    ([barberId, { totalAppt, totalRevenue }]) => ({
+    ([barberId, { totalAppt, totalRevenue, totalCommission }]) => ({
       barberId:      Number(barberId),
       totalAppt,
       totalRevenue,
+      totalCommission,
     })
   );
 

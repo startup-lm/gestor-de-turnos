@@ -5,10 +5,13 @@ import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { isAdminStaff } from "@/lib/api/ownership";
 import { createdAtBound } from "@/lib/dates/argentina";
 import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
+import { commissionOf } from "@/lib/finance/commission";
+import { getAllBarberRates } from "@/lib/finance/barberRates";
 
 interface RawRow {
   barber_id: number;
   total:     number | null;
+  commission_rate: number | null;
 }
 
 export async function GET(request: Request) {
@@ -27,7 +30,7 @@ export async function GET(request: Request) {
   const { data: rows, error } = await fetchAllRows<RawRow>((from, to) => {
     let query = supabaseAdmin
       .from("sales")
-      .select("barber_id, total")
+      .select("barber_id, total, commission_rate")
       .gte("created_at", startIso)
       .lte("created_at", endIso);
     // Un barbero solo recibe sus propias ventas
@@ -37,19 +40,25 @@ export async function GET(request: Request) {
 
   if (error) return dbErrorResponse(error, "sales/all");
 
-  const agg: Record< number, { totalSales: number; totalSalesRevenue: number } > = {};
+  const { rates, error: ratesError } = await getAllBarberRates();
+  if (ratesError) return dbErrorResponse(ratesError, "sales/all");
 
-  rows.forEach(({ barber_id, total }) => {
-    if (!agg[barber_id]) agg[barber_id] = {  totalSales: 0, totalSalesRevenue: 0 };
+  const agg: Record< number, { totalSales: number; totalSalesRevenue: number; totalSalesCommission: number } > = {};
+
+  rows.forEach(({ barber_id, total, commission_rate }) => {
+    if (!agg[barber_id]) agg[barber_id] = {  totalSales: 0, totalSalesRevenue: 0, totalSalesCommission: 0 };
     agg[barber_id].totalSales++;
     agg[barber_id].totalSalesRevenue += total ?? 0;
+    // Con el % congelado al vender: cambiar el % del barbero no recalcula lo viejo
+    agg[barber_id].totalSalesCommission += commissionOf(total, commission_rate, rates.get(barber_id)?.saleCommission ?? 0);
   });
 
   const result = Object.entries(agg).map(
-    ([barberId, { totalSales, totalSalesRevenue }]) => ({
+    ([barberId, { totalSales, totalSalesRevenue, totalSalesCommission }]) => ({
       barberId:      Number(barberId),
       totalSales,
       totalSalesRevenue,
+      totalSalesCommission,
     })
   );
 

@@ -17,6 +17,8 @@ export interface BarberTotals {
   barberId: number;
   totalAppt: number;
   totalRevenue: number;
+  /** Comisión calculada en el servidor con el % congelado al cobrar */
+  totalCommission: number;
 };
 
 export type PaymentMethodTotals = Record<string, number>;

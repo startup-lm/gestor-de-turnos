@@ -34,7 +34,11 @@ export const AppointmentUpdatesSchema = z.object({
   price: z.number().nonnegative("El precio no puede ser negativo").optional(),
   paid: z.boolean().optional(),
   payment_method: z.string().trim().max(50).nullable().optional(),
-});
+}).refine(
+  // Sin medio de pago, el cobro no se puede ubicar en la caja
+  (updates) => updates.paid !== true || !!updates.payment_method,
+  { message: "Elegí un medio de pago", path: ["payment_method"] }
+);
 
 export const AppointmentPatchSchema = z.object({
   appointmentId: z.number().int().positive(),
@@ -54,7 +58,7 @@ export const SaleInsertSchema = z.object({
   price: z.number().nonnegative("El precio no puede ser negativo"),
   quantity: z.number().int().positive("La cantidad debe ser mayor a cero"),
   details: z.string().trim().max(500).nullable().optional(),
-  payment_method: z.string().trim().max(50).nullable().optional(),
+  payment_method: z.string({ error: "Elegí un medio de pago" }).trim().min(1, "Elegí un medio de pago").max(50),
 });
 
 export const SaleUpdateSchema = SaleInsertSchema.partial();

@@ -46,7 +46,7 @@ export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
   const [viewMode, setViewMode] = useState<ViewMode>("day");
 
   // Hooks de turnos y cortes (una sola llamada)
-  const { totalCount: turnosTotales, totalRevenue: ingresosTotales, chartData } =
+  const { totalCount: turnosTotales, paidCount: turnosCobrados, totalRevenue: ingresosTotales, chartData } =
     useDashboardData(selectedBarberId, startDate, endDate, viewMode);
 
   // Hooks de ventas de productos
@@ -59,30 +59,30 @@ export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
     totalSales: allSalesCount,
     totalSalesRevenue: allSalesRevenue,
     salesByBarber,
-  } = useTotalRevenueForAllSales(startDate, endDate, barbers);
-  const totalCutsCommission = useTotalCommissions(barberTotals, barbers);
+  } = useTotalRevenueForAllSales(startDate, endDate);
+  const totalCutsCommission = useTotalCommissions(barberTotals);
   const totalCommissionsAll = totalCutsCommission + totalSalesCommission;
 
-  // Ventas del barbero elegido
-  const { ventasCount, ingresosVentas } = useMemo(() => {
+  // Ventas y comisiones del barbero elegido (las comisiones vienen del servidor con el % congelado)
+  const { ventasCount, ingresosVentas, comisionVentas } = useMemo(() => {
     if (selectedBarberId === -1) {
-      return { ventasCount: 0, ingresosVentas: 0 };
+      return { ventasCount: 0, ingresosVentas: 0, comisionVentas: 0 };
     }
     if (selectedBarberId === 0) {
-      return { ventasCount: allSalesCount, ingresosVentas: allSalesRevenue };
+      return { ventasCount: allSalesCount, ingresosVentas: allSalesRevenue, comisionVentas: totalSalesCommission };
     }
     const barberSale = salesByBarber.find((s) => s.barberId === selectedBarberId);
     return {
       ventasCount: barberSale?.totalSales ?? 0,
       ingresosVentas: barberSale?.totalSalesRevenue ?? 0,
+      comisionVentas: barberSale?.totalSalesCommission ?? 0,
     };
-  }, [selectedBarberId, allSalesCount, allSalesRevenue, salesByBarber]);
+  }, [selectedBarberId, allSalesCount, allSalesRevenue, totalSalesCommission, salesByBarber]);
+  const comisionCortes = barberTotals.find((t) => t.barberId === selectedBarberId)?.totalCommission ?? 0;
 
-  const turnos = turnosTotales ?? 0;
   const ingresos = ingresosTotales ?? 0;
   const selectedBarber = barbers.find((b) => b.id === selectedBarberId);
   const comision = selectedBarber?.commission ?? 0;
-  const comisionVenta = selectedBarber?.sale_commission ?? 0;
 
   const isDataLoading = turnosTotales === null;
 
@@ -138,11 +138,13 @@ export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
 
       {/* 4 KPIs Ejecutivos */}
       <Metrics
-        turnos={turnos}
+        turnos={turnosCobrados}
+        turnosAgendados={turnosTotales ?? 0}
         ventas={ventasCount}
         ingresos={ingresos}
         comision={comision}
-        comisionVenta={comisionVenta}
+        gananciaCortes={comisionCortes}
+        gananciaVentas={comisionVentas}
         ingresosVentas={ingresosVentas}
         selectedBarberId={selectedBarberId}
         totalCommissionsAll={totalCommissionsAll}

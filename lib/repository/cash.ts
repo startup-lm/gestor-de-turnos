@@ -1,5 +1,6 @@
 import { CommissionPayout, CashMovement } from "@/lib/types/cash";
 import { getBaseUrl } from "@/utils/getBaseUrl";
+import type { PayoutData } from "@/lib/finance/payoutData";
 
 const BASE = getBaseUrl();
 
@@ -73,13 +74,8 @@ export async function createCommissionPayout(
   }
 }
 
-export interface PayoutPreview {
-  barber: { id: number; name: string; commission: number; sale_commission: number; active: boolean };
-  cuts: { count: number; revenue: number };
-  sales: { count: number; revenue: number };
-  advances: CashMovement[];
-  overlappingPayout: { id: number; period_start: string; period_end: string } | null;
-}
+/** Lo calcula el servidor (lib/finance/payoutData): import solo de tipo, no trae código de servidor */
+export type PayoutPreview = PayoutData;
 
 export async function getPayoutPreview(params: {
   barberId: number;
@@ -124,6 +120,8 @@ export interface CashSummaryResponse {
   rows: { method: string; income: number; outcome: number; net: number }[];
   totals: { income: number; outcome: number; net: number };
   expensesTotal: number;
+  /** Retiros del dueño: salen de la caja pero no restan de la ganancia */
+  withdrawalsTotal: number;
 }
 
 export async function getCashSummary(params: {

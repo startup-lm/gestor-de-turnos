@@ -5,7 +5,7 @@ import { requirePlanFeature } from "@/lib/flags/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { computePayout } from "@/lib/finance/payout";
-import { isValidPeriod, loadPayoutData } from "@/lib/finance/payoutData";
+import { endsInTheFuture, isValidPeriod, loadPayoutData } from "@/lib/finance/payoutData";
 import { todayInArgentina } from "@/lib/dates/argentina";
 
 export async function GET(request: Request) {
@@ -59,18 +59,12 @@ export async function POST(request: Request) {
 
   if (!barberId) return errorResponse("Elegí un profesional", 400);
   if (!isValidPeriod(periodStart, periodEnd)) return errorResponse("El período no es válido", 400);
+  if (endsInTheFuture(periodEnd!)) return errorResponse("El período a liquidar no puede terminar después de hoy", 400);
   if (!paymentMethod) return errorResponse("Elegí un medio de pago", 400);
 
   const { data: payoutData, error: loadError, notFound } = await loadPayoutData(barberId, periodStart, periodEnd!);
   if (loadError) return dbErrorResponse(loadError, "payouts.post");
   if (notFound || !payoutData) return errorResponse("Profesional no encontrado", 404);
-
-  if (payoutData.overlappingPayout) {
-    return errorResponse(
-      `Ya existe la liquidación #${payoutData.overlappingPayout.id} para este profesional en un período que se superpone. Anulala antes de volver a liquidar.`,
-      409
-    );
-  }
 
   // Solo se descuentan adelantos disponibles (sin anular y sin descontar) de este profesional
   const available = payoutData.advances.filter((a) => advanceIds.includes(a.id));
@@ -80,11 +74,9 @@ export async function POST(request: Request) {
 
   const result = computePayout({
     cutsCount: payoutData.cuts.count,
-    cutsRevenue: payoutData.cuts.revenue,
-    commissionRate: payoutData.barber.commission,
+    cutsCommission: payoutData.cuts.commission,
     salesCount: payoutData.sales.count,
-    salesRevenue: payoutData.sales.revenue,
-    saleCommissionRate: payoutData.barber.sale_commission,
+    salesCommission: payoutData.sales.commission,
     advancesTotal: available.reduce((sum, a) => sum + Number(a.amount), 0),
   });
 
@@ -113,10 +105,29 @@ export async function POST(request: Request) {
 
   /** Si falla un paso posterior, se deshace todo para no dejar la caja a medias. */
   const rollback = async () => {
+    await supabaseAdmin.from("appointments").update({ payout_id: null }).eq("payout_id", payout.id);
+    await supabaseAdmin.from("sales").update({ payout_id: null }).eq("payout_id", payout.id);
     await supabaseAdmin.from("cash_movements").update({ payout_id: null }).eq("payout_id", payout.id).eq("type", "advance");
     await supabaseAdmin.from("cash_movements").delete().eq("payout_id", payout.id).eq("type", "commission_payout");
     await supabaseAdmin.from("commission_payouts").delete().eq("id", payout.id);
   };
+
+  // Turnos y ventas quedan atados a esta liquidación: no se vuelven a pagar ni se pueden editar.
+  // Marca condicional: si otra liquidación los tomó en paralelo, se detecta y se deshace
+  for (const [table, items] of [["appointments", payoutData.cuts], ["sales", payoutData.sales]] as const) {
+    if (items.ids.length === 0) continue;
+    const { data: linked, error: linkError } = await supabaseAdmin
+      .from(table)
+      .update({ payout_id: payout.id })
+      .in("id", items.ids)
+      .is("payout_id", null)
+      .select("id");
+
+    if (linkError || (linked ?? []).length !== items.ids.length) {
+      await rollback();
+      return errorResponse("No se pudo registrar la liquidación", 500);
+    }
+  }
 
   if (available.length > 0) {
     // Marca condicional: si otro pedido ya descontó alguno en paralelo, se detecta y se deshace

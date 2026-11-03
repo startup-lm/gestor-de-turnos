@@ -8,7 +8,7 @@ import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { DEFAULT_PAYMENT_METHODS } from "@/lib/flags";
 import { computePayout } from "@/lib/finance/payout";
 import { buildPayoutWhatsAppText } from "@/lib/finance/payoutText";
-import { formatLocalDate } from "@/lib/dates/argentina";
+import { formatLocalDate, todayInArgentina } from "@/lib/dates/argentina";
 import { DatePreset, getPresetRange } from "@/lib/dates/presets";
 import DatePresetSelector from "@/components/admin/DatePresetSelector";
 import { toast } from "@/lib/store/useToastStore";
@@ -62,6 +62,13 @@ export default function LiquidationPanel({
   const [startDate, setStartDate] = useState<Date>(initialRange.start);
   const [endDate, setEndDate] = useState<Date>(initialRange.end);
 
+  // No se liquidan días que todavía no pasaron: si el período elegido sigue abierto, se cuenta hasta hoy
+  const periodStart = formatLocalDate(startDate);
+  const today = todayInArgentina();
+  const isClampedToToday = formatLocalDate(endDate) > today;
+  const periodEnd = isClampedToToday ? today : formatLocalDate(endDate);
+  const startsInTheFuture = periodStart > today;
+
   // Vista previa calculada en el servidor (turnos cobrados, ventas y adelantos sin descontar)
   const [preview, setPreview] = useState<PayoutPreview | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -72,12 +79,16 @@ export default function LiquidationPanel({
   useEffect(() => {
     if (!selectedBarberId) return;
     const current = ++requestId.current;
+    if (startsInTheFuture) {
+      setPreview(null);
+      return;
+    }
     setLoadingPreview(true);
     setPreviewError(null);
     getPayoutPreview({
       barberId: selectedBarberId,
-      startDate: formatLocalDate(startDate),
-      endDate: formatLocalDate(endDate),
+      startDate: periodStart,
+      endDate: periodEnd,
     }).then((res) => {
       // Si el usuario cambió de profesional o de período, se descarta la respuesta vieja
       if (current !== requestId.current) return;
@@ -90,7 +101,7 @@ export default function LiquidationPanel({
       setPreview(res.data);
       setSelectedAdvanceIds(res.data.advances.map((a) => a.id));
     });
-  }, [selectedBarberId, startDate, endDate]);
+  }, [selectedBarberId, periodStart, periodEnd, startsInTheFuture]);
 
   const toggleAdvance = (id: number) => {
     setSelectedAdvanceIds((prev) =>
@@ -104,11 +115,9 @@ export default function LiquidationPanel({
       .reduce((sum, a) => sum + Number(a.amount), 0);
     return computePayout({
       cutsCount: preview?.cuts.count ?? 0,
-      cutsRevenue: preview?.cuts.revenue ?? 0,
-      commissionRate: preview?.barber.commission ?? 0,
+      cutsCommission: preview?.cuts.commission ?? 0,
       salesCount: preview?.sales.count ?? 0,
-      salesRevenue: preview?.sales.revenue ?? 0,
-      saleCommissionRate: preview?.barber.sale_commission ?? 0,
+      salesCommission: preview?.sales.commission ?? 0,
       advancesTotal,
     });
   }, [preview, selectedAdvanceIds]);
@@ -121,8 +130,8 @@ export default function LiquidationPanel({
   const [completedPayout, setCompletedPayout] = useState<CommissionPayout | null>(null);
   const [copiedReceipt, setCopiedReceipt] = useState(false);
 
-  const overlapping = preview?.overlappingPayout ?? null;
-  const canConfirm = !!preview && !overlapping && !loadingPreview && !isSubmitting && !!paymentMethod;
+  const lateCount = (preview?.cuts.lateCount ?? 0) + (preview?.sales.lateCount ?? 0);
+  const canConfirm = !!preview && !startsInTheFuture && !loadingPreview && !isSubmitting && !!paymentMethod;
   const barberName = preview?.barber.name ?? barbers.find((b) => b.id === selectedBarberId)?.name ?? "";
 
   const handleConfirmPayout = async () => {
@@ -131,8 +140,8 @@ export default function LiquidationPanel({
     try {
       const res = await createCommissionPayout({
         barber_id: selectedBarberId,
-        period_start: formatLocalDate(startDate),
-        period_end: formatLocalDate(endDate),
+        period_start: periodStart,
+        period_end: periodEnd,
         advance_ids: selectedAdvanceIds,
         payment_method: paymentMethod,
         reference_code: referenceCode.trim() || undefined,
@@ -310,12 +319,27 @@ export default function LiquidationPanel({
             </div>
           </div>
 
-          {overlapping && (
+          {startsInTheFuture ? (
             <div className="flex items-start gap-2 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-300">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>El período todavía no empezó. Elegí uno que incluya días pasados.</span>
+            </div>
+          ) : isClampedToToday ? (
+            <div className="flex items-start gap-2 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>
-                Ya liquidaste a este profesional del {formatDay(overlapping.period_start)} al{" "}
-                {formatDay(overlapping.period_end)} (#{overlapping.id}). Elegí otro período o anulá esa liquidación.
+                El período sigue abierto: se liquida hasta hoy ({formatDay(today)}). Lo que se cobre después
+                entra en la próxima liquidación.
+              </span>
+            </div>
+          ) : null}
+
+          {lateCount > 0 && (
+            <div className="flex items-start gap-2 p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs text-blue-200">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                Incluye {lateCount} {lateCount === 1 ? "cobro atrasado" : "cobros atrasados"} de antes del{" "}
+                {formatDay(periodStart)} que todavía no se habían liquidado.
               </span>
             </div>
           )}

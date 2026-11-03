@@ -100,10 +100,10 @@ describe("API /api/payouts", () => {
 
     const baseData = {
       barber: { id: 2, name: "Martín", commission: 0.5, sale_commission: 0.1, active: true },
-      cuts: { count: 20, revenue: 100000 },
-      sales: { count: 2, revenue: 30000 },
+      // Comisiones ya calculadas con el % congelado de cada turno o venta
+      cuts: { count: 2, revenue: 100000, commission: 50000, lateCount: 1, ids: [11, 12] },
+      sales: { count: 1, revenue: 30000, commission: 3000, lateCount: 0, ids: [21] },
       advances: [{ id: 5, amount: 10000, type: "advance" }],
-      overlappingPayout: null,
     };
 
     /** Consulta encadenable: cada método devuelve la misma consulta y al final resuelve `result`. */
@@ -118,12 +118,16 @@ describe("API /api/payouts", () => {
     const post = (body: unknown) =>
       POST(new Request("http://localhost:3000/api/payouts", { method: "POST", body: JSON.stringify(body) }));
 
-    function mockTables(markedCount = 1) {
+    const rows = (n: number) => ({ data: Array.from({ length: n }, (_, i) => ({ id: i })), error: null });
+
+    function mockTables(markedCount = 1, linkedAppointments = 2) {
       const payouts = chain({ data: { id: 77 }, error: null });
-      const movements = chain({ data: Array.from({ length: markedCount }, (_, i) => ({ id: i })), error: null });
-      vi.mocked(supabaseAdmin.from).mockImplementation(((table: string) =>
-        table === "commission_payouts" ? payouts : movements) as any);
-      return { payouts, movements };
+      const movements = chain(rows(markedCount));
+      const appointments = chain(rows(linkedAppointments));
+      const sales = chain(rows(1));
+      const tables: Record<string, unknown> = { commission_payouts: payouts, appointments, sales };
+      vi.mocked(supabaseAdmin.from).mockImplementation(((table: string) => tables[table] ?? movements) as any);
+      return { payouts, movements, appointments, sales };
     }
 
     it("calcula los montos en el servidor e ignora los del navegador", async () => {
@@ -137,7 +141,7 @@ describe("API /api/payouts", () => {
       });
 
       expect(response.status).toBe(200);
-      // 100000 × 0.5 + 30000 × 0.1 − 10000 de adelanto
+      // 50000 + 3000 de comisiones − 10000 de adelanto
       expect(payouts.insert).toHaveBeenCalledWith(expect.objectContaining({
         cuts_commission_amount: 50000, sales_commission_amount: 3000, advances_deducted: 10000, total_paid: 43000,
       }));
@@ -148,18 +152,36 @@ describe("API /api/payouts", () => {
       expect(movements.update).toHaveBeenCalledWith({ payout_id: 77 });
     });
 
-    it("rechaza un período que se superpone con otra liquidación", async () => {
+    it("ata los turnos y las ventas a la liquidación, incluidos los cobros atrasados", async () => {
       vi.mocked(auth.requireAdmin).mockResolvedValueOnce({ email: "admin@test.com" } as any);
-      vi.mocked(payoutData.loadPayoutData).mockResolvedValueOnce({
-        data: { ...baseData, overlappingPayout: { id: 9, period_start: "2026-10-01", period_end: "2026-10-31" } } as any,
-        error: null,
-      });
-      const { payouts } = mockTables();
+      vi.mocked(payoutData.loadPayoutData).mockResolvedValueOnce({ data: baseData as any, error: null });
+      const { appointments, sales } = mockTables();
 
       const response = await post({ barber_id: 2, period_start: "2026-10-01", period_end: "2026-10-15", payment_method: "Efectivo" });
-      expect(response.status).toBe(409);
-      expect((await response.json()).error).toMatch(/#9/);
-      expect(payouts.insert).not.toHaveBeenCalled();
+      expect(response.status).toBe(200);
+      expect(appointments.update).toHaveBeenCalledWith({ payout_id: 77 });
+      expect(appointments.in).toHaveBeenCalledWith("id", [11, 12]);
+      expect(sales.in).toHaveBeenCalledWith("id", [21]);
+    });
+
+    it("si otra liquidación tomó un turno en paralelo, deshace todo", async () => {
+      vi.mocked(auth.requireAdmin).mockResolvedValueOnce({ email: "admin@test.com" } as any);
+      vi.mocked(payoutData.loadPayoutData).mockResolvedValueOnce({ data: baseData as any, error: null });
+      const { payouts, appointments } = mockTables(1, 1);
+
+      const response = await post({ barber_id: 2, period_start: "2026-10-01", period_end: "2026-10-15", payment_method: "Efectivo" });
+      expect(response.status).toBe(500);
+      expect(appointments.update).toHaveBeenCalledWith({ payout_id: null });
+      expect(payouts.delete).toHaveBeenCalled();
+    });
+
+    it("rechaza un período que termina después de hoy", async () => {
+      vi.mocked(auth.requireAdmin).mockResolvedValueOnce({ email: "admin@test.com" } as any);
+
+      const response = await post({ barber_id: 2, period_start: "2099-01-01", period_end: "2099-01-31", payment_method: "Efectivo" });
+      expect(response.status).toBe(400);
+      expect((await response.json()).error).toMatch(/después de hoy/);
+      expect(payoutData.loadPayoutData).not.toHaveBeenCalled();
     });
 
     it("rechaza un adelanto que ya fue descontado o es de otro profesional", async () => {

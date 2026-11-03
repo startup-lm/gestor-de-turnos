@@ -14,8 +14,8 @@ describe("computePayout", () => {
     [10000, 1, 0, 0, 9999, 10000, 0, 10000, 1, 0],
   ])("cortes %d × %d, ventas %d × %d, adelantos %d", (cutsRevenue, rate, salesRevenue, saleRate, advances, cutsComm, salesComm, subtotal, totalToPay, excess) => {
     const r = computePayout({
-      cutsCount: 3, cutsRevenue, commissionRate: rate,
-      salesCount: 1, salesRevenue, saleCommissionRate: saleRate,
+      cutsCount: 3, cutsCommission: cutsRevenue * rate,
+      salesCount: 1, salesCommission: salesRevenue * saleRate,
       advancesTotal: advances,
     });
     expect(r).toMatchObject({ cutsCommission: cutsComm, salesCommission: salesComm, subtotal, totalToPay, advancesExcess: excess, advancesDeducted: advances });

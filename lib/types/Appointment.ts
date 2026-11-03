@@ -27,6 +27,10 @@ export interface Appointment {
   updated_at?: string | null;
   arca_invoice_id?: number | null;
   arca_invoices?: ArcaInvoiceRecord | null;
+  /** Liquidación que pagó la comisión de este turno */
+  payout_id?: number | null;
+  /** % de comisión del barbero al momento de cobrarlo (0..1) */
+  commission_rate?: number | null;
 }
 
 export interface AppointmentUpdates {

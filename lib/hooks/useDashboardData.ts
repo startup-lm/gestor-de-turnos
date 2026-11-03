@@ -47,19 +47,19 @@ export function useDashboardData(
     };
   }, [barberId, startIso, endIso]);
 
-  const { totalCount, totalRevenue, chartData } = useMemo(() => {
+  const { totalCount, paidCount, totalRevenue, chartData } = useMemo(() => {
     if (barberId === -1 || appointments.length === 0) {
       return {
         totalCount: barberId === -1 ? null : 0,
+        paidCount: 0,
         totalRevenue: barberId === -1 ? null : 0,
         chartData: [],
       };
     }
 
     const count = appointments.length;
-    const revenue = appointments
-      .filter((a) => a.paid === true)
-      .reduce((sum, a) => sum + (a.price ?? 0), 0);
+    const paidAppointments = appointments.filter((a) => a.paid === true);
+    const revenue = paidAppointments.reduce((sum, a) => sum + (a.price ?? 0), 0);
 
     const grouped: Record<string, { count: number; revenue: number; label: string }> = {};
 
@@ -104,8 +104,9 @@ export function useDashboardData(
       .map(([date, { count, revenue, label }]) => ({ date, count, revenue, label }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    return { totalCount: count, totalRevenue: revenue, chartData: dataPoints };
+    return { totalCount: count, paidCount: paidAppointments.length, totalRevenue: revenue, chartData: dataPoints };
   }, [appointments, barberId, viewMode]);
 
-  return { totalCount, totalRevenue, chartData };
+  // totalCount: todos los turnos agendados; paidCount: solo los cobrados (los que suman a la facturación)
+  return { totalCount, paidCount, totalRevenue, chartData };
 }

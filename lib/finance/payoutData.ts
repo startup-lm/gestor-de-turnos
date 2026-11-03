@@ -1,16 +1,26 @@
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
-import { createdAtBound } from "@/lib/dates/argentina";
+import { createdAtBound, todayInArgentina } from "@/lib/dates/argentina";
+import { commissionOf } from "@/lib/finance/commission";
 import { CashMovement } from "@/lib/types/cash";
+
+/** Turnos cobrados o ventas de una liquidación, con la comisión ya calculada con el % congelado */
+export interface PayoutItems {
+  count: number;
+  revenue: number;
+  commission: number;
+  /** Cuántos son de antes del inicio del período: cobros atrasados que nunca se liquidaron */
+  lateCount: number;
+  ids: number[];
+}
 
 /** Datos de servidor de una liquidación: los usan la vista previa y el registro, para que calculen lo mismo. */
 export interface PayoutData {
   barber: { id: number; name: string; commission: number; sale_commission: number; active: boolean };
-  cuts: { count: number; revenue: number };
-  sales: { count: number; revenue: number };
+  cuts: PayoutItems;
+  sales: PayoutItems;
   /** Adelantos sin descontar hasta el fin del período (incluye los anteriores al período). */
   advances: CashMovement[];
-  overlappingPayout: { id: number; period_start: string; period_end: string } | null;
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -19,17 +29,22 @@ export function isValidPeriod(start?: string | null, end?: string | null): start
   return !!start && !!end && DAY.test(start) && DAY.test(end) && start <= end;
 }
 
-export async function findOverlappingPayout(barberId: number, start: string, end: string) {
-  return supabaseAdmin
-    .from("commission_payouts")
-    .select("id, period_start, period_end")
-    .eq("barber_id", barberId)
-    .is("voided_at", null)
-    .lte("period_start", end)
-    .gte("period_end", start)
-    .order("id", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+/** Una liquidación no puede incluir días que todavía no pasaron */
+export function endsInTheFuture(end: string, today: string = todayInArgentina()): boolean {
+  return end > today;
+}
+
+function summarize(
+  rows: { id: number; amount: number | null; commission_rate: number | null; late: boolean }[],
+  currentRate: number
+): PayoutItems {
+  return {
+    count: rows.length,
+    revenue: rows.reduce((sum, r) => sum + Number(r.amount ?? 0), 0),
+    commission: rows.reduce((sum, r) => sum + commissionOf(r.amount, r.commission_rate, currentRate), 0),
+    lateCount: rows.filter((r) => r.late).length,
+    ids: rows.map((r) => r.id),
+  };
 }
 
 export async function loadPayoutData(
@@ -45,27 +60,28 @@ export async function loadPayoutData(
   if (barberError) return { data: null, error: barberError };
   if (!barber) return { data: null, error: null, notFound: true };
 
-  const [appointments, sales, advances, overlap] = await Promise.all([
-    // Solo turnos cobrados: la comisión se paga sobre lo que efectivamente entró
-    fetchAllRows<{ price: number | null }>((from, to) =>
+  // Todo lo cobrado y sin liquidar hasta el fin del período: lo que se cobró tarde
+  // de un período ya liquidado entra acá, en vez de perderse
+  const [appointments, sales, advances] = await Promise.all([
+    fetchAllRows<{ id: number; price: number | null; commission_rate: number | null; date: string }>((from, to) =>
       supabaseAdmin
         .from("appointments")
-        .select("price")
+        .select("id, price, commission_rate, date")
         .eq("barber_id", barberId)
         .eq("paid", true)
         .is("deleted_at", null)
+        .is("payout_id", null)
         .neq("phone", "0000000000")
-        .gte("date", start)
         .lte("date", end)
         .order("id", { ascending: true })
         .range(from, to)
     ),
-    fetchAllRows<{ total: number | null }>((from, to) =>
+    fetchAllRows<{ id: number; total: number | null; commission_rate: number | null; created_at: string }>((from, to) =>
       supabaseAdmin
         .from("sales")
-        .select("total")
+        .select("id, total, commission_rate, created_at")
         .eq("barber_id", barberId)
-        .gte("created_at", createdAtBound(start, "start"))
+        .is("payout_id", null)
         .lte("created_at", createdAtBound(end, "end"))
         .order("id", { ascending: true })
         .range(from, to)
@@ -79,31 +95,39 @@ export async function loadPayoutData(
       .is("payout_id", null)
       .lte("created_at", createdAtBound(end, "end"))
       .order("created_at", { ascending: true }),
-    findOverlappingPayout(barberId, start, end),
   ]);
 
-  const error = appointments.error || sales.error || advances.error || overlap.error;
+  const error = appointments.error || sales.error || advances.error;
   if (error) return { data: null, error };
+
+  const commission = Number(barber.commission ?? 0);
+  const saleCommission = Number(barber.sale_commission ?? 0);
+  const startBound = createdAtBound(start, "start");
 
   return {
     data: {
       barber: {
         id: barber.id,
         name: barber.name,
-        commission: Number(barber.commission ?? 0),
-        sale_commission: Number(barber.sale_commission ?? 0),
+        commission,
+        sale_commission: saleCommission,
         active: barber.active !== false,
       },
-      cuts: {
-        count: appointments.data.length,
-        revenue: appointments.data.reduce((sum, a) => sum + Number(a.price ?? 0), 0),
-      },
-      sales: {
-        count: sales.data.length,
-        revenue: sales.data.reduce((sum, s) => sum + Number(s.total ?? 0), 0),
-      },
+      cuts: summarize(
+        appointments.data.map((a) => ({ id: a.id, amount: a.price, commission_rate: a.commission_rate, late: a.date < start })),
+        commission
+      ),
+      // Las ventas se comparan por instante UTC: el día argentino empieza a las 03:00 UTC
+      sales: summarize(
+        sales.data.map((s) => ({
+          id: s.id,
+          amount: s.total,
+          commission_rate: s.commission_rate,
+          late: new Date(s.created_at).getTime() < new Date(startBound).getTime(),
+        })),
+        saleCommission
+      ),
       advances: (advances.data ?? []) as CashMovement[],
-      overlappingPayout: overlap.data ?? null,
     },
     error: null,
   };

@@ -11,6 +11,10 @@ export interface Sale {
   created_at?: string;
   arca_invoice_id?: number | null;
   payment_method?: string | null;
+  /** Liquidación que pagó la comisión de esta venta */
+  payout_id?: number | null;
+  /** % de comisión por venta del barbero al momento de registrarla (0..1) */
+  commission_rate?: number | null;
 }
 
 export interface SaleWithRelations extends Sale {

@@ -95,11 +95,12 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
   }, [startDate, endDate]);
 
   const operatingExpenses = cashSummary?.expensesTotal ?? 0;
+  const ownerWithdrawals = cashSummary?.withdrawalsTotal ?? 0;
 
   const { summary, barberTotals } = useBarberCutsData(startDate, endDate, barbers);
   const { totalSalesRevenue, totalSales, totalSalesCommission, salesByBarber } =
-    useTotalRevenueForAllSales(startDate, endDate, barbers);
-  const totalCommissions = useTotalCommissions(barberTotals, barbers);
+    useTotalRevenueForAllSales(startDate, endDate);
+  const totalCommissions = useTotalCommissions(barberTotals);
 
   // Cálculos financieros
   const totalTurnosRevenue = summary.totalRevenue;
@@ -257,6 +258,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
             )}
             <span className="text-slate-400 text-[11px] font-medium">
               Margen: {profitMargin}%{Math.round(operatingExpenses) > 0 ? ` · Gastos: -${formatARS(operatingExpenses)}` : ""}
+              {Math.round(ownerWithdrawals) > 0 ? ` · Retiraste: ${formatARS(ownerWithdrawals)}` : ""}
             </span>
           </div>
         </div>
@@ -529,13 +531,14 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                   const bTotals = barberTotals.find((t) => t.barberId === barber.id);
                   const cortes = bTotals?.totalAppt ?? 0;
                   const facturadoCortes = bTotals?.totalRevenue ?? 0;
+                  // El % que se muestra es el vigente; el monto sale del servidor con el % congelado al cobrar
                   const commRateCortes = barber.commission ?? 0;
-                  const aLiquidarCortes = facturadoCortes * commRateCortes;
+                  const aLiquidarCortes = bTotals?.totalCommission ?? 0;
 
                   const bSales = salesByBarber?.find((s) => s.barberId === barber.id);
                   const facturadoVentas = bSales?.totalSalesRevenue ?? 0;
                   const commRateVentas = barber.sale_commission ?? 0;
-                  const aLiquidarVentas = facturadoVentas * commRateVentas;
+                  const aLiquidarVentas = bSales?.totalSalesCommission ?? 0;
 
                   const totalALiquidar = aLiquidarCortes + aLiquidarVentas;
                   const totalFacturado = facturadoCortes + facturadoVentas;
@@ -586,9 +589,6 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                 })}
               </tbody>
             </table>
-            <p className="text-[11px] text-slate-500 mt-3">
-              Calculado con el porcentaje de comisión vigente de cada profesional.
-            </p>
           </div>
         )}
       </div>

@@ -6,6 +6,7 @@ import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { checkRateLimit, getClientIp } from "@/lib/api/rateLimit";
 import { revalidateTag } from "next/cache";
 import { canModify } from "@/lib/api/ownership";
+import { getBarberRates, lockedByPayoutMessage } from "@/lib/finance/barberRates";
 import {
   AppointmentInsertSchema,
   AppointmentPatchSchema,
@@ -202,7 +203,7 @@ export async function DELETE(request: Request) {
   // Validar existencia y estado del turno antes de eliminar
   const { data: appt, error: findError } = await supabaseAdmin
     .from("appointments")
-    .select("id, barber_id, paid, arca_invoice_id, type")
+    .select("id, barber_id, paid, arca_invoice_id, payout_id, type")
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
@@ -215,6 +216,9 @@ export async function DELETE(request: Request) {
 
   // Un bloqueo de horario no es un turno de cliente, se puede desbloquear normalmente
   if (appt.type !== "block") {
+    if (appt.payout_id) {
+      return errorResponse(lockedByPayoutMessage("turno", appt.payout_id), 409);
+    }
     if (appt.arca_invoice_id) {
       return errorResponse(
         `No es posible eliminar un turno que ya posee comprobante fiscal emitido ante ARCA (Factura #${appt.arca_invoice_id}).`,
@@ -265,7 +269,7 @@ export async function PATCH(request: Request) {
   // Validar si el turno ya cuenta con comprobante fiscal emitido
   const { data: existingAppt, error: findError } = await supabaseAdmin
     .from("appointments")
-    .select("id, barber_id, arca_invoice_id")
+    .select("id, barber_id, paid, arca_invoice_id, payout_id")
     .eq("id", appointmentId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -282,10 +286,27 @@ export async function PATCH(request: Request) {
       400
     );
   }
+  if (existingAppt.payout_id) {
+    return errorResponse(lockedByPayoutMessage("turno", existingAppt.payout_id), 409);
+  }
+
+  // % de comisión congelado: se fija al cobrar (o si un turno cobrado cambia de barbero)
+  // y se borra al revertir el cobro
+  const willBePaid = updates.paid ?? existingAppt.paid;
+  const barberChanges = updates.barber_id !== undefined && updates.barber_id !== existingAppt.barber_id;
+  let commissionUpdate: { commission_rate?: number | null } = {};
+  if (!willBePaid) {
+    if (existingAppt.paid) commissionUpdate = { commission_rate: null };
+  } else if (updates.paid === true || barberChanges) {
+    const { rates, error: ratesError } = await getBarberRates(updates.barber_id ?? existingAppt.barber_id);
+    if (ratesError) return dbErrorResponse(ratesError, "appointments");
+    if (!rates) return errorResponse("Profesional no encontrado", 404);
+    commissionUpdate = { commission_rate: rates.commission };
+  }
 
   const { data, error } = await supabaseAdmin
     .from("appointments")
-    .update(updates)
+    .update({ ...updates, ...commissionUpdate })
     .eq("id", appointmentId)
     .select();
 

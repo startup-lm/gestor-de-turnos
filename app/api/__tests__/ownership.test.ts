@@ -48,7 +48,7 @@ beforeEach(() => {
 describe("Ventas: permisos y total", () => {
   it("un barbero no puede registrar una venta a nombre de otro", async () => {
     vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(BARBER_2);
-    const response = await createSale(json({ barber_id: 1, product_id: 3, price: 1000, quantity: 1 }));
+    const response = await createSale(json({ barber_id: 1, product_id: 3, price: 1000, quantity: 1, payment_method: "Efectivo" }));
     expect(response.status).toBe(403);
     expect(supabaseAdmin.from).not.toHaveBeenCalled();
   });
@@ -58,9 +58,41 @@ describe("Ventas: permisos y total", () => {
     const q = chain({ data: { id: 10 }, error: null });
     vi.mocked(supabaseAdmin.from).mockReturnValue(q as any);
 
-    const response = await createSale(json({ barber_id: 2, product_id: 3, price: 1500, quantity: 2, total: 1 }));
+    const response = await createSale(json({ barber_id: 2, product_id: 3, price: 1500, quantity: 2, total: 1, payment_method: "Efectivo" }));
     expect(response.status).toBe(200);
     expect(q.insert).toHaveBeenCalledWith(expect.objectContaining({ total: 3000, barber_id: 2 }));
+  });
+
+  it("exige medio de pago: sin él la venta no se puede ubicar en la caja", async () => {
+    vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
+    const response = await createSale(json({ barber_id: 1, product_id: 3, price: 1000, quantity: 1 }));
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toMatch(/medio de pago/);
+    expect(supabaseAdmin.from).not.toHaveBeenCalled();
+  });
+
+  it("congela el % de comisión por venta vigente del barbero", async () => {
+    vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
+    const q = chain({ data: { id: 10, commission: 0.5, sale_commission: 0.3 }, error: null });
+    vi.mocked(supabaseAdmin.from).mockReturnValue(q as any);
+
+    const response = await createSale(json({ barber_id: 1, product_id: 3, price: 1000, quantity: 1, payment_method: "Efectivo" }));
+    expect(response.status).toBe(200);
+    expect(q.insert).toHaveBeenCalledWith(expect.objectContaining({ commission_rate: 0.3, payment_method: "Efectivo" }));
+  });
+
+  it("no permite editar ni borrar una venta ya liquidada", async () => {
+    vi.mocked(auth.requireBarberOrAdmin).mockResolvedValue(ADMIN);
+    const q = chain({ data: { id: 5, barber_id: 1, price: 1000, quantity: 1, arca_invoice_id: null, payout_id: 8 }, error: null });
+    vi.mocked(supabaseAdmin.from).mockReturnValue(q as any);
+
+    const edited = await patchSale(json({ price: 2000 }, "PATCH"), params(5));
+    expect(edited.status).toBe(409);
+    expect((await edited.json()).error).toMatch(/liquidación #8/);
+    const deleted = await deleteSale(json({}, "DELETE"), params(5));
+    expect(deleted.status).toBe(409);
+    expect(q.update).not.toHaveBeenCalled();
+    expect(q.delete).not.toHaveBeenCalled();
   });
 
   it("rechaza cantidades inválidas", async () => {

@@ -6,6 +6,7 @@ import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { requirePlanFeature } from "@/lib/flags/server";
 import { canModify } from "@/lib/api/ownership";
 import { SaleUpdateSchema } from "@/lib/schemas";
+import { getBarberRates, lockedByPayoutMessage } from "@/lib/finance/barberRates";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -32,7 +33,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 async function findSaleForChange(id: number) {
   return supabaseAdmin
     .from("sales")
-    .select("id, barber_id, price, quantity, arca_invoice_id")
+    .select("id, barber_id, price, quantity, arca_invoice_id, payout_id")
     .eq("id", id)
     .maybeSingle();
 }
@@ -69,15 +70,25 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       400
     );
   }
+  if (sale.payout_id) return errorResponse(lockedByPayoutMessage("venta", sale.payout_id), 409);
 
   const updates = parsed.data;
   // El total siempre se recalcula con los valores finales: nunca se acepta del navegador
   const price = updates.price ?? Number(sale.price);
   const quantity = updates.quantity ?? Number(sale.quantity);
 
+  // Si la venta pasa a otro barbero, se congela el % de comisión de ese barbero
+  let commissionUpdate: { commission_rate?: number } = {};
+  if (updates.barber_id !== undefined && updates.barber_id !== sale.barber_id) {
+    const { rates, error: ratesError } = await getBarberRates(updates.barber_id);
+    if (ratesError) return dbErrorResponse(ratesError, "sales/id");
+    if (!rates) return errorResponse("Profesional no encontrado", 404);
+    commissionUpdate = { commission_rate: rates.saleCommission };
+  }
+
   const { error } = await supabaseAdmin
     .from("sales")
-    .update({ ...updates, total: price * quantity })
+    .update({ ...updates, ...commissionUpdate, total: price * quantity })
     .eq("id", id);
 
   if (error) return dbErrorResponse(error, "sales/id");
@@ -109,6 +120,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       400
     );
   }
+  if (sale.payout_id) return errorResponse(lockedByPayoutMessage("venta", sale.payout_id), 409);
 
   const { error } = await supabaseAdmin
     .from("sales")

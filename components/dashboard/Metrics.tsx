@@ -7,11 +7,17 @@ import { Scissors, ShoppingBag, TrendingUp, DollarSign, Wallet, Award } from "lu
 import { formatARS } from "@/lib/format/currency";
 
 interface Props {
+  /** Turnos cobrados: los que suman a la facturación */
   turnos: number;
+  /** Todos los turnos agendados del período, cobrados o no */
+  turnosAgendados: number;
   ventas: number;
   ingresos: number;
+  /** % de comisión vigente del barbero elegido (solo para mostrar) */
   comision: number;
-  comisionVenta: number;
+  /** Comisiones del barbero elegido, calculadas en el servidor con el % congelado */
+  gananciaCortes: number;
+  gananciaVentas: number;
   ingresosVentas: number;
   selectedBarberId?: number;
   totalCommissionsAll?: number;
@@ -19,10 +25,12 @@ interface Props {
 
 export default function Metrics({
   turnos,
+  turnosAgendados,
   ventas,
   ingresos,
   comision,
-  comisionVenta,
+  gananciaCortes,
+  gananciaVentas,
   ingresosVentas,
   selectedBarberId = 0,
   totalCommissionsAll = 0,
@@ -36,8 +44,6 @@ export default function Metrics({
   const isGlobalView = selectedBarberId === 0;
 
   // Ganancias individuales
-  const gananciaCortes = ingresos * comision;
-  const gananciaVentas = ingresosVentas * comisionVenta;
   const gananciaTotal = gananciaCortes + gananciaVentas;
 
   // En vista global, comisiones totales a pagar
@@ -80,8 +86,9 @@ export default function Metrics({
               </span>
               <h4 className="text-2xl font-extrabold text-white">
                 <CountUp start={0} end={turnos} duration={2} separator="." />
-                <span className="text-xs text-slate-500 font-medium ml-1.5">turnos</span>
+                <span className="text-xs text-slate-500 font-medium ml-1.5">cobrados</span>
               </h4>
+              <span className="block text-[11px] text-slate-500 mt-0.5">{turnosAgendados} agendados</span>
             </div>
             <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center border border-violet-500/25 text-violet-400 shadow-inner">
               <Scissors className="w-5 h-5" />
@@ -152,8 +159,9 @@ export default function Metrics({
             </span>
             <h4 className="text-2xl lg:text-3xl font-black text-white leading-tight">
               <CountUp start={0} end={turnos} duration={2} separator="." />
-              <span className="text-xs text-slate-500 font-semibold ml-1.5">turnos</span>
+              <span className="text-xs text-slate-500 font-semibold ml-1.5">cobrados</span>
             </h4>
+            <span className="block text-[11px] text-slate-500 mt-0.5">{turnosAgendados} agendados</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center border border-violet-500/25 text-violet-400 shadow-inner flex-shrink-0">
             <Scissors className="w-5 h-5" />

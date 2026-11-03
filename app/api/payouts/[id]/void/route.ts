@@ -7,7 +7,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-/** Anula una liquidación: libera sus adelantos y anula su egreso de caja. No borra nada. */
+/** Anula una liquidación: libera sus turnos, ventas y adelantos y anula su egreso de caja. No borra nada. */
 export async function POST(_request: Request, { params }: RouteParams) {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
@@ -32,6 +32,15 @@ export async function POST(_request: Request, { params }: RouteParams) {
     .eq("id", id)
     .is("voided_at", null);
   if (voidError) return dbErrorResponse(voidError, "payouts/void");
+
+  // Lo que estaba liquidado vuelve a quedar disponible para la próxima liquidación
+  for (const table of ["appointments", "sales"] as const) {
+    const { error: releaseError } = await supabaseAdmin
+      .from(table)
+      .update({ payout_id: null })
+      .eq("payout_id", id);
+    if (releaseError) return dbErrorResponse(releaseError, `payouts/void.${table}`);
+  }
 
   const { error: advancesError } = await supabaseAdmin
     .from("cash_movements")

@@ -1,10 +1,10 @@
 export interface PayoutInput {
   cutsCount: number;
-  cutsRevenue: number;
-  commissionRate: number; // 0..1
+  /** Comisión por turnos, ya calculada con el % congelado de cada uno */
+  cutsCommission: number;
   salesCount: number;
-  salesRevenue: number;
-  saleCommissionRate: number; // 0..1
+  /** Comisión por ventas, ya calculada con el % congelado de cada una */
+  salesCommission: number;
   advancesTotal: number;
 }
 
@@ -23,8 +23,8 @@ export interface PayoutResult {
 
 /** Cálculo único de una liquidación: lo usan la vista previa, el registro y la UI. */
 export function computePayout(input: PayoutInput): PayoutResult {
-  const cutsCommission = Math.round(input.cutsRevenue * input.commissionRate);
-  const salesCommission = Math.round(input.salesRevenue * input.saleCommissionRate);
+  const cutsCommission = Math.round(input.cutsCommission);
+  const salesCommission = Math.round(input.salesCommission);
   const subtotal = cutsCommission + salesCommission;
   const advancesDeducted = input.advancesTotal;
 

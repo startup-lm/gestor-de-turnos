@@ -1,19 +1,26 @@
 import { useState, useEffect } from "react";
 import { getTotalRevenueForAllSales } from "@/lib/repository/sales";
-import { Barber } from "@/lib/types/Barbers";
+
+export interface BarberSalesTotals {
+  barberId: number;
+  totalSales: number;
+  totalSalesRevenue: number;
+  /** Comisión calculada en el servidor con el % congelado al vender */
+  totalSalesCommission: number;
+}
 
 export interface TotalSalesData {
   totalSales: number;
   totalSalesRevenue: number;
   totalSalesCommission: number;
-  salesByBarber: Array<{ barberId: number; totalSales: number; totalSalesRevenue: number }>;
+  salesByBarber: BarberSalesTotals[];
 }
 
-export function useTotalRevenueForAllSales(startDate: Date, endDate: Date, barbers: Barber[] ): TotalSalesData {
+export function useTotalRevenueForAllSales(startDate: Date, endDate: Date): TotalSalesData {
   const [totalSalesRevenue, setTotalSalesRevenue] = useState<number>(0);
   const [totalSales, setTotalSales] = useState<number>(0);
   const [totalSalesCommission, setTotalSalesCommission] = useState<number>(0);
-  const [salesByBarber, setSalesByBarber] = useState<Array<{ barberId: number; totalSales: number; totalSalesRevenue: number }>>([]);
+  const [salesByBarber, setSalesByBarber] = useState<BarberSalesTotals[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -32,14 +39,7 @@ export function useTotalRevenueForAllSales(startDate: Date, endDate: Date, barbe
       );
 
       const salesCommission = data.reduce(
-        (
-          sum: number,
-          sale: { barberId: number; totalSalesRevenue: number }
-        ) => {
-          const barber = barbers.find((b) => b.id === sale.barberId);
-          const rate = barber?.sale_commission ?? 0;
-          return sum + sale.totalSalesRevenue * rate;
-        },
+        (sum: number, sale: { totalSalesCommission?: number }) => sum + (sale.totalSalesCommission ?? 0),
         0
       );
 
@@ -52,7 +52,7 @@ export function useTotalRevenueForAllSales(startDate: Date, endDate: Date, barbe
     return () => {
       mounted = false;
     };
-  }, [startDate, endDate, barbers]);
+  }, [startDate, endDate]);
 
   return { totalSales, totalSalesRevenue, totalSalesCommission, salesByBarber };
 }

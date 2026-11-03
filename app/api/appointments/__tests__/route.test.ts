@@ -117,9 +117,46 @@ describe("API /api/appointments", () => {
       vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
       mockExisting({ id: 1, barber_id: 1, arca_invoice_id: 1234 });
 
-      const response = await patch({ appointmentId: 1, updates: { paid: true, price: 15000 } });
+      const response = await patch({ appointmentId: 1, updates: { paid: true, price: 15000, payment_method: "Efectivo" } });
       expect(response.status).toBe(400);
       expect((await response.json()).error).toMatch(/comprobante fiscal emitido ante ARCA/i);
+    });
+
+    it("no permite cobrar sin medio de pago", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
+      const update = mockExisting({ id: 1, barber_id: 1, arca_invoice_id: null });
+
+      const response = await patch({ appointmentId: 1, updates: { paid: true, price: 15000 } });
+      expect(response.status).toBe(400);
+      expect(update).not.toHaveBeenCalled();
+    });
+
+    it("al cobrar congela el % de comisión vigente del barbero", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
+      // La misma consulta mockeada responde al turno y al barbero
+      const update = mockExisting({ id: 1, barber_id: 1, paid: false, arca_invoice_id: null, commission: 0.6 });
+
+      const response = await patch({ appointmentId: 1, updates: { paid: true, price: 15000, payment_method: "Efectivo" } });
+      expect(response.status).toBe(200);
+      expect(update).toHaveBeenCalledWith(expect.objectContaining({ paid: true, commission_rate: 0.6 }));
+    });
+
+    it("al revertir el cobro borra el % congelado", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
+      const update = mockExisting({ id: 1, barber_id: 1, paid: true, arca_invoice_id: null });
+
+      await patch({ appointmentId: 1, updates: { paid: false } });
+      expect(update).toHaveBeenCalledWith({ paid: false, commission_rate: null });
+    });
+
+    it("no permite modificar un turno ya liquidado", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
+      const update = mockExisting({ id: 1, barber_id: 1, paid: true, arca_invoice_id: null, payout_id: 4 });
+
+      const response = await patch({ appointmentId: 1, updates: { paid: false } });
+      expect(response.status).toBe(409);
+      expect((await response.json()).error).toMatch(/liquidación #4/);
+      expect(update).not.toHaveBeenCalled();
     });
 
     it("permite registrar o revertir el cobro si no tiene comprobante", async () => {
