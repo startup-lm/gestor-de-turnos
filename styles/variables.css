@@ -42,6 +42,11 @@
   --calendar-paid-appointment: #1CA74F;
   --calendar-unpaid-appointment: #A42126;
   --calendar-disabled-slot: var(--button-home-disabled);
+
+  --google-blue: #4285F4;
+  --google-red: #EA4335;
+  --google-yellow: #FBBC05;
+  --google-green: #34A853;
 }
 
 @media (prefers-color-scheme: dark) {

@@ -8,8 +8,13 @@ import GoogleRatingBadge from "@/components/reviews/GoogleRatingBadge";
 import homeBg from "@/public/images/home.jpg";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { getBusinessOpenStatus, getScheduleSummary, BusinessOpenStatus } from "@/utils/businessHours";
+import type { GoogleReviewsData } from "@/lib/types/BusinessSettings";
 
-export default function Hero() {
+interface HeroProps {
+  reviewsData?: GoogleReviewsData | null;
+}
+
+export default function Hero({ reviewsData }: Readonly<HeroProps>) {
   const { businessSettings, businessHours, isEnabled } = useBusinessContext();
   const [openStatus, setOpenStatus] = useState<BusinessOpenStatus | null>(null);
 
@@ -19,7 +24,7 @@ export default function Hero() {
     isReviewsFlag &&
     reviewsConfig?.enabled !== false &&
     reviewsConfig?.show_in_hero !== false &&
-    ((reviewsConfig?.user_ratings_total ?? 0) > 0 || (reviewsConfig?.reviews?.length ?? 0) > 0);
+    Boolean(reviewsData);
 
   useEffect(() => {
     const checkStatus = () => {
@@ -112,10 +117,7 @@ export default function Hero() {
 
           {showHeroBadge && (
             <div className="pt-2">
-              <GoogleRatingBadge
-                rating={reviewsConfig?.rating}
-                totalReviews={reviewsConfig?.user_ratings_total}
-              />
+              <GoogleRatingBadge data={reviewsData} />
             </div>
           )}
         </div>
