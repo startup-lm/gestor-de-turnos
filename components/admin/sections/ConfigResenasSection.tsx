@@ -43,7 +43,7 @@ export default function ConfigResenasSection() {
   const [placeId, setPlaceId] = useState("");
   const [writeReviewUrl, setWriteReviewUrl] = useState("");
   const [googleMapsUri, setGoogleMapsUri] = useState("");
-  const [rating, setRating] = useState<number | null>(5.0);
+  const [rating, setRating] = useState<number | null>(null);
   const [userRatingsTotal, setUserRatingsTotal] = useState<number>(0);
   const [showInHero, setShowInHero] = useState(true);
   const [showInHome, setShowInHome] = useState(true);
@@ -413,13 +413,13 @@ export default function ConfigResenasSection() {
                     <Star
                       key={s}
                       className={`w-3.5 h-3.5 ${
-                        s <= Math.round(candidate.rating || 5) ? "fill-amber-400" : "text-slate-800"
+                        s <= Math.round(candidate.rating || 0) ? "fill-amber-400" : "text-slate-800"
                       }`}
                     />
                   ))}
                 </div>
                 <span className="text-xs font-bold text-white">
-                  {(candidate.rating || 5.0).toFixed(1)}
+                  {candidate.rating ? candidate.rating.toFixed(1) : "Sin calificación"}
                 </span>
                 <span className="text-xs text-slate-400">
                   ({candidate.user_ratings_total || 0} opiniones en Google)

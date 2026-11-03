@@ -21,9 +21,12 @@ export default function GoogleRatingBadge({
   }
 
   const { rating: score, total: totalCount } = data;
-  const ratingValue = score ?? 5.0;
-  const formattedRating = Number(ratingValue).toFixed(1);
   const totalReviews = totalCount ?? 0;
+  // Sin opiniones no hay calificación real que mostrar: nunca se inventa un puntaje
+  if (score == null || totalReviews === 0) {
+    return null;
+  }
+  const formattedRating = Number(score).toFixed(1);
   const targetHref = href || data.googleMapsUri;
 
   const content = (

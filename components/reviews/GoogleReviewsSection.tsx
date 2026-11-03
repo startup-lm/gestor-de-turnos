@@ -26,8 +26,9 @@ export default function GoogleReviewsSection({
   const [loaded, setLoaded] = useState(false);
 
   const rawRating = data?.rating;
-  const rating = rawRating != null ? Number(rawRating).toFixed(1) : "5.0";
   const totalReviews = data?.total || 0;
+  // Sin opiniones no hay calificación real que mostrar: nunca se inventa un puntaje
+  const rating = rawRating != null && totalReviews > 0 ? Number(rawRating).toFixed(1) : null;
   const writeUrl = data?.writeReviewUrl;
   const googleMapsUri = data?.googleMapsUri;
 
@@ -100,21 +101,23 @@ export default function GoogleReviewsSection({
 
           {/* Resumen de puntuación oficial de Google con atribución */}
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 pt-1">
-            <span className="text-sm font-bold text-white">{rating}</span>
-            <div className="flex items-center gap-0.5" aria-label={`${rating} estrellas de 5`}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  className="w-3.5 h-3.5 fill-amber-400 text-amber-400"
-                />
-              ))}
-            </div>
-            {totalReviews > 0 && (
-              <span className="text-xs text-slate-400">
-                ({totalReviews} opiniones)
-              </span>
+            {rating && (
+              <>
+                <span className="text-sm font-bold text-white">{rating}</span>
+                <div className="flex items-center gap-0.5" aria-label={`${rating} estrellas de 5`}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className="w-3.5 h-3.5 fill-amber-400 text-amber-400"
+                    />
+                  ))}
+                </div>
+                <span className="text-xs text-slate-400">
+                  ({totalReviews} opiniones)
+                </span>
+                <span className="text-slate-600 hidden sm:inline">•</span>
+              </>
             )}
-            <span className="text-slate-600 hidden sm:inline">•</span>
             <GoogleAttribution className="h-4 w-auto" />
           </div>
 
