@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import Image from "next/image";
 import logo from "@/public/images/logo.png";
 import { format } from "date-fns";
@@ -42,6 +42,11 @@ import {
   Coins,
   FileText,
   Loader2,
+  Copy,
+  Check,
+  CheckCircle2,
+  MessageCircle,
+  RotateCcw,
 } from "lucide-react";
 
 function getPaymentMethodIcon(name: string) {
@@ -82,9 +87,24 @@ export default function AppointmentDetailsSplitPanel({
   // Estados para conmutar a la vista de cobro integrada en el panel (sin modal)
   const [isCheckoutView, setIsCheckoutView] = useState(false);
   const [paidInfo, setPaidInfo] = useState<{ price: number; payment_method: string } | null>(null);
+  const [isPaidLocally, setIsPaidLocally] = useState<boolean>(appointment.paid);
+  const [confirmRevertPayment, setConfirmRevertPayment] = useState(false);
+  const [reversingPayment, setReversingPayment] = useState(false);
+  const [copiedCae, setCopiedCae] = useState(false);
   const [checkoutPrice, setCheckoutPrice] = useState<number>(appointment.price || 0);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("Efectivo");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  useEffect(() => {
+    setIsPaidLocally(appointment.paid);
+  }, [appointment.id, appointment.paid]);
+
+  const handleCopyCae = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCae(true);
+    toast.success("CAE copiado");
+    setTimeout(() => setCopiedCae(false), 2000);
+  };
 
   // Guard para evitar click-through involuntario entre la vista de detalle y la de cobro
   const checkoutOpenedAtRef = useRef<number>(0);
@@ -138,9 +158,38 @@ export default function AppointmentDetailsSplitPanel({
     handleUpdate,
   } = useAppointmentDetailsLogic(appointment, barbers);
 
-  const isPaid = appointment.paid || !!paidInfo;
+  const isPaid = isPaidLocally || !!paidInfo;
   const isDeleteDisabled = !isBlockedRange && (isPaid || !!appointment.arca_invoice_id);
   const isLocked = !isBlockedRange && !!appointment.arca_invoice_id;
+  const invoice = appointment.arca_invoices;
+  const hasInvoice = !isBlockedRange && !!appointment.arca_invoice_id && !!invoice;
+
+  const cleanPhoneDigits = (phone || "").replace(/\D/g, "");
+  const showWhatsapp = cleanPhoneDigits.length > 0 && cleanPhoneDigits !== "0000000000";
+  const whatsappUrl = showWhatsapp ? `https://wa.me/${cleanPhoneDigits}` : null;
+
+  const handleRevertPayment = async () => {
+    if (reversingPayment) return;
+    setReversingPayment(true);
+    try {
+      const res = await updateAppointment(appointment.id, { paid: false });
+      if (res.success) {
+        appointment.paid = false;
+        setPaidInfo(null);
+        setIsPaidLocally(false);
+        setConfirmRevertPayment(false);
+        toast.success("Cobro revertido");
+        onAppointmentChanged?.();
+      } else {
+        toast.error(res.error || "Error al revertir el cobro");
+      }
+    } catch (err) {
+      console.error("Error al revertir cobro:", err);
+      toast.error("Error inesperado al revertir cobro");
+    } finally {
+      setReversingPayment(false);
+    }
+  };
 
   if (loadingFetch) {
     return (
@@ -223,6 +272,8 @@ export default function AppointmentDetailsSplitPanel({
 
     // Actualizar estado local
     setPaidInfo({ price: checkoutPrice, payment_method: selectedPaymentMethod });
+    setIsPaidLocally(true);
+    appointment.paid = true;
     setPrice(checkoutPrice);
 
     // Emitir comprobante ARCA si el toggle está activado
@@ -257,7 +308,7 @@ export default function AppointmentDetailsSplitPanel({
   // ==========================================
   if (isCheckoutView) {
     return (
-      <div className="bg-[var(--bg-carousel)] border border-[var(--foreground)]/10 rounded-3xl p-5 md:p-6 shadow-2xl flex flex-col h-fit max-h-full text-left overflow-y-auto gap-4">
+      <div className="w-full bg-[var(--bg-carousel)] border border-[var(--foreground)]/10 rounded-3xl p-5 md:p-6 shadow-2xl flex flex-col h-fit max-h-full text-left overflow-y-auto gap-4">
         {/* BLOQUE SUPERIOR DE COBRO */}
         <div className="space-y-4">
           {/* Header de cobro con botón volver */}
@@ -458,7 +509,7 @@ export default function AppointmentDetailsSplitPanel({
   // VISTA 2: DETALLE DEL TURNO (ESTRUCTURA IDÉNTICA A RESERVA)
   // ==========================================
   return (
-    <div className="bg-[var(--bg-carousel)] border border-[var(--foreground)]/10 rounded-3xl p-5 md:p-6 shadow-2xl flex flex-col justify-between h-full text-left overflow-y-auto gap-4">
+    <div className="w-full bg-[var(--bg-carousel)] border border-[var(--foreground)]/10 rounded-3xl p-5 md:p-6 shadow-2xl flex flex-col justify-between h-full text-left overflow-y-auto gap-4">
       {/* HIJO 1 (SUPERIOR): Header + Resumen del turno + Tip */}
       <div className="space-y-4">
         {/* Header con botón cerrar */}
@@ -817,8 +868,22 @@ export default function AppointmentDetailsSplitPanel({
                 onNameChange={setClient}
                 onPhoneChange={setPhone}
                 onClientResolved={() => {}}
-                showWhatsapp
                 disabled={isLocked}
+                phoneSuffix={
+                  whatsappUrl ? (
+                    <a
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="min-h-[44px] min-w-[44px] px-3.5 py-2 inline-flex items-center justify-center gap-1.5 rounded-xl bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 text-xs font-semibold transition-all cursor-pointer"
+                      title="Abrir chat de WhatsApp"
+                      aria-label="Abrir chat de WhatsApp"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span>WhatsApp</span>
+                    </a>
+                  ) : null
+                }
               />
 
               {/* Si ya está pagado, campo de monto cobrado con padding forzado */}
@@ -888,6 +953,130 @@ export default function AppointmentDetailsSplitPanel({
           </div>
         )}
 
+        {/* Revertir cobro si está cobrado y no tiene comprobante */}
+        {isPaid && !appointment.arca_invoice_id && (
+          <div className="space-y-2">
+            {!confirmRevertPayment ? (
+              <button
+                type="button"
+                id="btn-revert-payment"
+                onClick={() => setConfirmRevertPayment(true)}
+                className="w-full flex items-center justify-center gap-2 border border-amber-500/30 hover:border-amber-500/60 text-amber-400 hover:bg-amber-500/10 min-h-[44px] px-3.5 py-2.5 rounded-xl transition-all text-xs font-bold cursor-pointer active:scale-95"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Revertir cobro</span>
+              </button>
+            ) : (
+              <InlineConfirm
+                message="¿Revertir el cobro de este turno?"
+                confirmText="Sí, revertir"
+                cancelText="No"
+                loading={reversingPayment}
+                onConfirm={handleRevertPayment}
+                onCancel={() => setConfirmRevertPayment(false)}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Bloque Comprobante emitido */}
+        {hasInvoice && invoice && (
+          <div className="bg-[var(--background)]/60 border border-[var(--foreground)]/10 rounded-2xl p-4 md:p-5 space-y-3.5 shadow-inner">
+            <div className="flex items-center justify-between pb-2.5 border-b border-[var(--foreground)]/10">
+              <div className="flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-emerald-400" />
+                <h4 className="text-sm font-extrabold text-[var(--foreground)] tracking-tight">
+                  Comprobante emitido
+                </h4>
+              </div>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
+                {invoice.voucher_type === 6 ? "Factura B" : "Factura C"}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                  Número
+                </span>
+                <span className="font-mono font-bold text-[var(--foreground)]">
+                  {invoice.point_of_sale != null && invoice.voucher_number != null
+                    ? `${String(invoice.point_of_sale).padStart(4, "0")}-${String(invoice.voucher_number).padStart(8, "0")}`
+                    : `#${appointment.arca_invoice_id}`}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                  Estado fiscal
+                </span>
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                  <CheckCircle2 className="w-3 h-3" />
+                  {invoice.status === "mock" ? "Demo" : "Aprobado"}
+                </span>
+              </div>
+
+              <div className="col-span-2 bg-[var(--background)] rounded-xl p-3 border border-[var(--foreground)]/10 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Código CAE
+                  </span>
+                  {invoice.cae && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopyCae(invoice.cae!)}
+                      className="text-[11px] font-semibold text-[var(--accent)] hover:underline inline-flex items-center gap-1 cursor-pointer min-h-[44px] sm:min-h-0"
+                      aria-label="Copiar CAE"
+                    >
+                      {copiedCae ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-emerald-400">Copiado</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copiar CAE</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+                <p className="font-mono text-sm font-bold text-emerald-400">
+                  {invoice.cae || "—"}
+                </p>
+                {invoice.cae_due_date && (
+                  <span className="text-[10px] text-slate-400 block">
+                    Vencimiento: {invoice.cae_due_date}
+                  </span>
+                )}
+              </div>
+
+              {invoice.customer_name && (
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                    Receptor
+                  </span>
+                  <span className="font-medium text-[var(--foreground)] truncate block">
+                    {invoice.customer_name}
+                  </span>
+                </div>
+              )}
+
+              {invoice.doc_number && (
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                    Documento
+                  </span>
+                  <span className="font-medium text-[var(--foreground)] truncate block">
+                    {invoice.doc_number}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* FILA DE ACCIONES SECUNDARIAS: Eliminar y Guardar cambios */}
         <div className="pt-2 space-y-3">
           <div className="grid grid-cols-2 gap-3">
@@ -898,8 +1087,8 @@ export default function AppointmentDetailsSplitPanel({
               disabled={isDeleteDisabled || loading}
               onClick={() => setConfirmDelete(true)}
               title={
-                appointment.arca_invoice_id
-                  ? "No se puede eliminar un turno que ya posee comprobante fiscal emitido ante ARCA"
+                isLocked
+                  ? "Este turno tiene comprobante fiscal: no se puede modificar."
                   : isPaid
                   ? "No se puede eliminar un turno que ya fue cobrado"
                   : undefined
@@ -917,7 +1106,7 @@ export default function AppointmentDetailsSplitPanel({
               disabled={!hasChanges || loadingUpdate || isLocked}
               title={
                 isLocked
-                  ? "No se puede editar un turno que ya posee comprobante fiscal emitido ante ARCA"
+                  ? "Este turno tiene comprobante fiscal: no se puede modificar."
                   : undefined
               }
               className={`w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl transition-all text-xs font-black active:scale-95 ${
@@ -959,13 +1148,15 @@ export default function AppointmentDetailsSplitPanel({
             />
           )}
 
-          {(isDeleteDisabled || isLocked) && (
+          {isLocked ? (
             <p className="text-[11px] text-amber-400/90 text-center font-medium mt-2">
-              {isLocked
-                ? "Este turno ya cuenta con comprobante fiscal emitido ante ARCA y no puede ser modificado ni eliminado."
-                : "Este turno ya fue cobrado y no puede ser eliminado."}
+              Este turno tiene comprobante fiscal: no se puede modificar.
             </p>
-          )}
+          ) : isDeleteDisabled ? (
+            <p className="text-[11px] text-amber-400/90 text-center font-medium mt-2">
+              Este turno ya fue cobrado y no puede ser eliminado.
+            </p>
+          ) : null}
         </div>
       </form>
     </div>
