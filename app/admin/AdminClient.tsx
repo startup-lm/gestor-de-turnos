@@ -33,6 +33,7 @@ const VALID_SECTIONS: readonly AdminSection[] = [
   "finanzas-liquidaciones",
   "finanzas-gastos",
   "turnos",
+  "caja",
   "ventas",
   "facturas",
   "facturacion-config",
@@ -83,6 +84,9 @@ const ArcaConfigSection = dynamic(() => import("@/components/admin/sections/Arca
 const BarberosSection = dynamic(() => import("@/components/admin/sections/BarberosSection"), {
   loading: () => <BarbersGridSkeleton />,
 });
+const CajaSection = dynamic(() => import("@/components/admin/sections/CajaSection"), {
+  loading: () => <SectionSkeleton />,
+});
 const ProductosSection = dynamic(() => import("@/components/admin/sections/ProductosSection"), {
   loading: () => <SectionSkeleton />,
 });
@@ -125,6 +129,7 @@ export default function AdminClient({ barbers, me }: Readonly<{ barbers: Barber[
     paymentMethods: limits.maxPaymentMethods > 0,
     arca: isEnabled("arca"),
     googleReviews: isEnabled("google_reviews"),
+    cashRegister: isEnabled("cash_register"),
   };
   // Sin métricas en el plan, el panel arranca en la gestión de turnos
   const defaultSection: AdminSection = modules.metrics ? "metricas" : "turnos";
@@ -155,6 +160,7 @@ export default function AdminClient({ barbers, me }: Readonly<{ barbers: Barber[
     finanzas: modules.finances,
     "finanzas-liquidaciones": modules.commissionPayouts,
     "finanzas-gastos": modules.expenses,
+    caja: modules.cashRegister,
     turnos: true,
     ventas: modules.sales,
     facturas: modules.arca,
@@ -235,6 +241,7 @@ export default function AdminClient({ barbers, me }: Readonly<{ barbers: Barber[
           {visibleSection === "finanzas-gastos" && isAdmin && (
             <GastosSection barbers={barbers} />
           )}
+          {visibleSection === "caja" && <CajaSection />}
           {visibleSection === "turnos" && <TurnosSection />}
           {visibleSection === "ventas" && <VentasSection />}
           {visibleSection === "facturas" && isAdmin && (

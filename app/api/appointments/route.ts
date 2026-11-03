@@ -7,6 +7,7 @@ import { checkRateLimit, getClientIp } from "@/lib/api/rateLimit";
 import { revalidateTag } from "next/cache";
 import { canModify } from "@/lib/api/ownership";
 import { getBarberRates, lockedByPayoutMessage } from "@/lib/finance/barberRates";
+import { currentShiftId, closedShiftLock } from "@/lib/finance/openShift";
 import {
   AppointmentInsertSchema,
   AppointmentPatchSchema,
@@ -269,7 +270,7 @@ export async function PATCH(request: Request) {
   // Validar si el turno ya cuenta con comprobante fiscal emitido
   const { data: existingAppt, error: findError } = await supabaseAdmin
     .from("appointments")
-    .select("id, barber_id, paid, arca_invoice_id, payout_id")
+    .select("id, barber_id, paid, arca_invoice_id, payout_id, shift_id")
     .eq("id", appointmentId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -289,6 +290,8 @@ export async function PATCH(request: Request) {
   if (existingAppt.payout_id) {
     return errorResponse(lockedByPayoutMessage("turno", existingAppt.payout_id), 409);
   }
+  const shiftLock = await closedShiftLock(existingAppt.shift_id);
+  if (shiftLock) return shiftLock;
 
   // % de comisión congelado: se fija al cobrar (o si un turno cobrado cambia de barbero)
   // y se borra al revertir el cobro
@@ -304,9 +307,19 @@ export async function PATCH(request: Request) {
     commissionUpdate = { commission_rate: rates.commission };
   }
 
+  // Caja: el cobro entra en el período en curso; al revertirlo, sale de la caja
+  let shiftUpdate: { shift_id?: number | null } = {};
+  if (!willBePaid && existingAppt.paid && existingAppt.shift_id) {
+    shiftUpdate = { shift_id: null };
+  } else if (updates.paid === true && !existingAppt.paid) {
+    const { shiftId, error: shiftError } = await currentShiftId(staff.user.email!);
+    if (shiftError) return dbErrorResponse(shiftError, "appointments.shift");
+    shiftUpdate = { shift_id: shiftId };
+  }
+
   const { data, error } = await supabaseAdmin
     .from("appointments")
-    .update({ ...updates, ...commissionUpdate })
+    .update({ ...updates, ...commissionUpdate, ...shiftUpdate })
     .eq("id", appointmentId)
     .select();
 

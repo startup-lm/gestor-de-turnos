@@ -31,6 +31,8 @@ export interface Appointment {
   payout_id?: number | null;
   /** % de comisión del barbero al momento de cobrarlo (0..1) */
   commission_rate?: number | null;
+  /** Caja que estaba abierta cuando se cobró */
+  shift_id?: number | null;
 }
 
 export interface AppointmentUpdates {

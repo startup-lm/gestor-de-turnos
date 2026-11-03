@@ -16,6 +16,7 @@ const STANDARD = [
   "staff_management",
   "booking_rules",
   "stock_control",
+  "cash_register",
 ];
 const PREMIUM_ONLY = ["finances", "expenses"];
 
@@ -46,7 +47,7 @@ describe("planes comerciales", () => {
     }
   });
 
-  it("standard incluye ARCA, métricas, ventas, liquidaciones, profesionales, reseñas, criterios de turno y stock", () => {
+  it("standard incluye ARCA, métricas, ventas, liquidaciones, profesionales, reseñas, criterios de turno, stock y caja", () => {
     for (const flag of STANDARD) expect(isFeatureEnabled(flag, null, "standard")).toBe(true);
     for (const flag of PREMIUM_ONLY) expect(isFeatureEnabled(flag, null, "standard")).toBe(false);
   });

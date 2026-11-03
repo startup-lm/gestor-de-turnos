@@ -303,7 +303,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
         </div>
       </div>
 
-      {/* Caja por medio de pago (en el bloque de caja pasa a ser "Cobros y caja") */}
+      {/* Saldo por medio de pago del período */}
       <div>
         <div className="dashboard-card p-6 flex flex-col justify-between">
           <div>
@@ -314,7 +314,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white tracking-tight">
-                    Caja por medio de pago
+                    Saldo por medio de pago
                   </h3>
                   <p className="text-xs text-slate-400">
                     Lo que debería haber en cada medio al cerrar la caja: cobros de turnos y ventas menos gastos, adelantos y liquidaciones

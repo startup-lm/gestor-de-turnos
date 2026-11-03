@@ -22,6 +22,7 @@ import {
   Package,
   Scissors,
   UserCircle,
+  Wallet,
 } from "lucide-react";
 import { APP_VERSION } from "@/lib/version";
 import NavbarLogoutButton from "@/components/navbar/NavbarLogoutButton";
@@ -32,6 +33,7 @@ export type AdminSection =
   | "finanzas"
   | "finanzas-liquidaciones"
   | "finanzas-gastos"
+  | "caja"
   | "turnos"
   | "ventas"
   | "facturas"
@@ -57,6 +59,7 @@ export interface AdminModules {
   paymentMethods: boolean;
   arca: boolean;
   googleReviews: boolean;
+  cashRegister: boolean;
 }
 
 export interface NavItem {
@@ -113,6 +116,12 @@ export const NAV_GROUPS: NavGroup[] = [
     id: "operaciones",
     label: "Operaciones",
     items: [
+      {
+        section: "caja",
+        label: "Caja",
+        icon: Wallet,
+        visible: (modules) => modules.cashRegister,
+      },
       {
         section: "turnos",
         label: "Turnos",
@@ -187,7 +196,7 @@ export const NAV_GROUPS: NavGroup[] = [
       },
       {
         section: "config-pagos",
-        label: "Medios de pago",
+        label: "Cobros y caja",
         icon: CreditCard,
         visible: (modules, isAdmin) => isAdmin && modules.paymentMethods,
       },

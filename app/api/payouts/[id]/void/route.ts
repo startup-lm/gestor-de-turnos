@@ -2,6 +2,7 @@ import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/api/auth";
 import { successResponse, errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
+import { closedShiftLock } from "@/lib/finance/openShift";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -23,6 +24,17 @@ export async function POST(_request: Request, { params }: RouteParams) {
   if (findError) return dbErrorResponse(findError, "payouts/void");
   if (!payout) return errorResponse("Liquidación no encontrada", 404);
   if (payout.voided_at) return errorResponse("La liquidación ya estaba anulada", 409);
+
+  // Si el pago salió de un cierre de caja ya hecho, anularlo cambiaría ese cierre
+  const { data: payment, error: paymentError } = await supabaseAdmin
+    .from("cash_movements")
+    .select("shift_id")
+    .eq("payout_id", id)
+    .eq("type", "commission_payout")
+    .maybeSingle();
+  if (paymentError) return dbErrorResponse(paymentError, "payouts/void.payment");
+  const shiftLock = await closedShiftLock(payment?.shift_id);
+  if (shiftLock) return shiftLock;
 
   const now = new Date().toISOString();
 

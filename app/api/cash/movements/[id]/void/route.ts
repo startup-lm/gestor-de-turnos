@@ -2,6 +2,7 @@ import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/api/auth";
 import { successResponse, errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
+import { closedShiftLock } from "@/lib/finance/openShift";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -17,7 +18,7 @@ export async function POST(_request: Request, { params }: RouteParams) {
 
   const { data: movement, error: findError } = await supabaseAdmin
     .from("cash_movements")
-    .select("id, type, voided_at, payout_id")
+    .select("id, type, voided_at, payout_id, shift_id")
     .eq("id", id)
     .maybeSingle();
   if (findError) return dbErrorResponse(findError, "cash/movements/void");
@@ -32,6 +33,8 @@ export async function POST(_request: Request, { params }: RouteParams) {
       409
     );
   }
+  const shiftLock = await closedShiftLock(movement.shift_id);
+  if (shiftLock) return shiftLock;
 
   const { error } = await supabaseAdmin
     .from("cash_movements")

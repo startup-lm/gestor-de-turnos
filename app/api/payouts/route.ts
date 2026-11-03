@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/api/auth";
 import { requirePlanFeature } from "@/lib/flags/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
+import { currentShiftId } from "@/lib/finance/openShift";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { computePayout } from "@/lib/finance/payout";
 import { endsInTheFuture, isValidPeriod, loadPayoutData } from "@/lib/finance/payoutData";
@@ -145,6 +146,12 @@ export async function POST(request: Request) {
   }
 
   if (result.totalToPay > 0) {
+    // El pago sale de la caja del período en curso
+    const { shiftId, error: shiftError } = await currentShiftId(admin.email || "admin");
+    if (shiftError) {
+      await rollback();
+      return dbErrorResponse(shiftError, "payouts.shift");
+    }
     const { error: movementError } = await supabaseAdmin.from("cash_movements").insert({
       barber_id: barberId,
       type: "commission_payout",
@@ -154,6 +161,7 @@ export async function POST(request: Request) {
       description: `Liquidación de comisiones período ${periodStart} al ${periodEnd}`,
       reference_code: `REC-${payout.id}`,
       payout_id: payout.id,
+      shift_id: shiftId,
       created_by: admin.email || "admin",
     });
 

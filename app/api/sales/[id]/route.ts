@@ -7,6 +7,7 @@ import { requirePlanFeature, isServerFeatureEnabled } from "@/lib/flags/server";
 import { canModify } from "@/lib/api/ownership";
 import { SaleUpdateSchema } from "@/lib/schemas";
 import { getBarberRates, lockedByPayoutMessage } from "@/lib/finance/barberRates";
+import { closedShiftLock } from "@/lib/finance/openShift";
 import { adjustProductStock, stockFailureResponse } from "@/lib/finance/stock";
 
 interface RouteParams {
@@ -41,7 +42,7 @@ async function revertStockMoves(moves: { productId: number; delta: number }[]) {
 async function findSaleForChange(id: number) {
   return supabaseAdmin
     .from("sales")
-    .select("id, barber_id, product_id, price, quantity, arca_invoice_id, payout_id")
+    .select("id, barber_id, product_id, price, quantity, arca_invoice_id, payout_id, shift_id")
     .eq("id", id)
     .maybeSingle();
 }
@@ -79,6 +80,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     );
   }
   if (sale.payout_id) return errorResponse(lockedByPayoutMessage("venta", sale.payout_id), 409);
+  const shiftLock = await closedShiftLock(sale.shift_id);
+  if (shiftLock) return shiftLock;
 
   const updates = parsed.data;
   // El total siempre se recalcula con los valores finales: nunca se acepta del navegador
@@ -156,6 +159,8 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     );
   }
   if (sale.payout_id) return errorResponse(lockedByPayoutMessage("venta", sale.payout_id), 409);
+  const shiftLock = await closedShiftLock(sale.shift_id);
+  if (shiftLock) return shiftLock;
 
   const { error } = await supabaseAdmin
     .from("sales")

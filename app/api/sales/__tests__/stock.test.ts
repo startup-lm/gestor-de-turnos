@@ -7,6 +7,12 @@ import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { POST as createSale } from "@/app/api/sales/route";
 import { PATCH as patchSale, DELETE as deleteSale } from "@/app/api/sales/[id]/route";
 
+vi.mock("@/lib/finance/openShift", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/finance/openShift")>()),
+  currentShiftId: vi.fn().mockResolvedValue({ shiftId: null, error: null }),
+  closedShiftLock: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock("@/lib/api/auth", () => ({
   requireAdmin: vi.fn(),
   requireBarberOrAdmin: vi.fn(),

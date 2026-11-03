@@ -8,7 +8,7 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ## [1.9.0] - 2026-11-03
 
-Liquidaciones y comisiones confiables, `/admin` como único lugar de gestión y menú ajustable. **Requiere aplicar la migración `20261105000000_payout_links_and_commission_snapshot.sql`.**
+Liquidaciones y comisiones confiables, `/admin` como único lugar de gestión y menú ajustable. **Requiere aplicar las migraciones `20261105000000_payout_links_and_commission_snapshot.sql` y `20261106000000_cash_register.sql`.**
 
 ### Agregado
 - **Liquidaciones atadas a turnos y ventas:** cada turno o venta cobrado queda marcado con la liquidación que lo pagó. Un cobro atrasado de un período ya liquidado entra en la próxima liquidación, que lo avisa ("Incluye 2 cobros atrasados"), en vez de perderse.
@@ -19,10 +19,12 @@ Liquidaciones y comisiones confiables, `/admin` como único lugar de gestión y 
 - **Mi perfil en `/admin`:** cada barbero edita su foto, sus datos y su contraseña desde el menú lateral.
 - **Cerrar sesión en el pie del menú lateral**, junto al nombre del producto y la versión.
 - **Aviso de turnos pasados sin cobrar** en Resumen: cuenta los turnos del período que ya terminaron y no se cobraron (incluye clientes que no vinieron), y "Ver turnos" abre la agenda filtrada en esos turnos.
+- **Caja diaria** (planes estándar y premium): la sección Operaciones → Caja muestra lo que entró desde el último cierre por medio de pago (cobros menos gastos, adelantos y liquidaciones). No hay que abrirla: el primer cobro después de un cierre empieza la caja nueva. Al cerrar se carga el efectivo contado (y, si se quiere, lo de Mercado Pago u otros medios) y queda registrada la diferencia. Lo que entra después de un cierre va al siguiente. El admin ve los últimos cierres con su diferencia, y si se pasa la frecuencia de cierre configurada aparece un recordatorio.
 
 ### Corregido
 - **Liquidaciones de períodos abiertos:** no se puede liquidar un período que termina después de hoy. Si el período elegido sigue abierto, se liquida hasta hoy y se avisa.
 - **Turnos y ventas liquidados:** ya no se pueden editar, descobrar ni borrar sin anular antes la liquidación, para que el pago no quede desfasado de lo que muestra el sistema.
+- **Cierres de caja bloqueados:** los turnos, ventas, gastos y liquidaciones de una caja ya cerrada no se pueden editar, anular ni borrar, para que el cierre no cambie después de hecho.
 - **Retiro del dueño:** se registraba como gasto y bajaba la ganancia neta. Ahora resta de la caja pero no de la ganancia (los retiros ya cargados se corrigen con la migración).
 - **Ticket promedio en Métricas:** se dividía la facturación de los turnos cobrados por todos los turnos agendados, y salía muy por debajo del real. La tarjeta ahora muestra los turnos cobrados y, debajo, los agendados.
 - **Medio de pago obligatorio** al cobrar un turno o registrar una venta: sin él, el cobro no se puede ubicar en la caja.
@@ -35,6 +37,7 @@ Liquidaciones y comisiones confiables, `/admin` como único lugar de gestión y 
 - El ícono de usuario del header solo aparece para invitados y lleva a ingresar.
 - "Horarios y atención" pasa a llamarse "Horarios y reservas".
 - **Métricas pasa a llamarse Resumen** y muestra la actividad del local: turnos, productos vendidos y ticket promedio. Los totales de plata (facturación y comisiones) quedan solo en Balance.
+- "Medios de pago" pasa a llamarse **"Cobros y caja"**, y su frecuencia de cierre ahora también es el recordatorio para cerrar la caja. En Balance, "Caja por medio de pago" pasa a llamarse "Saldo por medio de pago".
 
 ### Eliminado
 - Botones "Ver todas en Google" y "Dejar una reseña" al pie de la sección de reseñas de Google.

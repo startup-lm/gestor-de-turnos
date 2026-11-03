@@ -5,6 +5,7 @@ import { requirePlanFeature } from "@/lib/flags/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { createdAtBound } from "@/lib/dates/argentina";
+import { currentShiftId } from "@/lib/finance/openShift";
 
 export async function GET(request: Request) {
   const admin = await requireAdmin();
@@ -65,7 +66,6 @@ export async function POST(request: Request) {
       description,
       reference_code,
       barber_id,
-      shift_id,
     } = body;
 
     // Un retiro del dueño nunca se guarda como gasto, aunque lo pida un cliente viejo
@@ -93,6 +93,10 @@ export async function POST(request: Request) {
     const defaultCategory =
       type === "advance" ? "adelanto" : type === "expense" ? "insumos" : "otro";
 
+    // Caja: el movimiento entra en el período en curso (lo decide el servidor, no el cliente)
+    const { shiftId, error: shiftError } = await currentShiftId(admin.email || "admin");
+    if (shiftError) return dbErrorResponse(shiftError, "cash/movements.shift");
+
     const { data, error } = await supabaseAdmin
       .from("cash_movements")
       .insert({
@@ -103,7 +107,7 @@ export async function POST(request: Request) {
         description: description.trim(),
         reference_code: reference_code || null,
         barber_id: barber_id ? Number(barber_id) : null,
-        shift_id: shift_id ? Number(shift_id) : null,
+        shift_id: shiftId,
         created_by: admin.email || "admin",
       })
       .select("id")

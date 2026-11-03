@@ -6,6 +6,12 @@ import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import * as planServer from "@/lib/flags/server";
 import * as payoutData from "@/lib/finance/payoutData";
 
+vi.mock("@/lib/finance/openShift", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/finance/openShift")>()),
+  currentShiftId: vi.fn().mockResolvedValue({ shiftId: null, error: null }),
+  closedShiftLock: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock("@/lib/api/auth", () => ({
   requireAdmin: vi.fn(),
 }));

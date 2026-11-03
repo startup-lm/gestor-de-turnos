@@ -9,6 +9,7 @@ import { SaleInsertSchema } from "@/lib/schemas";
 import { revalidateTag } from "next/cache";
 import { getBarberRates } from "@/lib/finance/barberRates";
 import { adjustProductStock, stockFailureResponse } from "@/lib/finance/stock";
+import { currentShiftId } from "@/lib/finance/openShift";
 
 // Edición y borrado de ventas: ver /api/sales/[id]
 export async function POST(request: Request) {
@@ -32,6 +33,10 @@ export async function POST(request: Request) {
   if (ratesError) return dbErrorResponse(ratesError, "sales");
   if (!rates) return errorResponse("Profesional no encontrado", 404);
 
+  // Caja: la venta entra en el período en curso (se crea si es el primer movimiento desde el cierre)
+  const { shiftId, error: shiftError } = await currentShiftId(staff.user.email!);
+  if (shiftError) return dbErrorResponse(shiftError, "sales.shift");
+
   // Las unidades se descuentan antes de registrar la venta: si no hay stock, no se vende
   const controlsStock = await isServerFeatureEnabled("stock_control");
   if (controlsStock) {
@@ -50,6 +55,7 @@ export async function POST(request: Request) {
       payment_method,
       total: price * quantity,
       commission_rate: rates.saleCommission,
+      shift_id: shiftId,
     })
     .select("id")
     .single();

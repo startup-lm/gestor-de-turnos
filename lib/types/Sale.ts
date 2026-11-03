@@ -15,6 +15,8 @@ export interface Sale {
   payout_id?: number | null;
   /** % de comisión por venta del barbero al momento de registrarla (0..1) */
   commission_rate?: number | null;
+  /** Caja que estaba abierta cuando se registró */
+  shift_id?: number | null;
 }
 
 export interface SaleWithRelations extends Sale {

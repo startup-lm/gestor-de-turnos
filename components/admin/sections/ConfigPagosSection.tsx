@@ -73,20 +73,20 @@ const CLOSING_FREQUENCIES: Array<{
 }> = [
   {
     id: "daily",
-    title: "Diario (hoy)",
-    description: "Muestra las operaciones y métricas de hoy al abrir Balance.",
+    title: "Diario",
+    description: "Se cierra la caja todos los días. Balance arranca mostrando hoy.",
     icon: Clock,
   },
   {
     id: "weekly",
-    title: "Semanal (esta semana)",
-    description: "Muestra las operaciones y métricas de esta semana al abrir Balance.",
+    title: "Semanal",
+    description: "Se cierra una vez por semana. Balance arranca mostrando esta semana.",
     icon: Calendar,
   },
   {
     id: "manual",
-    title: "Manual (este mes)",
-    description: "Muestra las operaciones y métricas de este mes al abrir Balance.",
+    title: "Manual",
+    description: "Sin recordatorio: se cierra cuando quieras. Balance arranca mostrando este mes.",
     icon: Sliders,
   },
 ];
@@ -99,6 +99,9 @@ type PagosDraft = {
 export default function ConfigPagosSection() {
   const { isEnabled, limits } = useBusinessContext();
   const isFinancesEnabled = isEnabled("finances");
+  const isCashRegisterEnabled = isEnabled("cash_register");
+  // La frecuencia sirve de recordatorio para cerrar la caja y de período por defecto en Balance
+  const showsClosingFrequency = isFinancesEnabled || isCashRegisterEnabled;
   const maxPaymentMethods = limits.maxPaymentMethods;
 
   const [newMethod, setNewMethod] = useState("");
@@ -112,7 +115,7 @@ export default function ConfigPagosSection() {
       }),
       toPayload: (currentDraft) => ({
         payment_methods: currentDraft.payment_methods,
-        ...(isFinancesEnabled && {
+        ...(showsClosingFrequency && {
           cash_closing_frequency: currentDraft.cash_closing_frequency,
         }),
       }),
@@ -179,11 +182,11 @@ export default function ConfigPagosSection() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-            Medios de pago
+            Cobros y caja
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            {isFinancesEnabled
-              ? "Habilitá los métodos de pago aceptados y configurá los turnos de caja de tu local"
+            {showsClosingFrequency
+              ? "Habilitá los métodos de pago aceptados y elegí cada cuánto se cierra la caja"
               : "Habilitá los métodos de pago aceptados para turnos y ventas en el local"}
           </p>
         </div>
@@ -208,16 +211,20 @@ export default function ConfigPagosSection() {
         </div>
       </div>
 
-      {/* Frecuencia de Cierre de Caja (solo visible si el plan incluye finanzas) */}
-      {isFinancesEnabled && (
+      {/* Frecuencia de cierre de caja (si el plan incluye la caja o el balance) */}
+      {showsClosingFrequency && (
         <div className="bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10 space-y-4">
           <div className="flex items-center gap-2 text-[var(--accent)] font-bold text-sm tracking-wider">
             <Receipt className="w-4 h-4" />
-            <span>Frecuencia de cierre de balance</span>
+            <span>Frecuencia de cierre de caja</span>
           </div>
           <p className="text-xs text-slate-400">
-            Definí el período que se muestra por defecto al entrar a la sección Balance. Podés cambiarlo
-            en cualquier momento con los filtros de período.
+            {isCashRegisterEnabled
+              ? "Cada cuánto contás la plata y cerrás la caja. Si se pasa el plazo, la sección Caja te lo recuerda. "
+              : ""}
+            {isFinancesEnabled
+              ? "También define el período que se muestra por defecto al entrar a Balance."
+              : ""}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
