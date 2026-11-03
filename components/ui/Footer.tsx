@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { PRODUCT_CREDIT } from "@/lib/brand";
 import { FaInstagram, FaFacebook, FaTiktok, FaWhatsapp, FaLink } from "react-icons/fa";
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -40,7 +41,7 @@ export default function Footer() {
           </div>
         )}
         <div className="text-center text-xs">
-          © {new Date().getFullYear()} {businessSettings?.business_name || "Barbería"}. Desarrollado por LM². Todos los derechos reservados.
+          © {new Date().getFullYear()} {PRODUCT_CREDIT}. Todos los derechos reservados.
         </div>
       </div>
     </footer>

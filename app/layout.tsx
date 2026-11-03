@@ -3,6 +3,7 @@ import { Inter, Montserrat } from "next/font/google";
 import "@/styles/globals.css";
 import ClientProviders from "@/components/providers/ClientProviders";
 import { getCalendarConfig } from "@/lib/repository/calendar";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 export const revalidate = 60;
 
@@ -18,15 +19,18 @@ const montserrat = Montserrat({
   variable: "--font-montserrat",
 });
 
-export const metadata: Metadata = {
-  title: "Gestor de turnos",
-  description: "Sistema de gestión y reserva de turnos",
-  manifest: "/manifest.json",
-  icons: {
-    icon: "/icon-192x192.png",
-    apple: "/icon-192x192.png",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { businessSettings } = await getCalendarConfig();
+  const name = businessSettings?.business_name?.trim() || PRODUCT_NAME;
+  return {
+    title: name,
+    description: "Sistema de gestión y reserva de turnos",
+    icons: {
+      icon: "/icon-192x192.png",
+      apple: "/icon-192x192.png",
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#000000",
