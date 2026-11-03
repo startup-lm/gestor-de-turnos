@@ -254,7 +254,7 @@ export default function BookingSplitPanel({
                 </div>
               )}
               <div className="min-w-0">
-                <span className="block text-[11px] uppercase font-bold text-[var(--foreground)]/50 tracking-wider">
+                <span className="block text-[11px] font-bold text-[var(--foreground)]/50 tracking-wider">
                   Servicio
                 </span>
                 {currentService ? (
@@ -311,7 +311,7 @@ export default function BookingSplitPanel({
                 </div>
               )}
               <div className="min-w-0">
-                <span className="block text-[11px] uppercase font-bold text-[var(--foreground)]/50 tracking-wider">
+                <span className="block text-[11px] font-bold text-[var(--foreground)]/50 tracking-wider">
                   Profesional
                 </span>
                 <span className="font-extrabold text-base md:text-lg text-[var(--foreground)] truncate block leading-tight">
@@ -340,7 +340,7 @@ export default function BookingSplitPanel({
                 <Calendar className="w-6 h-6" />
               </div>
               <div className="min-w-0">
-                <span className="block text-[11px] uppercase font-bold text-[var(--foreground)]/50 tracking-wider">
+                <span className="block text-[11px] font-bold text-[var(--foreground)]/50 tracking-wider">
                   Fecha y Horario
                 </span>
                 <span className="font-extrabold text-base md:text-lg text-[var(--foreground)] block leading-tight">

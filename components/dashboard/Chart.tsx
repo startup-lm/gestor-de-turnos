@@ -12,6 +12,7 @@ import {
   Legend,
 } from "recharts";
 import { DataPoint } from "@/lib/hooks/useDashboardData";
+import { formatARS } from "@/lib/format/currency";
 import { CalendarOff, BarChart3, DollarSign, Layers } from "lucide-react";
 
 interface Props {
@@ -92,9 +93,9 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
     <div className="w-full">
       {/* Cabecera del Gráfico con Toggle Volumen vs Facturación */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-white/5">
-        <h3 className="text-xs font-bold uppercase text-slate-400 tracking-wider flex items-center gap-2">
+        <h3 className="text-xs font-bold text-slate-400 tracking-wider flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-[var(--accent)]" />
-          <span>Evolución Temporal ({isRevenue ? "Facturación en $" : "Volumen en Unidades"})</span>
+          <span>Evolución temporal ({isRevenue ? "facturación en $" : "volumen en unidades"})</span>
         </h3>
 
         {/* Toggle Selector */}
@@ -149,7 +150,7 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
                 const p = payload[0].payload as CombinedPoint;
                 return (
                   <div className="bg-slate-950/95 border border-white/10 rounded-xl p-3 shadow-2xl backdrop-blur-md">
-                    <div className="font-bold text-[11px] text-[var(--accent)] uppercase tracking-wider mb-2 border-b border-white/10 pb-1.5">
+                    <div className="font-bold text-[11px] text-[var(--accent)] tracking-wider mb-2 border-b border-white/10 pb-1.5">
                       {label}
                     </div>
                     <div className="space-y-2 text-xs min-w-[170px]">
@@ -160,7 +161,7 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
                           Turnos:
                         </span>
                         <span className="font-bold text-white">
-                          {p.cortes} <span className="text-slate-400 font-normal">(${p.revenueCortes.toLocaleString("es-AR")})</span>
+                          {p.cortes} <span className="text-slate-400 font-normal">({formatARS(p.revenueCortes)})</span>
                         </span>
                       </div>
 
@@ -171,7 +172,7 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
                           Ventas:
                         </span>
                         <span className="font-bold text-white">
-                          {p.ventas} <span className="text-slate-400 font-normal">(${p.revenueVentas.toLocaleString("es-AR")})</span>
+                          {p.ventas} <span className="text-slate-400 font-normal">({formatARS(p.revenueVentas)})</span>
                         </span>
                       </div>
 
@@ -179,7 +180,7 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
                       <div className="pt-2 border-t border-white/10 flex justify-between items-center text-xs">
                         <span className="text-slate-400 font-semibold">Total día:</span>
                         <span className="font-extrabold text-emerald-400">
-                          ${(p.revenueCortes + p.revenueVentas).toLocaleString("es-AR")}
+                          {formatARS(p.revenueCortes + p.revenueVentas)}
                         </span>
                       </div>
                     </div>
@@ -196,20 +197,19 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
                 fontSize: 11,
                 fontWeight: 600,
                 color: "rgba(249, 250, 251, 0.7)",
-                textTransform: "uppercase",
                 letterSpacing: "0.05em"
               }}
             />
             <Bar
               dataKey={isRevenue ? "revenueCortes" : "cortes"}
-              name={isRevenue ? "Facturación Cortes ($)" : "Turnos (Cant.)"}
+              name={isRevenue ? "Facturación cortes ($)" : "Turnos (cant.)"}
               fill="var(--accent)"
               radius={[6, 6, 0, 0]}
               maxBarSize={38}
             />
             <Bar
               dataKey={isRevenue ? "revenueVentas" : "ventas"}
-              name={isRevenue ? "Facturación Ventas ($)" : "Ventas (Cant.)"}
+              name={isRevenue ? "Facturación ventas ($)" : "Ventas (cant.)"}
               fill="var(--chart-1)"
               radius={[6, 6, 0, 0]}
               maxBarSize={38}

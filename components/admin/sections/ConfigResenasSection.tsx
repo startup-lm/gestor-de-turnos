@@ -390,7 +390,7 @@ export default function ConfigResenasSection() {
         {!placeId && candidate && !isManualSearchOpen && (
           <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-[var(--accent)]/15 via-[#0a0f1d] to-slate-950 border border-[var(--accent)]/30 shadow-xl space-y-4 animate-in fade-in duration-300">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[var(--accent)] text-xs font-bold uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-[var(--accent)] text-xs font-bold tracking-wider">
                 <MapPin className="w-4 h-4" />
                 <span>Encontramos tu local en Google Maps</span>
               </div>

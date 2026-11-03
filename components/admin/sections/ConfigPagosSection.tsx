@@ -70,20 +70,20 @@ const CLOSING_FREQUENCIES: Array<{
 }> = [
   {
     id: "daily",
-    title: "Diario (al final del día)",
-    description: "Cierre y arqueo de caja al concluir cada jornada laboral.",
+    title: "Diario (hoy)",
+    description: "Muestra las operaciones y métricas de hoy al abrir Balance.",
     icon: Clock,
   },
   {
     id: "weekly",
-    title: "Semanal (al finalizar la semana)",
-    description: "Cierre acumulado en el último día de trabajo de la semana.",
+    title: "Semanal (esta semana)",
+    description: "Muestra las operaciones y métricas de esta semana al abrir Balance.",
     icon: Calendar,
   },
   {
     id: "manual",
-    title: "Personalizado / Manual",
-    description: "El administrador abre y cierra la caja a demanda según necesidad.",
+    title: "Manual (este mes)",
+    description: "Muestra las operaciones y métricas de este mes al abrir Balance.",
     icon: Sliders,
   },
 ];
@@ -235,13 +235,13 @@ export default function ConfigPagosSection() {
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-                <span>Caja y Cierres de Turno</span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                  Plan Activo
+                <span>Período por defecto del balance</span>
+                <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  Plan activo
                 </span>
               </h3>
               <p className="text-xs text-slate-400">
-                Elegí la periodicidad con la que tu barbería realiza el balance y arqueo de caja
+                Elegí qué período muestra Balance al abrirlo: diario (hoy), semanal (esta semana) o manual (este mes).
               </p>
             </div>
           </div>

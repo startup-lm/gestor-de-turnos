@@ -542,7 +542,7 @@ export default function AppointmentDetailsSplitPanel({
                 )}
 
                 <div className="min-w-0 flex-1">
-                  <span className="block text-[11px] uppercase font-bold text-[var(--foreground)]/50 tracking-wider">
+                  <span className="block text-[11px] font-bold text-[var(--foreground)]/50 tracking-wider">
                     Servicio
                   </span>
 
@@ -635,7 +635,7 @@ export default function AppointmentDetailsSplitPanel({
               </div>
 
               <div className="min-w-0 flex-1">
-                <span className="block text-[11px] uppercase font-bold text-[var(--foreground)]/50 tracking-wider">
+                <span className="block text-[11px] font-bold text-[var(--foreground)]/50 tracking-wider">
                   Profesional
                 </span>
 
@@ -693,7 +693,7 @@ export default function AppointmentDetailsSplitPanel({
               </div>
 
               <div className="min-w-0 flex-1">
-                <span className="block text-[11px] uppercase font-bold text-[var(--foreground)]/50 tracking-wider">
+                <span className="block text-[11px] font-bold text-[var(--foreground)]/50 tracking-wider">
                   Fecha y horario
                 </span>
 

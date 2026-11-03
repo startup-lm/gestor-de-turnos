@@ -148,7 +148,7 @@ export default function ServicioDetailClient({ initialService }: Readonly<Props>
         <div>
           <Link
             href="/servicios"
-            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--accent)] hover:underline mb-2 transition-all"
+            className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider text-[var(--accent)] hover:underline mb-2 transition-all"
           >
             <ArrowLeft className="w-4 h-4" /> Volver a servicios
           </Link>

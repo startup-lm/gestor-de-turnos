@@ -529,10 +529,10 @@ export default function FacturasSection() {
             <button
               type="button"
               onClick={() => setViewMode("list")}
-              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
+              className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
             >
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              <span>Volver a facturas</span>
+              <span>Volver a comprobantes</span>
             </button>
             <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
               Emitir comprobante
@@ -769,7 +769,7 @@ export default function FacturasSection() {
             </h2>
             {status?.environment && (
               <span
-                className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border ${
+                className={`text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md border ${
                   status.environment === "prod"
                     ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                     : status.environment === "homo"
@@ -985,7 +985,7 @@ export default function FacturasSection() {
           <div className="overflow-x-auto">
             <table className="min-w-full text-xs md:text-sm">
               <thead>
-                <tr className="border-b border-gray-700 text-left text-[var(--foreground)]/50 text-[11px] uppercase tracking-wider">
+                <tr className="border-b border-gray-700 text-left text-[var(--foreground)]/50 text-[11px] tracking-wider">
                   <th className="py-2 pr-3">Fecha</th>
                   <th className="py-2 pr-3">Estado</th>
                   <th className="py-2 pr-3">Total</th>
