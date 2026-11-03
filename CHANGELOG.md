@@ -6,7 +6,22 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
-## [1.8.1] - 2026-11-03
+## [1.9.0] - 2026-11-03
+
+Liquidaciones y comisiones confiables, y menú de `/admin` ajustable. **Requiere aplicar la migración `20261105000000_payout_links_and_commission_snapshot.sql`.**
+
+### Agregado
+- **Liquidaciones atadas a turnos y ventas:** cada turno o venta cobrado queda marcado con la liquidación que lo pagó. Un cobro atrasado de un período ya liquidado entra en la próxima liquidación, que lo avisa ("Incluye 2 cobros atrasados"), en vez de perderse.
+- **Comisión congelada:** cada turno y venta guarda el % del barbero al momento de cobrarse. Si después cambia el %, Métricas, Balance y las liquidaciones de meses anteriores no se recalculan.
+- Filtro "Solo retiros del dueño" en Gastos y total retirado en Balance.
+
+### Corregido
+- **Liquidaciones de períodos abiertos:** no se puede liquidar un período que termina después de hoy. Si el período elegido sigue abierto, se liquida hasta hoy y se avisa.
+- **Turnos y ventas liquidados:** ya no se pueden editar, descobrar ni borrar sin anular antes la liquidación, para que el pago no quede desfasado de lo que muestra el sistema.
+- **Retiro del dueño:** se registraba como gasto y bajaba la ganancia neta. Ahora resta de la caja pero no de la ganancia (los retiros ya cargados se corrigen con la migración).
+- **Ticket promedio en Métricas:** se dividía la facturación de los turnos cobrados por todos los turnos agendados, y salía muy por debajo del real. La tarjeta ahora muestra los turnos cobrados y, debajo, los agendados.
+- **Medio de pago obligatorio** al cobrar un turno o registrar una venta: sin él, el cobro no se puede ubicar en la caja.
+- **Reseñas de Google:** sin opiniones se mostraba una calificación de 5.0 inventada, en el sitio y en la configuración. Ahora no se muestra ninguna.
 
 ### Cambiado
 - **Menú lateral de `/admin` ajustable:** el borde derecho se arrastra para ensancharlo o achicarlo (entre 180 y 360 px), y cada navegador recuerda el ancho elegido. Arrastrándolo hasta el borde se colapsa, y doble clic lo vuelve al ancho por defecto, que ahora es más angosto (220 px). También se ajusta con las flechas del teclado.
