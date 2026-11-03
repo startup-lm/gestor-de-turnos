@@ -1,14 +1,22 @@
 import { getAppointmentById } from "@/lib/repository/appointments";
 import TurnoDetailClient from "./TurnoDetailClient";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
+// Datos de clientes: solo staff, se renderiza por pedido y nunca se cachea.
+export const dynamic = "force-dynamic";
+
 export default async function TurnoDetailPage({ params }: Props) {
   const { id } = await params;
+  const staff = await requireBarberOrAdmin();
+  if (!staff) redirect(`/login?redirect=/turno/${id}`);
+
   const numId = Number(id);
   const appointment = isNaN(numId) ? null : await getAppointmentById(numId);
 

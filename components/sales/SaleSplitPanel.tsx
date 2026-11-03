@@ -12,6 +12,7 @@ import { createSale } from "@/lib/repository/sales";
 import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { toast } from "@/lib/store/useToastStore";
 import {
   ShoppingBag,
@@ -45,6 +46,17 @@ export default function SaleSplitPanel({
   const { data: arcaStatus } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);
 
   const [selectedBarberId, setSelectedBarberId] = useState(-1);
+
+  // Un barbero solo registra ventas a su nombre: el selector le muestra solo a él
+  const { role, barberId } = useAuth();
+  const isAdmin = role === "admin";
+  const selectableBarbers = useMemo(
+    () => (isAdmin ? barbers ?? [] : (barbers ?? []).filter((b) => b.id === barberId)),
+    [isAdmin, barbers, barberId]
+  );
+  useEffect(() => {
+    if (!isAdmin && barberId > 0) setSelectedBarberId(barberId);
+  }, [isAdmin, barberId]);
   const products = useMemo<Product[]>(() => data ?? [], [data]);
   const [selectedProductId, setSelectedProductId] = useState(-1);
   const [loading, setLoading] = useState(false);
@@ -212,7 +224,7 @@ export default function SaleSplitPanel({
               </label>
               <BarberSelector
                 id="sale-panel-barber"
-                barbers={barbers ?? []}
+                barbers={selectableBarbers}
                 selectedBarberId={selectedBarberId}
                 onChange={setSelectedBarberId}
                 className="w-full"

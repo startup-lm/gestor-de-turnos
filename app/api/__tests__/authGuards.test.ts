@@ -27,7 +27,7 @@ type Case = { name: string; load: () => Promise<Record<string, unknown>>; method
 const PROTECTED_ROUTES: Case[] = [
   { name: "admin/revalidate", load: () => import("@/app/api/admin/revalidate/route"), methods: ["POST"] },
   { name: "appointments/all", load: () => import("@/app/api/appointments/all/route"), methods: ["GET"] },
-  { name: "appointments", load: () => import("@/app/api/appointments/route"), methods: ["PUT", "DELETE", "PATCH"] },
+  { name: "appointments", load: () => import("@/app/api/appointments/route"), methods: ["DELETE", "PATCH"] },
   { name: "arca/config", load: () => import("@/app/api/arca/config/route"), methods: ["GET", "PUT"] },
   { name: "arca/emit", load: () => import("@/app/api/arca/emit/route"), methods: ["POST"] },
   { name: "arca/invoices", load: () => import("@/app/api/arca/invoices/route"), methods: ["GET"] },
@@ -46,7 +46,7 @@ const PROTECTED_ROUTES: Case[] = [
   { name: "sales/all", load: () => import("@/app/api/sales/all/route"), methods: ["GET"] },
   { name: "sales/barber", load: () => import("@/app/api/sales/barber/route"), methods: ["GET"] },
   { name: "sales/list", load: () => import("@/app/api/sales/list/route"), methods: ["GET"] },
-  { name: "sales", load: () => import("@/app/api/sales/route"), methods: ["GET", "POST", "PUT", "DELETE"] },
+  { name: "sales", load: () => import("@/app/api/sales/route"), methods: ["POST"] },
   { name: "services", load: () => import("@/app/api/services/route"), methods: ["POST", "PUT", "DELETE"] },
   { name: "storage", load: () => import("@/app/api/storage/route"), methods: ["POST", "DELETE"] },
 ];

@@ -4,6 +4,8 @@ import { successResponse, errorResponse, dbErrorResponse } from "@/lib/api/respo
 import { revalidateTag } from "next/cache";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { requirePlanFeature } from "@/lib/flags/server";
+import { canModify } from "@/lib/api/ownership";
+import { SaleUpdateSchema } from "@/lib/schemas";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -27,6 +29,14 @@ export async function GET(request: Request, { params }: RouteParams) {
   return NextResponse.json(data);
 }
 
+async function findSaleForChange(id: number) {
+  return supabaseAdmin
+    .from("sales")
+    .select("id, barber_id, price, quantity, arca_invoice_id")
+    .eq("id", id)
+    .maybeSingle();
+}
+
 export async function PATCH(request: Request, { params }: RouteParams) {
   const staff = await requireBarberOrAdmin();
   if (!staff) return errorResponse("No autorizado", 401);
@@ -37,15 +47,21 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   const id = Number(resolvedParams.id);
   if (Number.isNaN(id)) { return errorResponse("ID inválido", 400); }
 
-  // Validar si la venta ya posee comprobante fiscal emitido
-  const { data: sale, error: findError } = await supabaseAdmin
-    .from("sales")
-    .select("arca_invoice_id")
-    .eq("id", id)
-    .maybeSingle();
+  const parsed = SaleUpdateSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return errorResponse(parsed.error.issues[0]?.message ?? "Datos inválidos para modificar la venta", 400);
+  }
 
+  const { data: sale, error: findError } = await findSaleForChange(id);
   if (findError) return dbErrorResponse(findError, "sales/id");
   if (!sale) return errorResponse("Venta no encontrada", 404);
+  if (!canModify(staff, sale.barber_id)) {
+    return errorResponse("Solo podés modificar tus propias ventas", 403);
+  }
+  // Un barbero no puede pasarle la venta a otro: solo el admin reasigna
+  if (parsed.data.barber_id !== undefined && !canModify(staff, parsed.data.barber_id)) {
+    return errorResponse("Solo podés registrar ventas a tu nombre", 403);
+  }
 
   if (sale.arca_invoice_id) {
     return errorResponse(
@@ -54,31 +70,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     );
   }
 
-  const body = await request.json();
-  const { barber_id, product_id, price, quantity, total, details } = body as {
-    barber_id?: number;
-    product_id?: number;
-    price?: number;
-    quantity?: number;
-    total?: number;
-    details?: string;
-  };
-
-  const updateData: Record<string, unknown> = {};
-  if (barber_id !== undefined) updateData.barber_id = barber_id;
-  if (product_id !== undefined) updateData.product_id = product_id;
-  if (price !== undefined) updateData.price = price;
-  if (quantity !== undefined) updateData.quantity = quantity;
-  if (total !== undefined) {
-    updateData.total = total;
-  } else if (price !== undefined && quantity !== undefined) {
-    updateData.total = price * quantity;
-  }
-  if (details !== undefined) updateData.details = details;
+  const updates = parsed.data;
+  // El total siempre se recalcula con los valores finales: nunca se acepta del navegador
+  const price = updates.price ?? Number(sale.price);
+  const quantity = updates.quantity ?? Number(sale.quantity);
 
   const { error } = await supabaseAdmin
     .from("sales")
-    .update(updateData)
+    .update({ ...updates, total: price * quantity })
     .eq("id", id);
 
   if (error) return dbErrorResponse(error, "sales/id");
@@ -97,13 +96,14 @@ export async function DELETE(request: Request, { params }: RouteParams) {
   const id = Number(resolvedParams.id);
   if (Number.isNaN(id)) { return errorResponse("ID inválido", 400); }
 
-  const { data: sale } = await supabaseAdmin
-    .from("sales")
-    .select("arca_invoice_id")
-    .eq("id", id)
-    .single();
+  const { data: sale, error: findError } = await findSaleForChange(id);
+  if (findError) return dbErrorResponse(findError, "sales/id");
+  if (!sale) return errorResponse("Venta no encontrada", 404);
+  if (!canModify(staff, sale.barber_id)) {
+    return errorResponse("Solo podés eliminar tus propias ventas", 403);
+  }
 
-  if (sale?.arca_invoice_id) {
+  if (sale.arca_invoice_id) {
     return errorResponse(
       "No es posible eliminar una venta que ya cuenta con comprobante fiscal emitido ante ARCA",
       400

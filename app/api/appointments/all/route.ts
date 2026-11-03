@@ -2,6 +2,7 @@ import { NextResponse }    from "next/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
+import { isAdminStaff } from "@/lib/api/ownership";
 
 interface RawRow {
   barber_id: number;
@@ -19,13 +20,17 @@ export async function GET(request: Request) {
 
   if (!start || !end) return errorResponse("start_date y end_date son requeridos", 400);
 
-  const { data, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from("appointments")
     .select("barber_id, price, payment_method")
     .is("deleted_at", null)
     .gte("date", start)
     .lte("date", end)
     .neq("phone", "0000000000");
+  // La facturación del local es del admin: un barbero solo recibe la suya
+  if (!isAdminStaff(staff)) query = query.eq("barber_id", staff.barber.id);
+
+  const { data, error } = await query;
 
   if (error) return dbErrorResponse(error, "appointments/all");
 

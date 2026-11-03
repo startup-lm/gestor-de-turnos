@@ -47,7 +47,10 @@ export async function middleware(request: NextRequest) {
     pathname === "/operaciones" ||
     pathname.startsWith("/operaciones/") ||
     pathname === "/dashboard" ||
-    pathname.startsWith("/dashboard/");
+    pathname.startsWith("/dashboard/") ||
+    pathname.startsWith("/turno/") ||
+    pathname.startsWith("/venta/") ||
+    pathname.startsWith("/ventas/");
 
   if (isProtectedPath && !user) {
     const url = request.nextUrl.clone();
@@ -69,5 +72,8 @@ export const config = {
     "/operaciones/:path*",
     "/dashboard",
     "/dashboard/:path*",
+    "/turno/:path*",
+    "/venta/:path*",
+    "/ventas/:path*",
   ],
 };

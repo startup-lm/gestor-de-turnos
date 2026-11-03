@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
+import { isAdminStaff } from "@/lib/api/ownership";
 
 export async function GET(request: Request) {
   const staff = await requireBarberOrAdmin();
@@ -25,7 +26,8 @@ export async function GET(request: Request) {
     .gte("created_at", startIso)
     .lte("created_at", endIso);
 
-  const numBarberId = Number(barberId);
+  // Un barbero solo recibe sus propias ventas, pida el barber_id que pida
+  const numBarberId = isAdminStaff(staff) ? Number(barberId) : staff.barber.id;
   if (numBarberId !== 0) {
     query = query.eq("barber_id", numBarberId);
   }

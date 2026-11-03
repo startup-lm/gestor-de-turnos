@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   AppointmentInsertSchema,
-  AppointmentPutSchema,
+  AppointmentPatchSchema,
   AppointmentDeleteSchema,
   ClientUpsertSchema,
 } from "@/lib/schemas";
@@ -94,42 +94,30 @@ describe("AppointmentInsertSchema", () => {
   });
 });
 
-describe("AppointmentPutSchema", () => {
-  it("debe aceptar actualización de cobro con efectivo o mercado pago", () => {
-    const updateEfectivo = {
+describe("AppointmentPatchSchema", () => {
+  it("acepta un cobro con cualquier medio de pago configurado", () => {
+    const result = AppointmentPatchSchema.safeParse({
       appointmentId: 45,
-      isPaid: true,
-      price: 12000,
-      payment_method: "Efectivo",
-    };
-
-    expect(AppointmentPutSchema.safeParse(updateEfectivo).success).toBe(true);
-
-    const updateMP = {
-      appointmentId: 45,
-      isPaid: true,
-      price: 12000,
-      payment_method: "MercadoPago",
-    };
-
-    expect(AppointmentPutSchema.safeParse(updateMP).success).toBe(true);
+      updates: { paid: true, price: 12000, payment_method: "Transferencia" },
+    });
+    expect(result.success).toBe(true);
   });
 
-  it("debe rechazar precio negativo o ID inválido", () => {
-    expect(
-      AppointmentPutSchema.safeParse({
-        appointmentId: -1,
-        isPaid: true,
-        price: 1000,
-      }).success
-    ).toBe(false);
+  it("descarta los campos que no se pueden editar desde el navegador", () => {
+    const result = AppointmentPatchSchema.safeParse({
+      appointmentId: 45,
+      updates: { client: "Ana", deleted_at: "2026-01-01", arca_invoice_id: 9, created_by: "x" },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.updates).toEqual({ client: "Ana" });
+    }
+  });
 
+  it("rechaza precio negativo o ID inválido", () => {
+    expect(AppointmentPatchSchema.safeParse({ appointmentId: -1, updates: {} }).success).toBe(false);
     expect(
-      AppointmentPutSchema.safeParse({
-        appointmentId: 10,
-        isPaid: true,
-        price: -500,
-      }).success
+      AppointmentPatchSchema.safeParse({ appointmentId: 10, updates: { price: -500 } }).success
     ).toBe(false);
   });
 });
