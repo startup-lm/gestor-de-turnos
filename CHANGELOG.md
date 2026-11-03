@@ -6,6 +6,11 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.9.2] - 2026-11-03
+
+### Corregido
+- Migración `20261105000000_payout_links_and_commission_snapshot.sql`: el relleno de ventas tomaba la fecha de cada venta como del día anterior, así que podía dejar sin marcar las ventas del primer día de una liquidación y marcar las del día siguiente al cierre. Solo afecta a las bases donde todavía no se aplicó.
+
 ## [1.9.1] - 2026-11-03
 
 ### Corregido
