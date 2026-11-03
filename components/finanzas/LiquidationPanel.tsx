@@ -102,7 +102,7 @@ export default function LiquidationPanel({
       setPreview(res.data);
       setSelectedAdvanceIds(advancesEnabled ? res.data.advances.map((a) => a.id) : []);
     });
-  }, [selectedBarberId, periodStart, periodEnd, startsInTheFuture]);
+  }, [selectedBarberId, periodStart, periodEnd, startsInTheFuture, advancesEnabled]);
 
   const toggleAdvance = (id: number) => {
     setSelectedAdvanceIds((prev) =>
