@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   let query = supabaseAdmin
     .from("sales")
     .select(
-      "id, created_at, price, quantity, total, details, barber_id, product_id, arca_invoice_id, barbers(name), products(name)",
+      "id, created_at, price, quantity, total, details, payment_method, barber_id, product_id, arca_invoice_id, barbers(name), products(name)",
       { count: "exact" }
     );
 
