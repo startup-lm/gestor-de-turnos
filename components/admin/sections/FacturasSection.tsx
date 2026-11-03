@@ -18,6 +18,7 @@ import type {
   ArcaInvoiceRecord,
   ArcaStatus,
 } from "@/lib/types/Arca";
+import ArcaDocFields from "@/components/arca/ArcaDocFields";
 import { Appointment } from "@/lib/types/Appointment";
 import {
   Receipt,
@@ -54,13 +55,6 @@ const DOC_TYPE_LABELS: Record<number, string> = {
   96: "DNI",
   99: "Cons. Final",
 };
-
-const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
-  { value: 99, label: "Consumidor final" },
-  { value: 96, label: "DNI" },
-  { value: 80, label: "CUIT" },
-  { value: 86, label: "CUIL" },
-];
 
 type ArcaPeriod = "daily" | "weekly" | "biweekly" | "monthly" | "custom";
 
@@ -688,36 +682,14 @@ export default function FacturasSection() {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Tipo de documento
-              </label>
-              <select
-                value={emitDocType}
-                onChange={(e) => setEmitDocType(Number(e.target.value) as ArcaDocType)}
-                className="w-full border rounded-xl px-3 py-2 text-sm bg-[var(--background)] border-[var(--foreground)]/15 focus:border-[var(--accent)] outline-none"
-              >
-                {DOC_TYPES.map((d) => (
-                  <option key={d.value} value={d.value}>
-                    {d.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {emitDocType !== 99 && (
-              <div className="md:col-span-3">
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Número de documento <span className="text-[var(--accent)]">*</span>
-                </label>
-                <input
-                  value={emitDocNumber}
-                  onChange={(e) => setEmitDocNumber(e.target.value)}
-                  className="w-full border rounded-xl px-3 py-2 text-sm bg-transparent border-[var(--foreground)]/15 focus:border-[var(--accent)] outline-none"
-                  placeholder={emitDocType === 80 ? "20-XXXXXXXX-X" : "XX.XXX.XXX"}
-                />
-              </div>
-            )}
+            <ArcaDocFields
+              idPrefix="factura-emit"
+              docType={emitDocType}
+              onDocTypeChange={setEmitDocType}
+              docNumber={emitDocNumber}
+              onDocNumberChange={setEmitDocNumber}
+              numberClassName="md:col-span-3"
+            />
 
             <div className="md:col-span-3 flex justify-end pt-4 border-t border-white/5">
               <SendButton

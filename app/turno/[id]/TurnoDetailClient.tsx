@@ -12,6 +12,7 @@ import { DetailFormSkeleton } from "@/components/loading/Skeleton";
 import { updateAppointment, deleteAppointment } from "@/lib/repository/appointments";
 import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
+import ArcaDocFields from "@/components/arca/ArcaDocFields";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { toast } from "@/lib/store/useToastStore";
 import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
@@ -39,13 +40,6 @@ import {
   Check,
   ArrowUpRight,
 } from "lucide-react";
-
-const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
-  { value: 99, label: "Consumidor final" },
-  { value: 96, label: "DNI" },
-  { value: 80, label: "CUIT" },
-  { value: 86, label: "CUIL" },
-];
 
 interface Props {
   initialAppointment: Appointment;
@@ -774,38 +768,13 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
 
                     {emitInvoice && (
                       <div className="space-y-4 pt-3 border-t border-white/10 animate-in fade-in duration-200">
-                        <div>
-                          <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
-                            Tipo de documento
-                          </label>
-                          <select
-                            value={docType}
-                            onChange={(e) => setDocType(Number(e.target.value) as ArcaDocType)}
-                            className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-2.5 text-xs outline-none"
-                          >
-                            {DOC_TYPES.map((dt) => (
-                              <option key={dt.value} value={dt.value} style={{ color: "black" }}>
-                                {dt.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {docType !== 99 && (
-                          <div>
-                            <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
-                              Número de documento
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              value={docNumber}
-                              onChange={(e) => setDocNumber(e.target.value)}
-                              placeholder="Sin puntos ni guiones"
-                              className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-2.5 text-xs outline-none"
-                            />
-                          </div>
-                        )}
+                        <ArcaDocFields
+                          idPrefix="turno-detail"
+                          docType={docType}
+                          onDocTypeChange={setDocType}
+                          docNumber={docNumber}
+                          onDocNumberChange={setDocNumber}
+                        />
                       </div>
                     )}
                   </>

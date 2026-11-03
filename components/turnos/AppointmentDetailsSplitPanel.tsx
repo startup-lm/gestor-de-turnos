@@ -19,6 +19,7 @@ import { updateAppointment } from "@/lib/repository/appointments";
 import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
+import ArcaDocFields from "@/components/arca/ArcaDocFields";
 import { toast } from "@/lib/store/useToastStore";
 import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
 import {
@@ -42,13 +43,6 @@ import {
   FileText,
   Loader2,
 } from "lucide-react";
-
-const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
-  { value: 99, label: "Consumidor final" },
-  { value: 96, label: "DNI" },
-  { value: 80, label: "CUIT" },
-  { value: 86, label: "CUIL" },
-];
 
 function getPaymentMethodIcon(name: string) {
   const lower = name.toLowerCase();
@@ -423,39 +417,13 @@ export default function AppointmentDetailsSplitPanel({
 
                 {emitInvoice && (
                   <div className="p-3 space-y-2.5 bg-emerald-950/20 border-t border-emerald-500/20">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Tipo de documento
-                      </label>
-                      <select
-                        id="arca-doc-type"
-                        value={docType}
-                        onChange={(e) => setDocType(Number(e.target.value) as ArcaDocType)}
-                        className="!bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/10 rounded-lg p-2 w-full block text-xs"
-                      >
-                        {DOC_TYPES.map((d) => (
-                          <option key={d.value} value={d.value} style={{ color: "black" }}>
-                            {d.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {docType !== 99 && (
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                          Número de documento
-                        </label>
-                        <input
-                          id="arca-doc-number"
-                          type="text"
-                          value={docNumber}
-                          onChange={(e) => setDocNumber(e.target.value)}
-                          placeholder={docType === 80 ? "20-XXXXXXXX-X" : "XX.XXX.XXX"}
-                          className="!bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/10 rounded-lg p-2 w-full block text-xs"
-                        />
-                      </div>
-                    )}
+                    <ArcaDocFields
+                      idPrefix="appointment"
+                      docType={docType}
+                      onDocTypeChange={setDocType}
+                      docNumber={docNumber}
+                      onDocNumberChange={setDocNumber}
+                    />
                   </div>
                 )}
               </div>
