@@ -4,6 +4,7 @@ import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { revalidateTag } from "next/cache";
 import { isServerFeatureEnabled } from "@/lib/flags/server";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
+import { canModify, isAdminStaff } from "@/lib/api/ownership";
 
 function randomCae(): string {
   const min = 10 ** 13;
@@ -15,6 +16,10 @@ function formatDate(value: Date): string {
   return value.toISOString().slice(0, 10);
 }
 
+type SourceType = "appointment" | "sale" | "manual";
+
+const SOURCE_TABLE = { appointment: "appointments", sale: "sales" } as const;
+
 export async function POST(req: Request) {
   const staff = await requireBarberOrAdmin();
   if (!staff) return errorResponse("No autorizado", 401);
@@ -22,8 +27,52 @@ export async function POST(req: Request) {
   const enabled = await isServerFeatureEnabled("arca");
   if (!enabled) return errorResponse("Not Found", 404);
 
-  const payload = await req.json();
-  const total = Number(payload?.total ?? 0);
+  const payload = await req.json().catch(() => null);
+  const sourceType: SourceType = payload?.sourceType ?? "manual";
+  const sourceId = payload?.sourceId != null ? Number(payload.sourceId) : null;
+
+  if (!["appointment", "sale", "manual"].includes(sourceType)) {
+    return errorResponse("Origen de comprobante inválido", 400);
+  }
+
+  // El total de un turno o una venta sale de la base, nunca del navegador
+  let total: number;
+  if (sourceType === "manual") {
+    if (!isAdminStaff(staff)) return errorResponse("Solo el admin puede emitir comprobantes manuales", 403);
+    total = Number(payload?.total ?? 0);
+  } else {
+    if (!sourceId || Number.isNaN(sourceId)) return errorResponse("Falta el turno o la venta a facturar", 400);
+
+    const { data: source, error: sourceError } = sourceType === "appointment"
+      ? await supabaseAdmin
+          .from("appointments")
+          .select("id, barber_id, price, paid, arca_invoice_id")
+          .eq("id", sourceId)
+          .is("deleted_at", null)
+          .maybeSingle()
+      : await supabaseAdmin
+          .from("sales")
+          .select("id, barber_id, total, arca_invoice_id")
+          .eq("id", sourceId)
+          .maybeSingle();
+
+    if (sourceError) return dbErrorResponse(sourceError, "arca/emit");
+    const label = sourceType === "appointment" ? "turno" : "venta";
+    if (!source) return errorResponse(`No existe ese ${label}`, 404);
+    if (!canModify(staff, source.barber_id)) {
+      return errorResponse(sourceType === "appointment"
+        ? "Solo podés facturar tus propios turnos"
+        : "Solo podés facturar tus propias ventas", 403);
+    }
+    if (source.arca_invoice_id) {
+      return errorResponse(sourceType === "appointment" ? "Este turno ya tiene factura" : "Esta venta ya tiene factura", 409);
+    }
+    if (sourceType === "appointment" && !("paid" in source && source.paid)) {
+      return errorResponse("Solo se pueden facturar turnos cobrados", 409);
+    }
+    total = Number("price" in source ? source.price : source.total);
+  }
+
   if (!total || total <= 0) return errorResponse("Total inválido", 400);
 
   const { data: config, error } = await supabaseAdmin
@@ -69,8 +118,8 @@ export async function POST(req: Request) {
     invoice_type: invoiceType,
     point_of_sale: pointOfSale,
     // Trazabilidad
-    source_type: payload?.sourceType ?? "manual",
-    source_id:   payload?.sourceId ?? null,
+    source_type: sourceType,
+    source_id:   sourceId,
     doc_type:    payload?.docType ?? 99,   // 99 = Consumidor Final por defecto
     doc_number:  payload?.docNumber ?? null,
     raw: payload ?? {},
@@ -86,22 +135,23 @@ export async function POST(req: Request) {
 
   if (insertError) return dbErrorResponse(insertError, "arca/emit");
 
-  // Si el comprobante viene de un turno, actualizar appointments.arca_invoice_id
-  if (payload?.sourceType === "appointment" && payload?.sourceId) {
-    await supabaseAdmin
-      .from("appointments")
+  if (sourceType !== "manual") {
+    // Marca condicional: si otro pedido facturó el mismo origen en paralelo, este no pisa la marca
+    const table = SOURCE_TABLE[sourceType];
+    const { data: marked, error: markError } = await supabaseAdmin
+      .from(table)
       .update({ arca_invoice_id: inserted.id })
-      .eq("id", payload.sourceId);
-    revalidateTag("appointments");
-  }
+      .eq("id", sourceId)
+      .is("arca_invoice_id", null)
+      .select("id");
 
-  // Si viene de una venta, actualizar sales.arca_invoice_id
-  if (payload?.sourceType === "sale" && payload?.sourceId) {
-    await supabaseAdmin
-      .from("sales")
-      .update({ arca_invoice_id: inserted.id })
-      .eq("id", payload.sourceId);
-    revalidateTag("sales");
+    if (markError || !marked || marked.length === 0) {
+      // Deshacer el comprobante recién creado para no dejar uno huérfano
+      await supabaseAdmin.from("arca_invoices").delete().eq("id", inserted.id);
+      if (markError) return dbErrorResponse(markError, "arca/emit");
+      return errorResponse(sourceType === "appointment" ? "Este turno ya tiene factura" : "Esta venta ya tiene factura", 409);
+    }
+    revalidateTag(table);
   }
 
   revalidateTag("arca-invoices");

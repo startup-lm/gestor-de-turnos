@@ -13,6 +13,7 @@ import { updateSale, deleteSale } from "@/lib/repository/sales";
 import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { toast } from "@/lib/store/useToastStore";
 import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
 import { SaleWithRelations } from "@/lib/types/Sale";
@@ -64,6 +65,14 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
   const { data: arcaStatus } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);
 
   const products = useMemo<Product[]>(() => productsData ?? [], [productsData]);
+
+  // Un barbero no puede pasarle la venta a otro: el selector le muestra solo a él
+  const { role, barberId } = useAuth();
+  const isAdmin = role === "admin";
+  const selectableBarbers = useMemo(
+    () => (isAdmin ? barbers ?? [] : (barbers ?? []).filter((b) => b.id === barberId)),
+    [isAdmin, barbers, barberId]
+  );
 
   // Form states initialized with initialSale
   const [selectedProductId, setSelectedProductId] = useState<number>(initialSale.product_id);
@@ -338,7 +347,7 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
               </label>
               <BarberSelector
                 id="sale-edit-barber"
-                barbers={barbers ?? []}
+                barbers={selectableBarbers}
                 selectedBarberId={selectedBarberId}
                 onChange={setSelectedBarberId}
                 disabled={isLocked}
