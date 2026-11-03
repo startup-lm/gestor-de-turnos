@@ -9,7 +9,6 @@ import { ChartSkeleton, PieChartSkeleton, DashboardSkeleton } from "@/components
 import { Barber } from "@/lib/types/Barbers";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useBarberCutsData } from "@/lib/hooks/useBarberCutsdata";
-import { useSalesRevenueForBarber } from "@/lib/hooks/useSalesRevenueForBarber";
 import { useSalesDashboardData } from "@/lib/hooks/useSalesDashboardData";
 import { useTotalRevenueForAllSales } from "@/lib/hooks/useTotalSalesRevenue";
 import { useTotalCommissions } from "@/lib/hooks/useTotalComission";
@@ -46,19 +45,38 @@ export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
   const [endDate, setEndDate] = useState<Date>(initialDates.end);
   const [viewMode, setViewMode] = useState<ViewMode>("day");
 
-  // Hooks de turnos y cortes
-  const { total: turnosTotales, chartData } = useDashboardData(selectedBarberId, startDate, endDate, viewMode, "count");
-  const { total: ingresosTotales } = useDashboardData(selectedBarberId, startDate, endDate, viewMode, "revenue");
+  // Hooks de turnos y cortes (una sola llamada)
+  const { totalCount: turnosTotales, totalRevenue: ingresosTotales, chartData } =
+    useDashboardData(selectedBarberId, startDate, endDate, viewMode);
 
   // Hooks de ventas de productos
   const { chartData: salesChartData } = useSalesDashboardData(selectedBarberId, startDate, endDate, viewMode);
-  const { totalSalesRevenue: ingresosVentas, totalSales: ventasCount } = useSalesRevenueForBarber(selectedBarberId, startDate, endDate);
 
-  // Datos consolidados para comisiones globales
+  // Datos consolidados para comisiones globales y ventas por barbero
   const { pieData, barberTotals } = useBarberCutsData(startDate, endDate, barbers);
-  const { totalSalesCommission } = useTotalRevenueForAllSales(startDate, endDate, barbers);
+  const {
+    totalSalesCommission,
+    totalSales: allSalesCount,
+    totalSalesRevenue: allSalesRevenue,
+    salesByBarber,
+  } = useTotalRevenueForAllSales(startDate, endDate, barbers);
   const totalCutsCommission = useTotalCommissions(barberTotals, barbers);
   const totalCommissionsAll = totalCutsCommission + totalSalesCommission;
+
+  // Ventas del barbero elegido
+  const { ventasCount, ingresosVentas } = useMemo(() => {
+    if (selectedBarberId === -1) {
+      return { ventasCount: 0, ingresosVentas: 0 };
+    }
+    if (selectedBarberId === 0) {
+      return { ventasCount: allSalesCount, ingresosVentas: allSalesRevenue };
+    }
+    const barberSale = salesByBarber.find((s) => s.barberId === selectedBarberId);
+    return {
+      ventasCount: barberSale?.totalSales ?? 0,
+      ingresosVentas: barberSale?.totalSalesRevenue ?? 0,
+    };
+  }, [selectedBarberId, allSalesCount, allSalesRevenue, salesByBarber]);
 
   const turnos = turnosTotales ?? 0;
   const ingresos = ingresosTotales ?? 0;
