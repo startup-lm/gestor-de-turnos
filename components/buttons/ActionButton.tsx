@@ -33,13 +33,11 @@ export function ActionButton({
       {...rest}
     >
       {loading ? (
-        <LoadingIcon className="w-5 h-5 animate-spin" />
+        <LoadingIcon className={`w-5 h-5 animate-spin ${hideLabel ? "" : "mr-1.5"}`} />
       ) : (
-        <>
-          <Icon className={`w-5 h-5 ${hideLabel ? "" : "mr-1.5"}`} />
-          {!hideLabel && <span>{name}</span>}
-        </>
+        <Icon className={`w-5 h-5 ${hideLabel ? "" : "mr-1.5"}`} />
       )}
+      {!hideLabel && <span>{name}</span>}
     </button>
   );
 }

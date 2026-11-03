@@ -495,14 +495,8 @@ export default function AppointmentDetailsSplitPanel({
               disabled={checkoutLoading}
               className="w-full flex items-center justify-center gap-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-extrabold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all active:scale-95 text-sm cursor-pointer"
             >
-              {checkoutLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <DollarSign className="w-5 h-5 stroke-[2.5]" />
-                  <span>Confirmar cobro</span>
-                </>
-              )}
+              {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <DollarSign className="w-5 h-5 stroke-[2.5]" />}
+              <span>Confirmar cobro</span>
             </button>
           </div>
         </form>
