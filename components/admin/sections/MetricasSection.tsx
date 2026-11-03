@@ -56,6 +56,7 @@ export default function MetricasSection({ initialBarbers }: Readonly<Props>) {
     totalRevenue: ingresosTotales,
     chartData,
     pastUnpaidCount,
+    pastUnpaidAmount,
   } = useDashboardData(selectedBarberId, startDate, endDate, viewMode);
 
   // Hooks de ventas de productos
@@ -145,7 +146,7 @@ export default function MetricasSection({ initialBarbers }: Readonly<Props>) {
       />
 
       {/* Turnos que ya pasaron y nadie cobró (incluye clientes que no vinieron) */}
-      {pastUnpaidCount > 0 && (
+      {!isAdmin && pastUnpaidCount > 0 && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/25">
           <div className="flex items-start gap-2.5 text-sm text-amber-200">
             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-400" />
@@ -174,6 +175,9 @@ export default function MetricasSection({ initialBarbers }: Readonly<Props>) {
         gananciaCortes={comisionCortes}
         gananciaVentas={comisionVentas}
         ingresosVentas={ingresosVentas}
+        turnosSinCobrar={pastUnpaidCount}
+        montoSinCobrar={pastUnpaidAmount}
+        pendientesHref={pendientesHref}
       />
 
       {/* Gráfico de Evolución Temporal */}
