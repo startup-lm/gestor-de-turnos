@@ -1,5 +1,6 @@
 import { getAppointmentById } from "@/lib/repository/appointments";
-import TurnoDetailClient from "./TurnoDetailClient";
+import { getBarbers } from "@/lib/repository/barbers";
+import TurnoDetailView from "./TurnoDetailView";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
@@ -38,5 +39,7 @@ export default async function TurnoDetailPage({ params }: Props) {
     );
   }
 
-  return <TurnoDetailClient initialAppointment={appointment} />;
+  const barbers = await getBarbers();
+
+  return <TurnoDetailView appointment={appointment} barbers={barbers} />;
 }
