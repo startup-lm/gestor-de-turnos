@@ -643,7 +643,7 @@ export default function AppointmentDetailsSplitPanel({
                   <div className="space-y-1.5 mt-1">
                     <BarberSelector
                       id="appt-barber"
-                      barbers={barbers ?? []}
+                      barbers={barbers?.filter((b) => b.active !== false) ?? []}
                       selectedBarberId={selectedBarberId}
                       onChange={(id) => {
                         setSelectedBarberId(id);

@@ -12,7 +12,7 @@ import {
   updateBarber,
 } from "@/lib/repository/barbers";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
-import { createStaffAccount, isBarberAuthenticated, deleteAuthUser } from "@/lib/repository/auth";
+import { createStaffAccount, isBarberAuthenticated } from "@/lib/repository/auth";
 import { uploadImage } from "@/lib/repository/storage";
 import { toast } from "@/lib/store/useToastStore";
 import InputPassword from "@/components/input/InputPassword";
@@ -48,7 +48,9 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
   const router = useRouter();
   const { role, user } = useAuth();
   const { limits } = useBusinessContext();
-  const isAtBarberLimit = barbers.length >= limits.maxBarbers;
+  const activeBarbers = useMemo(() => barbers.filter((b) => b.active !== false), [barbers]);
+  const inactiveBarbers = useMemo(() => barbers.filter((b) => b.active === false), [barbers]);
+  const isAtBarberLimit = activeBarbers.length >= limits.maxBarbers;
 
   // Navigation mode: "list", "create", or "edit"
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -283,15 +285,6 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
       });
 
       if (updated) {
-        // Si el barbero estaba activo y ahora se desactiva, opcionalmente eliminar sesión
-        if (selectedBarber.active && !active && selectedBarber.email) {
-          try {
-            await deleteAuthUser(selectedBarber.email);
-          } catch (authErr) {
-            console.error("Error revocando autenticación:", authErr);
-          }
-        }
-
         toast.success("Barbero actualizado con éxito.");
         resetForm();
         setViewMode("list");
@@ -684,6 +677,123 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
     );
   }
 
+  const renderBarberCard = (barber: Barber) => (
+    <div
+      key={barber.id}
+      className={`group relative w-[300px] sm:w-[320px] min-h-[350px] border border-[var(--foreground)]/10 rounded-2xl p-5 flex flex-col items-center text-center bg-gradient-to-b from-[var(--foreground)]/[0.07] to-[var(--foreground)]/[0.02] backdrop-blur-md shadow-lg hover:border-[var(--accent)]/40 hover:shadow-xl hover:shadow-[var(--accent)]/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden ${
+        !barber.active ? "opacity-75" : ""
+      }`}
+    >
+      {/* Inline Delete Confirmation Overlay */}
+      {deletingId === barber.id && (
+        <CardDeleteOverlay
+          title="¿Deshabilitar barbero?"
+          description="No podrá recibir nuevos turnos en la agenda."
+          confirmText="Deshabilitar"
+          cancelText="Cancelar"
+          loading={deletingLoading}
+          onCancel={() => setDeletingId(null)}
+          onConfirm={handleDelete}
+        />
+      )}
+
+      {/* Acciones en esquinas opuestas: Eliminar a la izquierda, Editar a la derecha */}
+      {deletingId !== barber.id && (
+        <div className="w-full flex items-center justify-between mb-2 z-10">
+          {barber.active !== false ? (
+            <DeleteCardButton
+              onDelete={() => setDeletingId(barber.id!)}
+            />
+          ) : (
+            <div />
+          )}
+
+          <EditCardButton
+            data-testid="btn-edit-barber"
+            onEdit={() => startEdit(barber)}
+          />
+        </div>
+      )}
+
+      {/* Foto del Barbero */}
+      <div className="w-24 h-24 relative mb-3 rounded-full overflow-hidden border-2 border-[var(--accent)]/30 group-hover:border-[var(--accent)]/80 shadow-md flex items-center justify-center bg-[var(--background)] transition-all duration-300 group-hover:scale-105 shrink-0">
+        <Image
+          alt={barber.name}
+          src={
+            barber.image && barber.image !== "null" && barber.image !== ""
+              ? barber.image
+              : logo
+          }
+          fill
+          className="object-cover"
+          sizes="96px"
+        />
+      </div>
+
+      {/* Nombre y datos de contacto */}
+      <h3 className="text-[var(--foreground)] font-bold text-lg tracking-wide line-clamp-1 w-full text-center">
+        {barber.name}
+      </h3>
+
+      <div className="min-h-[1.25rem] flex items-center justify-center text-xs text-slate-400 mt-0.5 mb-2 max-w-full px-2">
+        {barber.instagram ? (
+          <span className="inline-flex items-center gap-1.5 text-[var(--accent)] hover:underline truncate">
+            <Instagram className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">@{barber.instagram.replace(/^@+/, "")}</span>
+          </span>
+        ) : barber.email ? (
+          <span className="inline-flex items-center gap-1.5 text-slate-400 truncate">
+            <Mail className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{barber.email}</span>
+          </span>
+        ) : (
+          <span className="text-slate-500 text-[11px] italic">Sin contacto registrado</span>
+        )}
+      </div>
+
+      {/* Badge de Estado: debajo de contacto */}
+      <div className="mb-3.5">
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-bold rounded-full border tracking-wider ${
+            barber.active
+              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+              : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+          }`}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              barber.active ? "bg-emerald-400 animate-pulse" : "bg-rose-400"
+            }`}
+          />
+          {barber.active ? "Activo" : "Inactivo"}
+        </span>
+      </div>
+
+      {/* Módulo de Comisiones estilo Dashboard */}
+      <div className="w-full mt-auto grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80">
+        <div className="flex flex-col items-center justify-center py-1 px-2 border-r border-slate-800/80">
+          <div className="flex items-center gap-1 text-[11px] font-medium text-slate-400 mb-0.5">
+            <Scissors className="w-3 h-3 text-[var(--accent)]" />
+            <span>Corte</span>
+          </div>
+          <span className="text-base font-extrabold text-[var(--foreground)] tracking-tight">
+            {((barber.commission ?? 0) * 100).toFixed(0)}%
+          </span>
+        </div>
+
+        <div className="flex flex-col items-center justify-center py-1 px-2">
+          <div className="flex items-center gap-1 text-[11px] font-medium text-slate-400 mb-0.5">
+            <ShoppingBag className="w-3 h-3 text-[var(--accent)]" />
+            <span>Venta</span>
+          </div>
+          <span className="text-base font-extrabold text-[var(--foreground)] tracking-tight">
+            {((barber.sale_commission ?? 0) * 100).toFixed(0)}%
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
   // -------------------------------------------------------------
   // VISTA 0: LISTADO DE CARDS DE BARBEROS
   // -------------------------------------------------------------
@@ -718,122 +828,32 @@ export default function AdminBarberosClient({ barbers }: Readonly<Props>) {
         </div>
       </div>
 
-      {/* Grilla de Barberos */}
+      {/* Grilla de Barberos Activos */}
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 justify-items-center sm:justify-items-start">
-        {/* Listado de Barberos */}
-        {barbers.map((barber) => (
-          <div
-            key={barber.id}
-            className={`group relative w-[300px] sm:w-[320px] min-h-[350px] border border-[var(--foreground)]/10 rounded-2xl p-5 flex flex-col items-center text-center bg-gradient-to-b from-[var(--foreground)]/[0.07] to-[var(--foreground)]/[0.02] backdrop-blur-md shadow-lg hover:border-[var(--accent)]/40 hover:shadow-xl hover:shadow-[var(--accent)]/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden ${
-              !barber.active ? "opacity-75" : ""
-            }`}
-          >
-            {/* Inline Delete Confirmation Overlay */}
-            {deletingId === barber.id && (
-              <CardDeleteOverlay
-                title="¿Deshabilitar barbero?"
-                description="No podrá recibir nuevos turnos en la agenda."
-                confirmText="Deshabilitar"
-                cancelText="Cancelar"
-                loading={deletingLoading}
-                onCancel={() => setDeletingId(null)}
-                onConfirm={handleDelete}
-              />
-            )}
-
-            {/* Acciones en esquinas opuestas: Eliminar a la izquierda, Editar a la derecha */}
-            {deletingId !== barber.id && (
-              <div className="w-full flex items-center justify-between mb-2 z-10">
-                <DeleteCardButton
-                  onDelete={() => setDeletingId(barber.id!)}
-                />
-
-                <EditCardButton
-                  data-testid="btn-edit-barber"
-                  onEdit={() => startEdit(barber)}
-                />
-              </div>
-            )}
-
-            {/* Foto del Barbero */}
-            <div className="w-24 h-24 relative mb-3 rounded-full overflow-hidden border-2 border-[var(--accent)]/30 group-hover:border-[var(--accent)]/80 shadow-md flex items-center justify-center bg-[var(--background)] transition-all duration-300 group-hover:scale-105 shrink-0">
-              <Image
-                alt={barber.name}
-                src={
-                  barber.image && barber.image !== "null" && barber.image !== ""
-                    ? barber.image
-                    : logo
-                }
-                fill
-                className="object-cover"
-                sizes="96px"
-              />
-            </div>
-
-            {/* Nombre y datos de contacto */}
-            <h3 className="text-[var(--foreground)] font-bold text-lg tracking-wide line-clamp-1 w-full text-center">
-              {barber.name}
-            </h3>
-
-            <div className="min-h-[1.25rem] flex items-center justify-center text-xs text-slate-400 mt-0.5 mb-2 max-w-full px-2">
-              {barber.instagram ? (
-                <span className="inline-flex items-center gap-1.5 text-[var(--accent)] hover:underline truncate">
-                  <Instagram className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">@{barber.instagram.replace(/^@+/, "")}</span>
-                </span>
-              ) : barber.email ? (
-                <span className="inline-flex items-center gap-1.5 text-slate-400 truncate">
-                  <Mail className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">{barber.email}</span>
-                </span>
-              ) : (
-                <span className="text-slate-500 text-[11px] italic">Sin contacto registrado</span>
-              )}
-            </div>
-
-            {/* Badge de Estado: debajo de contacto */}
-            <div className="mb-3.5">
-              <span
-                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-bold rounded-full border tracking-wider uppercase ${
-                  barber.active
-                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                    : "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                }`}
-              >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    barber.active ? "bg-emerald-400 animate-pulse" : "bg-rose-400"
-                  }`}
-                />
-                {barber.active ? "Activo" : "Inactivo"}
-              </span>
-            </div>
-
-            {/* Módulo de Comisiones estilo Dashboard */}
-            <div className="w-full mt-auto grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80">
-              <div className="flex flex-col items-center justify-center py-1 px-2 border-r border-slate-800/80">
-                <div className="flex items-center gap-1 text-[11px] font-medium text-slate-400 mb-0.5">
-                  <Scissors className="w-3 h-3 text-[var(--accent)]" />
-                  <span>Corte</span>
-                </div>
-                <span className="text-base font-extrabold text-[var(--foreground)] tracking-tight">
-                  {((barber.commission ?? 0) * 100).toFixed(0)}%
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center justify-center py-1 px-2">
-                <div className="flex items-center gap-1 text-[11px] font-medium text-slate-400 mb-0.5">
-                  <ShoppingBag className="w-3 h-3 text-[var(--accent)]" />
-                  <span>Venta</span>
-                </div>
-                <span className="text-base font-extrabold text-[var(--foreground)] tracking-tight">
-                  {((barber.sale_commission ?? 0) * 100).toFixed(0)}%
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
+        {activeBarbers.length > 0 ? (
+          activeBarbers.map((barber) => renderBarberCard(barber))
+        ) : (
+          <p className="text-xs text-slate-400 col-span-full">No hay barberos activos.</p>
+        )}
       </div>
+
+      {/* Sección Inactivos (N) */}
+      {inactiveBarbers.length > 0 && (
+        <div className="space-y-4 pt-6 border-t border-slate-800/40">
+          <div>
+            <h3 className="text-lg font-bold text-slate-200">
+              Inactivos ({inactiveBarbers.length})
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Barberos dados de baja lógica. Podés abrirlos y reactivarlos desde su edición.
+            </p>
+          </div>
+
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 justify-items-center sm:justify-items-start">
+            {inactiveBarbers.map((barber) => renderBarberCard(barber))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -28,7 +28,7 @@ export default function BarberSelector({ barbers, selectedBarberId, onChange, cl
           Selecciona un barbero
         </option>
 
-        {barbers.map((barber) => (
+        {barbers.filter((b) => b.active !== false).map((barber) => (
           <option
             style={{ color: "black" }}
             key={barber.id} value={barber.id}>

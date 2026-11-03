@@ -31,16 +31,20 @@ export const getBarbers = async (): Promise<Barber[]> => {
 };
 
 /** Solo servidor, en páginas protegidas para staff (/admin, /operaciones). */
-export const getBarbersWithPrivateFields = async (): Promise<Barber[]> => queryActiveBarbers(BARBER_PRIVATE_FIELDS);
+export const getBarbersWithPrivateFields = async (): Promise<Barber[]> => queryActiveBarbers(BARBER_PRIVATE_FIELDS, true);
 
-async function queryActiveBarbers(fields: string): Promise<Barber[]> {
+export const getAllBarbersWithPrivateFields = async (): Promise<Barber[]> => queryActiveBarbers(BARBER_PRIVATE_FIELDS, false);
+
+async function queryActiveBarbers(fields: string, onlyActive = true): Promise<Barber[]> {
   try {
     const { supabaseAdmin } = await import("@/lib/supabase/supabaseAdmin");
-    const { data, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from("barbers")
-      .select(fields)
-      .eq("active", true)
-      .order("id", { ascending: true });
+      .select(fields);
+    if (onlyActive) {
+      query = query.eq("active", true);
+    }
+    const { data, error } = await query.order("id", { ascending: true });
     if (error || !data) return [];
     return data as unknown as Barber[];
   } catch (e) {

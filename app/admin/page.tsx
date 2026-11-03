@@ -1,4 +1,4 @@
-import { getBarbersWithPrivateFields } from "@/lib/repository/barbers";
+import { getBarbersWithPrivateFields, getAllBarbersWithPrivateFields } from "@/lib/repository/barbers";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { isAdminStaff } from "@/lib/api/ownership";
 import { Barber } from "@/lib/types/Barbers";
@@ -17,8 +17,12 @@ export default async function AdminPage() {
   // Sin sesión el middleware ya redirige: acá solo evitamos mandar datos
   if (!staff) return <AdminClient barbers={[]} />;
 
-  const barbers = await getBarbersWithPrivateFields();
-  const visibleBarbers = isAdminStaff(staff)
+  const isAdmin = isAdminStaff(staff);
+  const barbers = isAdmin
+    ? await getAllBarbersWithPrivateFields()
+    : await getBarbersWithPrivateFields();
+
+  const visibleBarbers = isAdmin
     ? barbers
     : barbers.map((b) => (b.id === staff.barber.id ? b : withoutPrivateFields(b)));
 

@@ -63,10 +63,10 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
   // Un barbero no puede pasarle la venta a otro: el selector le muestra solo a él
   const { role, barberId } = useAuth();
   const isAdmin = role === "admin";
-  const selectableBarbers = useMemo(
-    () => (isAdmin ? barbers ?? [] : (barbers ?? []).filter((b) => b.id === barberId)),
-    [isAdmin, barbers, barberId]
-  );
+  const selectableBarbers = useMemo(() => {
+    const active = (barbers ?? []).filter((b) => b.active !== false);
+    return isAdmin ? active : active.filter((b) => b.id === barberId);
+  }, [isAdmin, barbers, barberId]);
 
   // Form states initialized with initialSale
   const [selectedProductId, setSelectedProductId] = useState<number>(initialSale.product_id);

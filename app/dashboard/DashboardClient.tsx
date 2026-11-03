@@ -30,7 +30,8 @@ interface Props {
 export default function DashboardClient({ initialBarbers }: Readonly<Props>) {
   const { barberId, role } = useAuth();
   const isAdmin = role === "admin";
-  const barbers = isAdmin ? initialBarbers : initialBarbers.filter((b) => b.id === barberId);
+  const activeBarbers = useMemo(() => initialBarbers.filter((b) => b.active !== false), [initialBarbers]);
+  const barbers = isAdmin ? activeBarbers : activeBarbers.filter((b) => b.id === barberId);
   const [selectedBarberId, setSelectedBarberId] = useState(isAdmin ? 0 : barberId);
 
   // Inicialización de rango de fechas: "Este Mes"

@@ -462,7 +462,7 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
                 </label>
                 <BarberSelector
                   id="appt-barber"
-                  barbers={barbers ?? []}
+                  barbers={(barbers ?? []).filter((b) => b.active !== false)}
                   selectedBarberId={barberId}
                   onChange={setBarberId}
                   disabled={isLocked}
