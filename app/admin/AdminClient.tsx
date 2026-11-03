@@ -19,6 +19,11 @@ import {
 
 // Modular Sidebar
 import AdminSidebar, { AdminSection, AdminModules } from "@/components/admin/sections/AdminSidebar";
+import {
+  useResizableSidebar,
+  SIDEBAR_COLLAPSED_WIDTH,
+  SIDEBAR_MAX_WIDTH,
+} from "@/lib/hooks/useResizableSidebar";
 import { APP_VERSION } from "@/lib/version";
 import { PRODUCT_NAME } from "@/lib/brand";
 
@@ -115,7 +120,7 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
   const tabParam = searchParams.get("tab");
   const initialTab = tabParam ? normalizeTab(tabParam, defaultSection) : defaultSection;
   const [activeSection, setActiveSection] = useState<AdminSection>(initialTab);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const sidebar = useResizableSidebar();
 
   // Sincronizar sección si cambia el query param (ej: navegación adelante/atrás del navegador).
   // No depende de activeSection: si lo hiciera, un click volvería a la sección anterior
@@ -164,18 +169,41 @@ export default function AdminClient({ barbers }: Readonly<{ barbers: Barber[] }>
     >
       {/* Columna Izquierda / Barra de pestañas mobile: Menú lateral con scroll independiente en desktop y barra fija en mobile */}
       <aside
-        className={`admin-sidebar-aside w-full flex-shrink-0 transition-all duration-300 ease-in-out flex flex-col ${
-          isSidebarCollapsed ? "lg:w-16" : "lg:w-64 xl:w-72"
-        }`}
+        style={{ "--admin-sidebar-width": `${sidebar.width}px` } as React.CSSProperties}
+        className={`admin-sidebar-aside w-full flex-shrink-0 flex flex-col ${
+          sidebar.isDragging ? "" : "transition-all duration-300 ease-in-out"
+        } ${sidebar.isCollapsed ? "lg:w-16" : "lg:w-[var(--admin-sidebar-width)]"}`}
       >
         <AdminSidebar
           activeSection={visibleSection}
           onSelectSection={handleSelectSection}
           isAdmin={isAdmin}
           modules={modules}
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+          isCollapsed={sidebar.isCollapsed}
+          onToggleCollapse={sidebar.toggleCollapsed}
         />
+
+        {/* Manija para ajustar el ancho (solo desktop). El aside es sticky, así que sirve de referencia al absolute */}
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Ajustar ancho del menú"
+          aria-valuenow={sidebar.isCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebar.width}
+          aria-valuemin={SIDEBAR_COLLAPSED_WIDTH}
+          aria-valuemax={SIDEBAR_MAX_WIDTH}
+          tabIndex={0}
+          title="Arrastrá para ajustar el ancho. Doble clic para restablecerlo"
+          {...sidebar.handleProps}
+          className="group hidden lg:flex justify-end absolute top-0 right-0 z-30 h-full w-2 cursor-col-resize touch-none focus-visible:outline-none"
+        >
+          <div
+            className={`h-full w-0.5 transition-colors ${
+              sidebar.isDragging
+                ? "bg-[var(--accent)]"
+                : "bg-transparent group-hover:bg-[var(--accent)]/60 group-focus-visible:bg-[var(--accent)]"
+            }`}
+          />
+        </div>
       </aside>
 
       {/* Columna Derecha: Canvas de Contenido Dinámico (ocupa todo el ancho disponible) */}
