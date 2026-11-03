@@ -39,8 +39,7 @@ FROM public.commission_payouts p
 WHERE p.voided_at IS NULL
   AND s.payout_id IS NULL
   AND s.barber_id = p.barber_id
-  AND (s.created_at AT TIME ZONE 'America/Argentina/Buenos_Aires')::date
-      BETWEEN p.period_start AND p.period_end;
+  AND s.created_at BETWEEN p.period_start AND p.period_end;
 
 -- 3. Retiros del dueño ------------------------------------------------------
 UPDATE public.cash_movements
