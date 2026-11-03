@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { ConfigFormSkeleton } from "@/components/loading/Skeleton";
 import SaveButton from "@/components/buttons/SaveButton";
-import { toast } from "@/lib/store/useToastStore";
 import { getBusinessHours, upsertBusinessHours } from "@/lib/repository/businessHours";
-import { getBusinessSettings, updateBusinessSettings } from "@/lib/repository/businessSettings";
 import { GlobalHours } from "@/lib/types/BusinessHours";
 import { Shuffle, Scale, Crown, Briefcase } from "lucide-react";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { useSettingsForm } from "@/lib/hooks/useSettingsForm";
 
 const DAY_LABELS = [
   { id: 1, name: "Lunes" },
@@ -24,161 +22,74 @@ type CriteriaOption = "random" | "balanced" | "prioritize_admin" | "prioritize_b
 
 type SlotStepMinutes = 15 | 30 | 45 | 60;
 
-export default function ConfigHorariosSection() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+type HorariosDraft = {
+  openTime: string;
+  closeTime: string;
+  lunchEnabled: boolean;
+  lunchStart: string;
+  lunchEnd: string;
+  closedDays: number[];
+  slotStep: SlotStepMinutes;
+  criteria: CriteriaOption;
+};
 
+export default function ConfigHorariosSection() {
   const { isEnabled } = useBusinessContext();
   const canCustomizeCriteria = isEnabled("booking_rules");
-  const [openTime, setOpenTime] = useState("09:00");
-  const [closeTime, setCloseTime] = useState("20:00");
-  const [lunchEnabled, setLunchEnabled] = useState(false);
-  const [lunchStart, setLunchStart] = useState("13:00");
-  const [lunchEnd, setLunchEnd] = useState("14:00");
-  const [closedDays, setClosedDays] = useState<number[]>([]);
-  const [slotStep, setSlotStep] = useState<SlotStepMinutes>(30);
-  const [criteria, setCriteria] = useState<CriteriaOption>("random");
 
-  const [initialData, setInitialData] = useState<{
-    openTime: string;
-    closeTime: string;
-    lunchEnabled: boolean;
-    lunchStart: string;
-    lunchEnd: string;
-    closedDays: number[];
-    slotStep: SlotStepMinutes;
-    criteria: CriteriaOption;
-  }>({
-    openTime: "09:00",
-    closeTime: "20:00",
-    lunchEnabled: false,
-    lunchStart: "13:00",
-    lunchEnd: "14:00",
-    closedDays: [],
-    slotStep: 30,
-    criteria: "random",
-  });
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const [h, s] = await Promise.all([getBusinessHours(), getBusinessSettings()]);
-        let oTime = "09:00";
-        let cTime = "20:00";
-        let cDays: number[] = [];
-        let hasLunch = false;
-        let lStart = "13:00";
-        let lEnd = "14:00";
-        let sStep: SlotStepMinutes = 30;
-        let crit: CriteriaOption = "random";
-
-        if (h) {
-          oTime = h.open_time || "09:00";
-          cTime = h.close_time || "20:00";
-          cDays = h.closed_days || [];
-          hasLunch = Boolean(h.lunch_start && h.lunch_end);
-          if (h.lunch_start) lStart = h.lunch_start;
-          if (h.lunch_end) lEnd = h.lunch_end;
-
-          setOpenTime(oTime);
-          setCloseTime(cTime);
-          setClosedDays(cDays);
-          setLunchEnabled(hasLunch);
-          setLunchStart(lStart);
-          setLunchEnd(lEnd);
+  const { draft, setDraft, loading, hasChanges, saving, save, reset } =
+    useSettingsForm<HorariosDraft>({
+      pick: (settings) => ({
+        openTime: "09:00",
+        closeTime: "20:00",
+        lunchEnabled: false,
+        lunchStart: "13:00",
+        lunchEnd: "14:00",
+        closedDays: [],
+        slotStep: (settings.slot_step_minutes as SlotStepMinutes) || 30,
+        criteria: (settings.assignment_criteria as CriteriaOption) || "random",
+      }),
+      loadExtra: async (baseDraft) => {
+        const h = await getBusinessHours();
+        if (!h) return baseDraft;
+        return {
+          ...baseDraft,
+          openTime: h.open_time || "09:00",
+          closeTime: h.close_time || "20:00",
+          closedDays: Array.isArray(h.closed_days) ? h.closed_days : [],
+          lunchEnabled: Boolean(h.lunch_start && h.lunch_end),
+          lunchStart: h.lunch_start || "13:00",
+          lunchEnd: h.lunch_end || "14:00",
+        };
+      },
+      saveExtra: async (currentDraft) => {
+        const hoursPayload: GlobalHours = {
+          open_time: currentDraft.openTime,
+          close_time: currentDraft.closeTime,
+          lunch_start: currentDraft.lunchEnabled ? currentDraft.lunchStart : null,
+          lunch_end: currentDraft.lunchEnabled ? currentDraft.lunchEnd : null,
+          closed_days: currentDraft.closedDays,
+        };
+        const hoursOk = await upsertBusinessHours(hoursPayload);
+        if (!hoursOk) {
+          throw new Error("Error al guardar la configuración de horarios");
         }
-        if (s) {
-          sStep = (s.slot_step_minutes as SlotStepMinutes) || 30;
-          if (s.assignment_criteria) {
-            crit = s.assignment_criteria as CriteriaOption;
-          }
-          setSlotStep(sStep);
-          setCriteria(crit);
-        }
-
-        setInitialData({
-          openTime: oTime,
-          closeTime: cTime,
-          lunchEnabled: hasLunch,
-          lunchStart: lStart,
-          lunchEnd: lEnd,
-          closedDays: cDays,
-          slotStep: sStep,
-          criteria: crit,
-        });
-      } catch (err) {
-        console.error("Error al cargar horarios:", err);
-        toast.error("Error al cargar configuración de horarios");
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
+      },
+      toPayload: (currentDraft) => ({
+        slot_step_minutes: currentDraft.slotStep,
+        ...(canCustomizeCriteria && { assignment_criteria: currentDraft.criteria }),
+      }),
+    });
 
   const toggleDay = (dayId: number) => {
-    if (closedDays.includes(dayId)) {
-      setClosedDays(closedDays.filter((d) => d !== dayId));
-    } else {
-      setClosedDays([...closedDays, dayId]);
-    }
+    if (!draft) return;
+    const closed = draft.closedDays.includes(dayId)
+      ? draft.closedDays.filter((d) => d !== dayId)
+      : [...draft.closedDays, dayId];
+    setDraft({ ...draft, closedDays: closed });
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const hoursPayload: GlobalHours = {
-        open_time: openTime,
-        close_time: closeTime,
-        lunch_start: lunchEnabled ? lunchStart : null,
-        lunch_end: lunchEnabled ? lunchEnd : null,
-        closed_days: closedDays,
-      };
-
-      const [hoursOk, settingsOk] = await Promise.all([
-        upsertBusinessHours(hoursPayload),
-        updateBusinessSettings({
-          slot_step_minutes: slotStep,
-          ...(canCustomizeCriteria && { assignment_criteria: criteria }),
-        }),
-      ]);
-
-      if (hoursOk && settingsOk) {
-        setInitialData({
-          openTime,
-          closeTime,
-          lunchEnabled,
-          lunchStart,
-          lunchEnd,
-          closedDays: [...closedDays],
-          slotStep,
-          criteria,
-        });
-        toast.success("Horarios y reglas guardados con éxito");
-      } else {
-        toast.error("Error al guardar algunos ajustes");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Error de conexión al guardar");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const hasChanges =
-    openTime !== initialData.openTime ||
-    closeTime !== initialData.closeTime ||
-    lunchEnabled !== initialData.lunchEnabled ||
-    (lunchEnabled && (lunchStart !== initialData.lunchStart || lunchEnd !== initialData.lunchEnd)) ||
-    slotStep !== initialData.slotStep ||
-    criteria !== initialData.criteria ||
-    closedDays.length !== initialData.closedDays.length ||
-    closedDays.some((d) => !initialData.closedDays.includes(d));
-
-  if (loading) {
+  if (loading || !draft) {
     return <ConfigFormSkeleton />;
   }
 
@@ -210,7 +121,13 @@ export default function ConfigHorariosSection() {
   ];
 
   return (
-    <form onSubmit={handleSave} className="space-y-8 animate-in fade-in duration-300">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        void save();
+      }}
+      className="space-y-8 animate-in fade-in duration-300"
+    >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
@@ -220,12 +137,24 @@ export default function ConfigHorariosSection() {
             Configurá los días de apertura, franja horaria, intervalo de turnos y criterio de asignación
           </p>
         </div>
-        <SaveButton
-          type="submit"
-          loading={saving}
-          disabled={!hasChanges || saving}
-          className="w-full sm:w-auto"
-        />
+        <div className="flex items-center gap-2">
+          {hasChanges && (
+            <button
+              type="button"
+              onClick={reset}
+              disabled={saving}
+              className="px-4 py-2.5 rounded-xl border border-[var(--foreground)]/20 text-xs text-slate-300 hover:bg-white/5 hover:text-white font-medium transition-all cursor-pointer min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Descartar
+            </button>
+          )}
+          <SaveButton
+            type="submit"
+            loading={saving}
+            disabled={!hasChanges || saving}
+            className="w-full sm:w-auto min-h-[44px]"
+          />
+        </div>
       </div>
 
       {/* Días de Atención */}
@@ -238,7 +167,7 @@ export default function ConfigHorariosSection() {
         </p>
         <div className="flex flex-wrap gap-2 pt-1">
           {DAY_LABELS.map((d) => {
-            const isOpen = !closedDays.includes(d.id);
+            const isOpen = !draft.closedDays.includes(d.id);
             return (
               <button
                 key={d.id}
@@ -265,23 +194,37 @@ export default function ConfigHorariosSection() {
           </h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="horario-apertura-input" className="block text-xs font-semibold text-slate-300 mb-1.5">Apertura</label>
+              <label
+                htmlFor="horario-apertura-input"
+                className="block text-xs font-semibold text-slate-300 mb-1.5"
+              >
+                Apertura
+              </label>
               <input
                 id="horario-apertura-input"
                 type="time"
-                value={openTime}
-                onChange={(e) => setOpenTime(e.target.value)}
+                value={draft.openTime}
+                onChange={(e) =>
+                  setDraft({ ...draft, openTime: e.target.value })
+                }
                 required
                 className="w-full p-2.5 rounded-xl border border-[var(--foreground)]/15 bg-[var(--background)] text-sm text-[var(--foreground)] focus:border-[var(--accent)] outline-none"
               />
             </div>
             <div>
-              <label htmlFor="horario-cierre-input" className="block text-xs font-semibold text-slate-300 mb-1.5">Cierre</label>
+              <label
+                htmlFor="horario-cierre-input"
+                className="block text-xs font-semibold text-slate-300 mb-1.5"
+              >
+                Cierre
+              </label>
               <input
                 id="horario-cierre-input"
                 type="time"
-                value={closeTime}
-                onChange={(e) => setCloseTime(e.target.value)}
+                value={draft.closeTime}
+                onChange={(e) =>
+                  setDraft({ ...draft, closeTime: e.target.value })
+                }
                 required
                 className="w-full p-2.5 rounded-xl border border-[var(--foreground)]/15 bg-[var(--background)] text-sm text-[var(--foreground)] focus:border-[var(--accent)] outline-none"
               />
@@ -289,13 +232,21 @@ export default function ConfigHorariosSection() {
           </div>
 
           <div>
-            <label htmlFor="intervalo-turnos-select" className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label
+              htmlFor="intervalo-turnos-select"
+              className="block text-xs font-semibold text-slate-300 mb-1.5"
+            >
               Duración de franja (slots de turno)
             </label>
             <select
               id="intervalo-turnos-select"
-              value={slotStep}
-              onChange={(e) => setSlotStep(Number(e.target.value) as SlotStepMinutes)}
+              value={draft.slotStep}
+              onChange={(e) =>
+                setDraft({
+                  ...draft,
+                  slotStep: Number(e.target.value) as SlotStepMinutes,
+                })
+              }
               className="w-full p-2.5 rounded-xl border border-[var(--foreground)]/15 bg-[var(--background)] text-sm text-[var(--foreground)] focus:border-[var(--accent)] outline-none"
             >
               <option value={15}>Cada 15 minutos</option>
@@ -315,33 +266,49 @@ export default function ConfigHorariosSection() {
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={lunchEnabled}
-                onChange={(e) => setLunchEnabled(e.target.checked)}
+                checked={draft.lunchEnabled}
+                onChange={(e) =>
+                  setDraft({ ...draft, lunchEnabled: e.target.checked })
+                }
                 className="w-4 h-4 accent-[var(--accent)] rounded cursor-pointer"
               />
               <span className="text-xs text-slate-300 font-medium">Habilitar pausa</span>
             </label>
           </div>
 
-          {lunchEnabled ? (
+          {draft.lunchEnabled ? (
             <div className="grid grid-cols-2 gap-4 animate-in fade-in duration-200">
               <div>
-                <label htmlFor="descanso-inicio-input" className="block text-xs font-semibold text-slate-300 mb-1.5">Inicio pausa</label>
+                <label
+                  htmlFor="descanso-inicio-input"
+                  className="block text-xs font-semibold text-slate-300 mb-1.5"
+                >
+                  Inicio pausa
+                </label>
                 <input
                   id="descanso-inicio-input"
                   type="time"
-                  value={lunchStart}
-                  onChange={(e) => setLunchStart(e.target.value)}
+                  value={draft.lunchStart}
+                  onChange={(e) =>
+                    setDraft({ ...draft, lunchStart: e.target.value })
+                  }
                   className="w-full p-2.5 rounded-xl border border-[var(--foreground)]/15 bg-[var(--background)] text-sm text-[var(--foreground)] focus:border-[var(--accent)] outline-none"
                 />
               </div>
               <div>
-                <label htmlFor="descanso-fin-input" className="block text-xs font-semibold text-slate-300 mb-1.5">Fin pausa</label>
+                <label
+                  htmlFor="descanso-fin-input"
+                  className="block text-xs font-semibold text-slate-300 mb-1.5"
+                >
+                  Fin pausa
+                </label>
                 <input
                   id="descanso-fin-input"
                   type="time"
-                  value={lunchEnd}
-                  onChange={(e) => setLunchEnd(e.target.value)}
+                  value={draft.lunchEnd}
+                  onChange={(e) =>
+                    setDraft({ ...draft, lunchEnd: e.target.value })
+                  }
                   className="w-full p-2.5 rounded-xl border border-[var(--foreground)]/15 bg-[var(--background)] text-sm text-[var(--foreground)] focus:border-[var(--accent)] outline-none"
                 />
               </div>
@@ -368,26 +335,44 @@ export default function ConfigHorariosSection() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
             {criteriaOptions.map((opt) => {
-              const isSelected = criteria === opt.id;
+              const isSelected = draft.criteria === opt.id;
               return (
                 <button
                   key={opt.id}
                   type="button"
-                  onClick={() => setCriteria(opt.id)}
+                  onClick={() =>
+                    setDraft({ ...draft, criteria: opt.id })
+                  }
                   className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all cursor-pointer ${
                     isSelected
                       ? "!bg-[var(--accent)]/15 !border-[var(--accent)]/60 shadow-md shadow-[var(--accent)]/10"
                       : "!bg-[var(--foreground)]/5 !border-[var(--foreground)]/10 hover:!bg-[var(--foreground)]/10"
                   }`}
                 >
-                  <div className={`p-2 rounded-lg ${isSelected ? "!bg-[var(--accent)]/20 !text-[var(--accent)]" : "!bg-black/30 !text-slate-400"}`}>
+                  <div
+                    className={`p-2 rounded-lg ${
+                      isSelected
+                        ? "!bg-[var(--accent)]/20 !text-[var(--accent)]"
+                        : "!bg-black/30 !text-slate-400"
+                    }`}
+                  >
                     <opt.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className={`text-sm font-bold ${isSelected ? "!text-[var(--accent)]" : "!text-white"}`}>
+                    <h4
+                      className={`text-sm font-bold ${
+                        isSelected ? "!text-[var(--accent)]" : "!text-white"
+                      }`}
+                    >
                       {opt.title}
                     </h4>
-                    <p className={`text-xs mt-0.5 ${isSelected ? "text-slate-200" : "text-slate-400"}`}>{opt.desc}</p>
+                    <p
+                      className={`text-xs mt-0.5 ${
+                        isSelected ? "text-slate-200" : "text-slate-400"
+                      }`}
+                    >
+                      {opt.desc}
+                    </p>
                   </div>
                 </button>
               );

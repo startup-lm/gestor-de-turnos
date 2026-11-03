@@ -1,16 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { FaInstagram, FaFacebook, FaTiktok } from "react-icons/fa";
 import { MapPin, MessageCircle, Share2, Check } from "lucide-react";
 import { ConfigFormSkeleton } from "@/components/loading/Skeleton";
 import SaveButton from "@/components/buttons/SaveButton";
-import { toast } from "@/lib/store/useToastStore";
 import { normalizePhone, formatPhoneDisplay } from "@/utils/phone";
+import { useSettingsForm } from "@/lib/hooks/useSettingsForm";
 
 type SocialItem = { name: string; url: string; active: boolean };
+
+type ContactoDraft = {
+  phone: string;
+  address: string;
+  socials: SocialItem[];
+};
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   instagram: <FaInstagram size={20} className="text-pink-500" />,
@@ -25,139 +30,76 @@ const PREFIX_MAP: Record<string, string> = {
 };
 
 export default function ConfigContactoSection() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [socials, setSocials] = useState<SocialItem[]>([
-    { name: "instagram", url: "", active: true },
-    { name: "facebook", url: "", active: false },
-    { name: "tiktok", url: "", active: false },
-  ]);
-
-  const [initialData, setInitialData] = useState<{
-    phone: string;
-    address: string;
-    socials: SocialItem[];
-  }>({
-    phone: "",
-    address: "",
-    socials: [
-      { name: "instagram", url: "", active: true },
-      { name: "facebook", url: "", active: false },
-      { name: "tiktok", url: "", active: false },
-    ],
-  });
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/business-settings");
-        if (res.ok) {
-          const data = await res.json();
-          const norm = normalizePhone(data.phone);
-          const p = norm.isValid ? norm.e164 : (data.phone || "");
-          const addr = data.location_address || "";
-          const s = Array.isArray(data.social_media) && data.social_media.length > 0
-            ? data.social_media
+  const { draft, setDraft, loading, hasChanges, saving, save, reset } =
+    useSettingsForm<ContactoDraft>({
+      pick: (settings) => {
+        const norm = normalizePhone(settings.phone);
+        const p = norm.isValid ? norm.e164 : settings.phone || "";
+        const addr = settings.location_address || "";
+        const s =
+          Array.isArray(settings.social_media) && settings.social_media.length > 0
+            ? settings.social_media
             : [
                 { name: "instagram", url: "", active: true },
                 { name: "facebook", url: "", active: false },
                 { name: "tiktok", url: "", active: false },
               ];
-          setPhone(p);
-          setAddress(addr);
-          setSocials(s);
-          setInitialData({
-            phone: p,
-            address: addr,
-            socials: JSON.parse(JSON.stringify(s)),
-          });
-        }
-      } catch (err) {
-        console.error("Error al cargar contacto:", err);
-        toast.error("Error al cargar datos de contacto");
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
+        return {
+          phone: p,
+          address: addr,
+          socials: s,
+        };
+      },
+      toPayload: (currentDraft) => {
+        const norm = normalizePhone(currentDraft.phone);
+        const finalPhone = norm.isValid ? norm.e164 : currentDraft.phone;
+        return {
+          phone: finalPhone,
+          location_address: currentDraft.address,
+          social_media: currentDraft.socials,
+        };
+      },
+    });
 
   const handlePhoneBlur = () => {
-    if (!phone) return;
-    const norm = normalizePhone(phone);
+    if (!draft?.phone) return;
+    const norm = normalizePhone(draft.phone);
     if (norm.isValid) {
-      setPhone(norm.e164);
+      setDraft((prev) => (prev ? { ...prev, phone: norm.e164 } : null));
     }
   };
 
   const handleSocialUrlChange = (index: number, val: string) => {
-    const updated = [...socials];
+    if (!draft) return;
+    const updated = [...draft.socials];
     const prefix = PREFIX_MAP[updated[index].name] || "";
     let clean = val;
     if (clean.includes(prefix)) {
       clean = clean.split(prefix)[1] || "";
     }
     updated[index].url = clean.replace("@", "").trim();
-    setSocials(updated);
+    setDraft({ ...draft, socials: updated });
   };
 
   const toggleSocialActive = (index: number) => {
-    const updated = [...socials];
+    if (!draft) return;
+    const updated = [...draft.socials];
     updated[index].active = !updated[index].active;
-    setSocials(updated);
+    setDraft({ ...draft, socials: updated });
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    const norm = normalizePhone(phone);
-    const finalPhone = norm.isValid ? norm.e164 : phone;
-
-    try {
-      const res = await fetch("/api/business-settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: finalPhone,
-          location_address: address,
-          social_media: socials,
-        }),
-      });
-
-      if (res.ok) {
-        setPhone(finalPhone);
-        setInitialData({
-          phone: finalPhone,
-          address,
-          socials: JSON.parse(JSON.stringify(socials)),
-        });
-        toast.success("Contacto y redes guardados con éxito");
-      } else {
-        toast.error("Error al guardar la configuración");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Error de conexión al guardar");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const hasChanges =
-    phone !== initialData.phone ||
-    address !== initialData.address ||
-    JSON.stringify(socials) !== JSON.stringify(initialData.socials);
-
-  if (loading) {
+  if (loading || !draft) {
     return <ConfigFormSkeleton />;
   }
 
   return (
-    <form onSubmit={handleSave} className="space-y-8 animate-in fade-in duration-300">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        void save();
+      }}
+      className="space-y-8 animate-in fade-in duration-300"
+    >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
@@ -167,12 +109,24 @@ export default function ConfigContactoSection() {
             Configurá el teléfono de WhatsApp, la dirección del local y los enlaces a redes sociales
           </p>
         </div>
-        <SaveButton
-          type="submit"
-          loading={saving}
-          disabled={!hasChanges || saving}
-          className="w-full sm:w-auto"
-        />
+        <div className="flex items-center gap-2">
+          {hasChanges && (
+            <button
+              type="button"
+              onClick={reset}
+              disabled={saving}
+              className="px-4 py-2.5 rounded-xl border border-[var(--foreground)]/20 text-xs text-slate-300 hover:bg-white/5 hover:text-white font-medium transition-all cursor-pointer min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Descartar
+            </button>
+          )}
+          <SaveButton
+            type="submit"
+            loading={saving}
+            disabled={!hasChanges || saving}
+            className="w-full sm:w-auto min-h-[44px]"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -189,20 +143,27 @@ export default function ConfigContactoSection() {
             <PhoneInput
               international
               defaultCountry="AR"
-              value={phone}
-              onChange={(val) => setPhone(val || "")}
+              value={draft.phone}
+              onChange={(val) =>
+                setDraft((prev) => (prev ? { ...prev, phone: val || "" } : null))
+              }
               onBlur={handlePhoneBlur}
               placeholder="+54 9 11 2345 6789"
               className="phone-input-custom !bg-[var(--background)] p-2.5 rounded-xl border border-[var(--foreground)]/15 text-sm text-[var(--foreground)] w-full"
             />
           </div>
-          {phone && (
+          {draft.phone && (
             <div className="flex items-center justify-between text-xs px-1">
               <span className="text-slate-400">
-                Visualización: <span className="font-mono text-slate-200">{formatPhoneDisplay(phone)}</span>
+                Visualización:{" "}
+                <span className="font-mono text-slate-200">
+                  {formatPhoneDisplay(draft.phone)}
+                </span>
               </span>
-              {normalizePhone(phone).isValid && (
-                <span className="text-emerald-400 font-medium text-[11px]">Válido para WhatsApp</span>
+              {normalizePhone(draft.phone).isValid && (
+                <span className="text-emerald-400 font-medium text-[11px]">
+                  Válido para WhatsApp
+                </span>
               )}
             </div>
           )}
@@ -219,8 +180,10 @@ export default function ConfigContactoSection() {
           </p>
           <input
             type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            value={draft.address}
+            onChange={(e) =>
+              setDraft((prev) => (prev ? { ...prev, address: e.target.value } : null))
+            }
             placeholder="Ej: Av. Santa Fe 1234, Palermo, CABA"
             className="w-full p-2.5 rounded-xl border border-[var(--foreground)]/15 bg-[var(--background)] text-sm text-[var(--foreground)] focus:border-[var(--accent)] outline-none"
           />
@@ -238,7 +201,7 @@ export default function ConfigContactoSection() {
         </p>
 
         <div className="space-y-3">
-          {socials.map((item, index) => {
+          {draft.socials.map((item, index) => {
             const prefix = PREFIX_MAP[item.name] || "";
             return (
               <div
@@ -247,7 +210,9 @@ export default function ConfigContactoSection() {
               >
                 <div className="flex items-center gap-2.5 min-w-[130px]">
                   {ICON_MAP[item.name]}
-                  <span className="text-xs font-bold capitalize text-slate-200">{item.name}</span>
+                  <span className="text-xs font-bold capitalize text-slate-200">
+                    {item.name}
+                  </span>
                 </div>
 
                 <div className="flex-1 flex items-center w-full">
