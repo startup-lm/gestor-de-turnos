@@ -12,6 +12,7 @@ import { createSale } from "@/lib/repository/sales";
 import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { DEFAULT_PAYMENT_METHODS } from "@/lib/flags";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { toast } from "@/lib/store/useToastStore";
 import {
@@ -39,8 +40,15 @@ export default function SaleSplitPanel({
   onClose,
   onSaleCreated,
 }: Readonly<Props>) {
-  const { isEnabled } = useBusinessContext();
+  const { isEnabled, businessSettings } = useBusinessContext();
   const ARCA_ENABLED = isEnabled("arca");
+  const paymentMethods = useMemo(
+    () =>
+      businessSettings?.payment_methods?.length
+        ? businessSettings.payment_methods
+        : DEFAULT_PAYMENT_METHODS,
+    [businessSettings?.payment_methods]
+  );
   const { data, loading: loadingProducts } = useFetchOnce<Product[]>("products", getProducts);
   const { data: barbers = [], loading: loadingBarbers } = useFetchOnce<Barber[]>("barbers", getBarbers);
   const { data: arcaStatus } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);
@@ -62,7 +70,16 @@ export default function SaleSplitPanel({
   const [loading, setLoading] = useState(false);
   const [price, setPrice] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState<string>(
+    () => paymentMethods[0] || "Efectivo"
+  );
   const [details, setDetails] = useState("");
+
+  useEffect(() => {
+    if (paymentMethods.length > 0 && !paymentMethods.includes(paymentMethod)) {
+      setPaymentMethod(paymentMethods[0]);
+    }
+  }, [paymentMethods, paymentMethod]);
 
   // ARCA
   const arcaAvailable = ARCA_ENABLED && !!arcaStatus?.ready;
@@ -98,6 +115,7 @@ export default function SaleSplitPanel({
       quantity,
       details,
       total,
+      payment_method: paymentMethod,
     };
 
     try {
@@ -169,7 +187,7 @@ export default function SaleSplitPanel({
           disabled={isDisabled}
           className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 min-h-[40px] ${
             !isDisabled
-              ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
+              ? "!bg-[var(--accent)] hover:opacity-90 !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
               : "!bg-white/5 !text-slate-500 border border-white/10 cursor-not-allowed opacity-50"
           }`}
         >
@@ -275,6 +293,32 @@ export default function SaleSplitPanel({
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* Selector de Medio de Pago */}
+            <div>
+              <label className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
+                Medio de pago
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {paymentMethods.map((m) => {
+                  const isSelected = paymentMethod === m;
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setPaymentMethod(m)}
+                      className={`p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 flex items-center justify-center text-center ${
+                        isSelected
+                          ? "!bg-[var(--accent)] !text-slate-950 !border-[var(--accent)] font-bold shadow-sm"
+                          : "!bg-[var(--background)] !text-[var(--foreground)] !border-[var(--foreground)]/15 hover:!bg-white/5"
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

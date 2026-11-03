@@ -20,14 +20,22 @@ export async function POST(request: Request) {
     return errorResponse(parsed.error.issues[0]?.message ?? "Datos inválidos para registrar la venta", 400);
   }
 
-  const { barber_id, product_id, price, quantity, details } = parsed.data;
+  const { barber_id, product_id, price, quantity, details, payment_method } = parsed.data;
   if (!canModify(staff, barber_id)) {
     return errorResponse("Solo podés registrar ventas a tu nombre", 403);
   }
 
   const { data, error } = await supabaseAdmin
     .from("sales")
-    .insert({ barber_id, product_id, price, quantity, details: details ?? null, total: price * quantity })
+    .insert({
+      barber_id,
+      product_id,
+      price,
+      quantity,
+      details: details ?? null,
+      payment_method: payment_method || null,
+      total: price * quantity,
+    })
     .select("id")
     .single();
 

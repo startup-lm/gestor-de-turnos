@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { createCashMovement } from "@/lib/repository/cash";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { DEFAULT_PAYMENT_METHODS } from "@/lib/flags";
 import { toast } from "@/lib/store/useToastStore";
 import {
   TrendingDown,
@@ -11,6 +13,7 @@ import {
   ArrowRightLeft,
   Wallet,
   ArrowLeft,
+  Loader2,
 } from "lucide-react";
 
 interface Props {
@@ -28,20 +31,46 @@ const CATEGORIES = [
   { id: "otro", label: "Otros gastos generales" },
 ];
 
-const METHODS = [
-  { name: "Efectivo", icon: Banknote },
-  { name: "Transferencia", icon: ArrowRightLeft },
-  { name: "Tarjeta de débito", icon: CreditCard },
-  { name: "Mercado Pago", icon: Wallet },
-];
+const getMethodIcon = (name: string) => {
+  const lower = name.toLowerCase();
+  if (lower.includes("efectivo")) return Banknote;
+  if (lower.includes("transf")) return ArrowRightLeft;
+  if (
+    lower.includes("débito") ||
+    lower.includes("debito") ||
+    lower.includes("crédito") ||
+    lower.includes("credito") ||
+    lower.includes("tarjeta")
+  ) {
+    return CreditCard;
+  }
+  return Wallet;
+};
 
 export default function ExpensePanel({ onClose, onSuccess }: Readonly<Props>) {
+  const { businessSettings } = useBusinessContext();
+  const paymentMethods = useMemo(
+    () =>
+      businessSettings?.payment_methods?.length
+        ? businessSettings.payment_methods
+        : DEFAULT_PAYMENT_METHODS,
+    [businessSettings?.payment_methods]
+  );
+
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("insumos");
-  const [paymentMethod, setPaymentMethod] = useState("Efectivo");
+  const [paymentMethod, setPaymentMethod] = useState<string>(
+    () => paymentMethods[0] || "Efectivo"
+  );
   const [referenceCode, setReferenceCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (paymentMethods.length > 0 && !paymentMethods.includes(paymentMethod)) {
+      setPaymentMethod(paymentMethods[0]);
+    }
+  }, [paymentMethods, paymentMethod]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +101,7 @@ export default function ExpensePanel({ onClose, onSuccess }: Readonly<Props>) {
         return;
       }
 
-      toast.success(`Gasto de $${numAmount.toLocaleString("es-AR")} registrado correctamente`);
+      toast.success(`Gasto de $${Math.round(numAmount).toLocaleString("es-AR")} registrado correctamente`);
       onSuccess();
     } catch (err) {
       console.error(err);
@@ -90,7 +119,7 @@ export default function ExpensePanel({ onClose, onSuccess }: Readonly<Props>) {
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-2 text-xs font-semibold cursor-pointer"
+            className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-2 text-xs font-semibold cursor-pointer min-h-[44px] sm:min-h-0"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Volver</span>
@@ -174,22 +203,22 @@ export default function ExpensePanel({ onClose, onSuccess }: Readonly<Props>) {
             Medio de pago utilizado
           </span>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            {METHODS.map((m) => {
-              const Icon = m.icon;
-              const isSelected = paymentMethod === m.name;
+            {paymentMethods.map((m) => {
+              const Icon = getMethodIcon(m);
+              const isSelected = paymentMethod === m;
               return (
                 <button
-                  key={m.name}
+                  key={m}
                   type="button"
-                  onClick={() => setPaymentMethod(m.name)}
-                  className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
+                  onClick={() => setPaymentMethod(m)}
+                  className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer min-h-[44px] sm:min-h-0 ${
                     isSelected
                       ? "!bg-[var(--accent)]/15 !border-[var(--accent)]/50 !text-[var(--accent)] shadow-sm"
                       : "!bg-slate-900/60 !border-white/5 !text-slate-400 hover:!text-white hover:!bg-white/5"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
-                  <span className="text-[11px]">{m.name}</span>
+                  <span className="text-[11px]">{m}</span>
                 </button>
               );
             })}
@@ -222,17 +251,21 @@ export default function ExpensePanel({ onClose, onSuccess }: Readonly<Props>) {
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[44px] sm:min-h-0"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 rounded-xl !bg-red-500 hover:!bg-red-600 !text-white font-bold text-xs shadow-md shadow-red-500/15 transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 disabled:scale-100 flex items-center gap-1.5"
+            className="px-6 py-2.5 rounded-xl !bg-red-500 hover:!bg-red-600 !text-white font-bold text-xs shadow-md shadow-red-500/15 transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 disabled:scale-100 flex items-center gap-1.5 min-h-[44px] sm:min-h-0"
           >
-            <Check className="w-4 h-4 stroke-[3]" />
-            <span>{isSubmitting ? "Guardando..." : "Guardar gasto"}</span>
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
+            ) : (
+              <Check className="w-4 h-4 stroke-[3]" />
+            )}
+            <span>Guardar gasto</span>
           </button>
         </div>
       </form>

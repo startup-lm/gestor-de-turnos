@@ -3,6 +3,8 @@ import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { isAdminStaff } from "@/lib/api/ownership";
+import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
+import { normalizeMethod } from "@/lib/finance/cashSummary";
 
 interface RawRow {
   barber_id: number;
@@ -20,21 +22,22 @@ export async function GET(request: Request) {
 
   if (!start || !end) return errorResponse("start_date y end_date son requeridos", 400);
 
-  let query = supabaseAdmin
-    .from("appointments")
-    .select("barber_id, price, payment_method")
-    .is("deleted_at", null)
-    .gte("date", start)
-    .lte("date", end)
-    .neq("phone", "0000000000");
-  // La facturación del local es del admin: un barbero solo recibe la suya
-  if (!isAdminStaff(staff)) query = query.eq("barber_id", staff.barber.id);
-
-  const { data, error } = await query;
+  // Solo turnos cobrados: es la facturación real y la base de las comisiones
+  const { data: rows, error } = await fetchAllRows<RawRow>((from, to) => {
+    let query = supabaseAdmin
+      .from("appointments")
+      .select("barber_id, price, payment_method")
+      .is("deleted_at", null)
+      .eq("paid", true)
+      .gte("date", start)
+      .lte("date", end)
+      .neq("phone", "0000000000");
+    // La facturación del local es del admin: un barbero solo recibe la suya
+    if (!isAdminStaff(staff)) query = query.eq("barber_id", staff.barber.id);
+    return query.order("id", { ascending: true }).range(from, to);
+  });
 
   if (error) return dbErrorResponse(error, "appointments/all");
-
-  const rows = (data ?? []) as RawRow[];
 
   const agg: Record< number, { totalAppt: number; totalRevenue: number } > = {};
   const paymentMethodTotals: Record<string, number> = {};
@@ -43,10 +46,9 @@ export async function GET(request: Request) {
     if (!agg[barber_id]) agg[barber_id] = {  totalAppt: 0, totalRevenue: 0 };
     agg[barber_id].totalAppt++;
     agg[barber_id].totalRevenue += price ?? 0;
-    
+
     if (price) {
-      let method = payment_method?.trim() || "Otros";
-      if (method === "MercadoPago") method = "Mercado Pago";
+      const method = normalizeMethod(payment_method);
       paymentMethodTotals[method] = (paymentMethodTotals[method] || 0) + price;
     }
   });

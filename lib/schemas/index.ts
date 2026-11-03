@@ -54,6 +54,7 @@ export const SaleInsertSchema = z.object({
   price: z.number().nonnegative("El precio no puede ser negativo"),
   quantity: z.number().int().positive("La cantidad debe ser mayor a cero"),
   details: z.string().trim().max(500).nullable().optional(),
+  payment_method: z.string().trim().max(50).nullable().optional(),
 });
 
 export const SaleUpdateSchema = SaleInsertSchema.partial();
