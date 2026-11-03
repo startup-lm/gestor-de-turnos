@@ -6,6 +6,11 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.10.1] - 2026-11-03
+
+### Cambiado
+- Barberos se lista en tabla, igual que Productos y Servicios: foto y nombre, contacto, estado y comisiones. Tocando una fila se abre la edición, desde donde se desactiva o reactiva al barbero.
+
 ## [1.10.0] - 2026-11-03
 
 ### Agregado
