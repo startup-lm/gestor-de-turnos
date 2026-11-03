@@ -1,19 +1,22 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api/auth";
-import { requirePlanFeature } from "@/lib/flags/server";
+import { getServerPlanContext, PLAN_FORBIDDEN_MESSAGE } from "@/lib/flags/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 import { createdAtBound } from "@/lib/dates/argentina";
 import { computeCashSummary } from "@/lib/finance/cashSummary";
 import { isValidPeriod } from "@/lib/finance/payoutData";
+import { applyPlanToSettings } from "@/lib/settings/sanitize";
+import type { BusinessSettings } from "@/lib/types/BusinessSettings";
 
 // GET /api/finance/cash-summary?start_date=&end_date=  (YYYY-MM-DD, días de Argentina)
 export async function GET(request: Request) {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
-  const planError = await requirePlanFeature("finances");
-  if (planError) return planError;
+  const { isEnabled } = await getServerPlanContext();
+  // Balance (finances) y la caja diaria (cash_register) usan este resumen
+  if (!isEnabled("finances") && !isEnabled("cash_register")) return errorResponse(PLAN_FORBIDDEN_MESSAGE, 403);
 
   const { searchParams } = new URL(request.url);
   const start = searchParams.get("start_date");
@@ -24,7 +27,7 @@ export async function GET(request: Request) {
   const to = createdAtBound(end!, "end");
 
   const [settings, appointments, sales, movements] = await Promise.all([
-    supabaseAdmin.from("business_settings").select("payment_methods").eq("id", 1).maybeSingle(),
+    supabaseAdmin.from("business_settings").select("payment_methods, plan, features").eq("id", 1).maybeSingle(),
     fetchAllRows<{ price: number | null; payment_method: string | null }>((a, b) =>
       supabaseAdmin
         .from("appointments")
@@ -61,7 +64,7 @@ export async function GET(request: Request) {
   if (error) return dbErrorResponse(error, "finance/cash-summary");
 
   const summary = computeCashSummary({
-    methods: (settings.data?.payment_methods as string[] | null) ?? [],
+    methods: applyPlanToSettings((settings.data ?? {}) as Partial<BusinessSettings>).payment_methods ?? [],
     appointments: appointments.data,
     sales: sales.data,
     movements: movements.data,

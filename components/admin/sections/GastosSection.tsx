@@ -7,6 +7,7 @@ import ExpensePanel from "@/components/finanzas/ExpensePanel";
 import AdvancePanel from "@/components/finanzas/AdvancePanel";
 import DatePresetSelector from "@/components/admin/DatePresetSelector";
 import { DatePreset, getPresetRange } from "@/lib/dates/presets";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
 import {
   TrendingDown,
   HandCoins,
@@ -20,6 +21,8 @@ interface Props {
 type ViewMode = "list" | "new-expense" | "new-advance";
 
 export default function GastosSection({ barbers }: Readonly<Props>) {
+  const { isEnabled } = useBusinessContext();
+  const advancesEnabled = isEnabled("advances");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const initialRange = useMemo(() => getPresetRange("month"), []);
   const [preset, setPreset] = useState<DatePreset>("month");
@@ -39,7 +42,7 @@ export default function GastosSection({ barbers }: Readonly<Props>) {
     );
   }
 
-  if (viewMode === "new-advance") {
+  if (viewMode === "new-advance" && advancesEnabled) {
     return (
       <AdvancePanel
         barbers={barbers}
@@ -66,20 +69,24 @@ export default function GastosSection({ barbers }: Readonly<Props>) {
             </h2>
           </div>
           <p className="text-xs text-slate-400">
-            Registro y control de compras, insumos, servicios y adelantos a profesionales
+            {advancesEnabled
+              ? "Registro y control de compras, insumos, servicios y adelantos a profesionales"
+              : "Registro y control de compras, insumos y servicios"}
           </p>
         </div>
 
         {/* Acciones Rápidas */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button
-            type="button"
-            onClick={() => setViewMode("new-advance")}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 hover:bg-amber-500/20 text-xs font-semibold transition-all cursor-pointer shadow-sm flex-1 sm:flex-none justify-center min-h-[44px] sm:min-h-0"
-          >
-            <HandCoins className="w-3.5 h-3.5" />
-            <span>Dar adelanto</span>
-          </button>
+          {advancesEnabled && (
+            <button
+              type="button"
+              onClick={() => setViewMode("new-advance")}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 hover:bg-amber-500/20 text-xs font-semibold transition-all cursor-pointer shadow-sm flex-1 sm:flex-none justify-center min-h-[44px] sm:min-h-0"
+            >
+              <HandCoins className="w-3.5 h-3.5" />
+              <span>Dar adelanto</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setViewMode("new-expense")}

@@ -13,7 +13,7 @@ const isAmount = (v: unknown): v is number => typeof v === "number" && Number.is
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const staff = await requireBarberOrAdmin();
   if (!staff) return errorResponse("No autorizado", 401);
-  const planError = await requirePlanFeature("cash_register");
+  const planError = await requirePlanFeature("cash_closing");
   if (planError) return planError;
 
   const { id } = await params;

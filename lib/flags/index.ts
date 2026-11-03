@@ -10,6 +10,9 @@ export type FeatureFlagName =
   | "booking_rules"
   | "stock_control"
   | "cash_register"
+  | "custom_payment_methods"
+  | "advances"
+  | "cash_closing"
   | (string & {});
 
 /**
@@ -27,7 +30,10 @@ export const DEFAULT_FEATURES: Record<string, boolean> = {
   expenses: false,           // Registro de gastos y egresos
   booking_rules: false,      // Personalización del criterio de asignación de turnos
   stock_control: false,      // Las ventas descuentan stock y no se vende sin stock
-  cash_register: false,      // Caja diaria: hay que abrirla para cobrar y se cierra con arqueo
+  cash_register: false,      // Caja: resumen diario por medio de pago (solo admin)
+  custom_payment_methods: false, // Medios de cobro además de Efectivo y Mercado Pago
+  advances: false,               // Adelantos a profesionales
+  cash_closing: false,           // Cierre de caja con arqueo y bloqueo de lo ya cerrado
 };
 
 /**

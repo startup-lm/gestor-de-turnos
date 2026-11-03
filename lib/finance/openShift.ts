@@ -3,6 +3,8 @@ import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { isServerFeatureEnabled } from "@/lib/flags/server";
 import { computeShiftExpected } from "@/lib/finance/cashShift";
 import type { CashShift } from "@/lib/types/cash";
+import { applyPlanToSettings } from "@/lib/settings/sanitize";
+import type { BusinessSettings } from "@/lib/types/BusinessSettings";
 
 export const CLOSED_SHIFT_MESSAGE = "Esto es de un cierre de caja ya hecho y no se puede modificar";
 
@@ -19,10 +21,10 @@ export async function getOpenShift() {
 /**
  * Período de caja en el que entra un cobro, venta o movimiento nuevo.
  * No hay que abrir la caja: si no hay período en curso, el primer movimiento lo crea.
- * Con la caja desactivada en el plan, no se ata a ninguno (shiftId null).
+ * Con el cierre de caja desactivado en el plan, no se ata a ninguno (shiftId null).
  */
 export async function currentShiftId(createdBy: string): Promise<{ shiftId: number | null; error: unknown }> {
-  if (!(await isServerFeatureEnabled("cash_register"))) return { shiftId: null, error: null };
+  if (!(await isServerFeatureEnabled("cash_closing"))) return { shiftId: null, error: null };
 
   const { shift, error } = await getOpenShift();
   if (error) return { shiftId: null, error };
@@ -59,7 +61,7 @@ export async function closedShiftLock(shiftId: number | null | undefined) {
 /** Lee todo lo cobrado y movido en un período de caja y calcula lo esperado por medio de pago */
 export async function loadShiftExpected(shift: Pick<CashShift, "id" | "initial_cash">) {
   const [settings, appointments, sales, movements] = await Promise.all([
-    supabaseAdmin.from("business_settings").select("payment_methods").eq("id", 1).maybeSingle(),
+    supabaseAdmin.from("business_settings").select("payment_methods, plan, features").eq("id", 1).maybeSingle(),
     supabaseAdmin
       .from("appointments")
       .select("price, payment_method")
@@ -77,7 +79,7 @@ export async function loadShiftExpected(shift: Pick<CashShift, "id" | "initial_c
 
   const rows = computeShiftExpected({
     initialCash: Number(shift.initial_cash ?? 0),
-    methods: (settings.data?.payment_methods as string[] | null) ?? [],
+    methods: applyPlanToSettings((settings.data ?? {}) as Partial<BusinessSettings>).payment_methods ?? [],
     appointments: appointments.data ?? [],
     sales: sales.data ?? [],
     movements: movements.data ?? [],

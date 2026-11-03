@@ -11,11 +11,11 @@ vi.mock("@/lib/flags/server", () => ({ getServerPlanContext: vi.fn() }));
 vi.mock("@/lib/supabase/supabaseAdmin", () => ({ supabaseAdmin: { from: vi.fn() } }));
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }));
 
-function withPlan(plan: PlanName) {
+function withPlan(plan: PlanName, features: Record<string, boolean> | null = null) {
   vi.mocked(planServer.getServerPlanContext).mockResolvedValue({
     plan,
     limits: getPlanLimits(plan),
-    isEnabled: (flag: string) => isFeatureEnabled(flag, null, plan),
+    isEnabled: (flag: string) => isFeatureEnabled(flag, features, plan),
   });
 }
 
@@ -40,7 +40,7 @@ describe("PUT /api/business-settings con límites del plan", () => {
   });
 
   it("standard rechaza más de 3 medios de cobro", async () => {
-    withPlan("standard");
+    withPlan("standard", { custom_payment_methods: true });
     const upsert = mockUpsert();
 
     const response = await put({ payment_methods: ["A", "B", "C", "D"] });
@@ -51,13 +51,23 @@ describe("PUT /api/business-settings con límites del plan", () => {
   });
 
   it("standard guarda hasta 3 medios de cobro", async () => {
-    withPlan("standard");
+    withPlan("standard", { custom_payment_methods: true });
     const upsert = mockUpsert();
 
     const response = await put({ payment_methods: ["A", "B", "C"] });
 
     expect(response.status).toBe(200);
     expect(upsert).toHaveBeenCalledWith({ id: 1, payment_methods: ["A", "B", "C"] });
+  });
+
+  it("premium sin override no guarda payment_methods", async () => {
+    withPlan("premium");
+    const upsert = mockUpsert();
+
+    const response = await put({ payment_methods: ["A"] });
+
+    expect(response.status).toBe(200);
+    expect(upsert).toHaveBeenCalledWith({ id: 1 });
   });
 
   it("basic no guarda medios de cobro ni criterio de asignación", async () => {

@@ -48,7 +48,8 @@ export default function LiquidationPanel({
   onClose,
   onSuccess,
 }: Readonly<Props>) {
-  const { businessSettings } = useBusinessContext();
+  const { businessSettings, isEnabled } = useBusinessContext();
+  const advancesEnabled = isEnabled("advances");
   const paymentMethods = businessSettings?.payment_methods?.length
     ? businessSettings.payment_methods
     : DEFAULT_PAYMENT_METHODS;
@@ -99,9 +100,9 @@ export default function LiquidationPanel({
         return;
       }
       setPreview(res.data);
-      setSelectedAdvanceIds(res.data.advances.map((a) => a.id));
+      setSelectedAdvanceIds(advancesEnabled ? res.data.advances.map((a) => a.id) : []);
     });
-  }, [selectedBarberId, periodStart, periodEnd, startsInTheFuture]);
+  }, [selectedBarberId, periodStart, periodEnd, startsInTheFuture, advancesEnabled]);
 
   const toggleAdvance = (id: number) => {
     setSelectedAdvanceIds((prev) =>
@@ -398,64 +399,66 @@ export default function LiquidationPanel({
               </div>
 
               {/* Adelantos a descontar */}
-              <div className="dashboard-card p-5 border border-white/10 bg-slate-900/60 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-slate-300 tracking-wider flex items-center gap-2">
-                    <HandCoins className="w-4 h-4 text-amber-400" />
-                    <span>Adelantos a descontar</span>
-                  </h4>
-                  <span className="text-xs text-slate-400 font-mono">
-                    {preview?.advances.length ?? 0} {preview?.advances.length === 1 ? "adelanto" : "adelantos"}
-                  </span>
-                </div>
-
-                {!preview || preview.advances.length === 0 ? (
-                  <div className="p-3 rounded-xl bg-slate-950/50 border border-white/5 text-xs text-slate-400 text-center">
-                    {barberName ? `${barberName} no tiene adelantos pendientes de descontar.` : "Sin adelantos pendientes."}
+              {advancesEnabled && (
+                <div className="dashboard-card p-5 border border-white/10 bg-slate-900/60 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-slate-300 tracking-wider flex items-center gap-2">
+                      <HandCoins className="w-4 h-4 text-amber-400" />
+                      <span>Adelantos a descontar</span>
+                    </h4>
+                    <span className="text-xs text-slate-400 font-mono">
+                      {preview?.advances.length ?? 0} {preview?.advances.length === 1 ? "adelanto" : "adelantos"}
+                    </span>
                   </div>
-                ) : (
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {preview.advances.map((adv) => {
-                      const isChecked = selectedAdvanceIds.includes(adv.id);
-                      return (
-                        <label
-                          key={adv.id}
-                          className={`flex items-center justify-between gap-3 p-3 rounded-xl border text-xs cursor-pointer transition-colors min-h-[44px] ${
-                            isChecked
-                              ? "bg-amber-500/10 border-amber-500/30 text-amber-200"
-                              : "bg-slate-950/50 border-white/5 text-slate-400 hover:bg-slate-950"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => toggleAdvance(adv.id)}
-                              className="w-4 h-4 rounded text-amber-500 focus:ring-0 focus:ring-offset-0 bg-slate-900 border-white/20 cursor-pointer"
-                            />
-                            <div className="min-w-0">
-                              <span className="font-semibold text-white block truncate">
-                                {adv.description || "Adelanto de comisión"}
-                              </span>
-                              <span className="text-[10px] text-slate-400">
-                                {new Date(adv.created_at).toLocaleDateString("es-AR")} • {adv.payment_method}
-                              </span>
+
+                  {!preview || preview.advances.length === 0 ? (
+                    <div className="p-3 rounded-xl bg-slate-950/50 border border-white/5 text-xs text-slate-400 text-center">
+                      {barberName ? `${barberName} no tiene adelantos pendientes de descontar.` : "Sin adelantos pendientes."}
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {preview.advances.map((adv) => {
+                        const isChecked = selectedAdvanceIds.includes(adv.id);
+                        return (
+                          <label
+                            key={adv.id}
+                            className={`flex items-center justify-between gap-3 p-3 rounded-xl border text-xs cursor-pointer transition-colors min-h-[44px] ${
+                              isChecked
+                                ? "bg-amber-500/10 border-amber-500/30 text-amber-200"
+                                : "bg-slate-950/50 border-white/5 text-slate-400 hover:bg-slate-950"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => toggleAdvance(adv.id)}
+                                className="w-4 h-4 rounded text-amber-500 focus:ring-0 focus:ring-offset-0 bg-slate-900 border-white/20 cursor-pointer"
+                              />
+                              <div className="min-w-0">
+                                <span className="font-semibold text-white block truncate">
+                                  {adv.description || "Adelanto de comisión"}
+                                </span>
+                                <span className="text-[10px] text-slate-400">
+                                  {new Date(adv.created_at).toLocaleDateString("es-AR")} • {adv.payment_method}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                          <span className="font-bold text-sm text-red-400 shrink-0">-{ars(adv.amount)}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
+                            <span className="font-bold text-sm text-red-400 shrink-0">-{ars(adv.amount)}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
 
-                {result.advancesExcess > 0 && (
-                  <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300">
-                    <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <span>Los adelantos superan las comisiones: quedan {ars(result.advancesExcess)} a favor del local.</span>
-                  </div>
-                )}
-              </div>
+                  {result.advancesExcess > 0 && (
+                    <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300">
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                      <span>Los adelantos superan las comisiones: quedan {ars(result.advancesExcess)} a favor del local.</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Total neto */}
               <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-500/15 to-teal-500/10 border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-3">

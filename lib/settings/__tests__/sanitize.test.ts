@@ -12,7 +12,10 @@ describe("toPublicBusinessSettings", () => {
 
   it("no rompe si no hay configuración de reseñas", () => {
     const settings = { slot_step_minutes: 30 as const, plan: "premium" as const };
-    expect(toPublicBusinessSettings(settings)).toEqual(settings);
+    expect(toPublicBusinessSettings(settings)).toEqual({
+      ...settings,
+      payment_methods: ["Efectivo", "Mercado Pago"],
+    });
   });
 });
 
@@ -32,9 +35,18 @@ describe("applyPlanToSettings", () => {
     expect(result.payment_methods).toEqual(["Efectivo", "Mercado Pago"]);
   });
 
-  it("standard recorta los medios de cobro al límite de 3", () => {
-    const result = applyPlanToSettings({ plan: "standard", payment_methods: ["A", "B", "C", "D"] });
+  it("standard con custom_payment_methods recorta los medios de cobro al límite de 3", () => {
+    const result = applyPlanToSettings({
+      plan: "standard",
+      features: { custom_payment_methods: true },
+      payment_methods: ["A", "B", "C", "D"],
+    });
     expect(result.payment_methods).toEqual(["A", "B", "C"]);
+  });
+
+  it("premium sin override devuelve los medios de cobro por defecto (flag apagado)", () => {
+    const result = applyPlanToSettings({ plan: "premium", payment_methods: ["Transferencia", "Efectivo"] });
+    expect(result.payment_methods).toEqual(["Efectivo", "Mercado Pago"]);
   });
 
   it("un override de features habilita la personalización aunque el plan no la incluya", () => {

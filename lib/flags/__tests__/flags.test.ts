@@ -62,6 +62,17 @@ describe("planes comerciales", () => {
     expect(isFeatureEnabled("arca", { arca: false }, "premium")).toBe(false);
     expect(isFeatureEnabled("finances", { finances: true }, "basic")).toBe(true);
   });
+
+  it("custom_payment_methods, advances y cash_closing están apagados en basic, standard y premium y se prenden con override", () => {
+    const flags = ["custom_payment_methods", "advances", "cash_closing"] as const;
+    const plans = ["basic", "standard", "premium"] as const;
+    for (const flag of flags) {
+      for (const plan of plans) {
+        expect(isFeatureEnabled(flag, null, plan)).toBe(false);
+      }
+      expect(isFeatureEnabled(flag, { [flag]: true }, "basic")).toBe(true);
+    }
+  });
 });
 
 describe("getPlanLimits", () => {

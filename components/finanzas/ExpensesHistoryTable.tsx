@@ -6,6 +6,7 @@ import { getCashMovements, MovementFilterParams, voidCashMovement } from "@/lib/
 import { formatLocalDate } from "@/lib/dates/argentina";
 import { toast } from "@/lib/store/useToastStore";
 import { formatARS } from "@/lib/format/currency";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
 import {
   TrendingDown,
   HandCoins,
@@ -41,6 +42,8 @@ export default function ExpensesHistoryTable({
   endDate,
   refreshKey,
 }: Readonly<Props>) {
+  const { isEnabled } = useBusinessContext();
+  const advancesEnabled = isEnabled("advances");
   const [movements, setMovements] = useState<CashMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -219,10 +222,10 @@ export default function ExpensesHistoryTable({
             onChange={(e) => setFilterType(e.target.value)}
             className="p-1.5 rounded-lg border border-white/10 bg-slate-950 text-xs text-white focus:border-[var(--accent)] outline-none min-h-[44px] sm:min-h-0"
           >
-            <option value="all">Todos los egresos y adelantos</option>
+            <option value="all">{advancesEnabled ? "Todos los egresos y adelantos" : "Todos los egresos"}</option>
             <option value="expense">Solo gastos del local</option>
             <option value="withdrawal">Solo retiros del dueño</option>
-            <option value="advance">Solo adelantos a barberos</option>
+            {advancesEnabled && <option value="advance">Solo adelantos a barberos</option>}
             <option value="commission_payout">Solo pagos de liquidaciones</option>
           </select>
         </div>

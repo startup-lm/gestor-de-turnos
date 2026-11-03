@@ -59,6 +59,7 @@ export interface AdminModules {
   arca: boolean;
   googleReviews: boolean;
   cashRegister: boolean;
+  cashClosing: boolean;
 }
 
 export interface NavItem {
@@ -119,7 +120,7 @@ export const NAV_GROUPS: NavGroup[] = [
         section: "caja",
         label: "Caja",
         icon: Wallet,
-        visible: (modules) => modules.cashRegister,
+        visible: (modules, isAdmin) => isAdmin && modules.cashRegister,
       },
       {
         section: "turnos",

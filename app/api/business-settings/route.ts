@@ -25,7 +25,7 @@ export async function PUT(req: Request) {
   // Límites del plan: lo que el plan no permite configurar no se guarda
   const { isEnabled, limits } = await getServerPlanContext();
   if (Array.isArray(payload.payment_methods)) {
-    if (limits.maxPaymentMethods === 0) {
+    if (!isEnabled("custom_payment_methods") || limits.maxPaymentMethods === 0) {
       delete payload.payment_methods;
     } else if (payload.payment_methods.length > limits.maxPaymentMethods) {
       return errorResponse(`Tu plan permite hasta ${limits.maxPaymentMethods} medios de cobro`, 403);
