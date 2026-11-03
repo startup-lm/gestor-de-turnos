@@ -1,10 +1,8 @@
-import { dbErrorResponse } from "@/lib/api/response";
 import { NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { requireAdmin } from "@/lib/api/auth";
 import { fetchGooglePlaceReviews } from "@/lib/services/googlePlaces";
-import { GoogleReviewsConfig } from "@/lib/types/BusinessSettings";
+import type { GoogleReviewsConfig } from "@/lib/types/BusinessSettings";
 
 export async function POST(req: Request) {
   const admin = await requireAdmin();
@@ -13,33 +11,36 @@ export async function POST(req: Request) {
   }
 
   try {
-    const body = await req.json();
-    const input = (body.input || body.placeId || "").trim();
+    const body = await req.json().catch(() => ({}));
+    let targetPlaceId = (body.input || body.placeId || body.place_id || "").trim();
 
-    if (!input) {
+    if (!targetPlaceId) {
+      const { data: currentSettings, error: fetchErr } = await supabaseAdmin
+        .from("business_settings")
+        .select("google_reviews")
+        .eq("id", 1)
+        .single();
+
+      if (fetchErr) {
+        console.error("Error al obtener business_settings para sync:", fetchErr);
+      }
+
+      const currentConfig: GoogleReviewsConfig = currentSettings?.google_reviews || {};
+      targetPlaceId = (currentConfig.place_id || "").trim();
+    }
+
+    if (!targetPlaceId) {
       return NextResponse.json(
         { error: "Ingresá el link de Google Maps, el nombre del local o el Place ID para sincronizar." },
         { status: 400 }
       );
     }
 
-    // 1. Obtener la configuración actual de business_settings para preservar preferencias
-    const { data: currentSettings, error: fetchErr } = await supabaseAdmin
-      .from("business_settings")
-      .select("google_reviews")
-      .eq("id", 1)
-      .single();
-
-    if (fetchErr) {
-      console.error("Error al obtener business_settings para sync:", fetchErr);
-    }
-
-    const currentConfig: GoogleReviewsConfig = currentSettings?.google_reviews || {};
-
-    // 2. Consultar Google Places API (resolviendo automáticamente link, texto o place ID)
+    // Consulta en vivo sin guardar en base de datos
     const result = await fetchGooglePlaceReviews({
-      input,
+      input: targetPlaceId,
       apiKey: process.env.GOOGLE_PLACES_API_KEY,
+      revalidateSeconds: 0,
     });
 
     if (!result.success || !result.data) {
@@ -49,35 +50,17 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Fusionar datos nuevos manteniendo configuración de visibilidad del usuario
-    const mergedConfig: GoogleReviewsConfig = {
-      ...currentConfig,
-      ...result.data,
-      enabled: currentConfig.enabled ?? true,
-      show_in_hero: currentConfig.show_in_hero ?? true,
-      show_in_home: currentConfig.show_in_home ?? true,
-      show_in_about: currentConfig.show_in_about ?? true,
-      place_id: result.data.place_id || currentConfig.place_id,
-    };
-
-    // 4. Guardar en Supabase
-    const { data: updated, error: updateErr } = await supabaseAdmin
-      .from("business_settings")
-      .update({ google_reviews: mergedConfig })
-      .eq("id", 1)
-      .select("google_reviews")
-      .single();
-
-    if (updateErr) {
-      return dbErrorResponse(updateErr, "google-reviews/sync");
-    }
-
-    revalidateTag("business-settings");
     return NextResponse.json({
-      success: true,
-      google_reviews: updated?.google_reviews ?? mergedConfig,
+      rating: typeof result.data.rating === "number" ? result.data.rating : null,
+      total: typeof result.data.user_ratings_total === "number" ? result.data.user_ratings_total : 0,
+      reviews: result.data.reviews || [],
+      googleMapsUri: result.data.googleMapsUri,
+      writeReviewUrl: result.data.write_review_url,
+      place_id: result.data.place_id,
     });
   } catch (err: unknown) {
-    return dbErrorResponse(err, "google-reviews/sync");
+    console.error("Error en POST /api/google-reviews/sync:", err);
+    const msg = err instanceof Error ? err.message : "Error interno del servidor";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

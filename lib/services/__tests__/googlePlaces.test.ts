@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fetchGooglePlaceReviews, resolveGooglePlaceId } from "@/lib/services/googlePlaces";
+import { fetchGooglePlaceReviews, resolveGooglePlaceId, stableReviewId } from "@/lib/services/googlePlaces";
+
+describe("stableReviewId", () => {
+  it("no depende de la posición de la reseña, así una reseña oculta sigue oculta si Google reordena", () => {
+    const a = stableReviewId("rev-legacy", "1700000000", "Ana  Pérez");
+    expect(a).toBe("rev-legacy-1700000000-ana-pérez");
+    expect(stableReviewId("rev-legacy", "1700000000", "Ana  Pérez")).toBe(a);
+    expect(stableReviewId("rev-new", undefined, undefined)).toBe("rev-new-sin-fecha-anonimo");
+  });
+});
 
 describe("fetchGooglePlaceReviews", () => {
   beforeEach(() => {

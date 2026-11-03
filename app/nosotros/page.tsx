@@ -5,6 +5,7 @@ import GoogleMapsLocation from "@/components/nosotros/GoogleMapsLocation";
 import GoogleReviewsSection from "@/components/reviews/GoogleReviewsSection";
 import { getBusinessSettings } from "@/lib/repository/businessSettings";
 import { isFeatureEnabled } from "@/lib/flags";
+import { getPublicGoogleReviews } from "@/lib/reviews/getPublicGoogleReviews";
 import { FaInstagram, FaFacebook, FaTiktok, FaWhatsapp, FaLink } from "react-icons/fa";
 import Image from "next/image";
 import local from "@/public/images/local.webp";
@@ -14,11 +15,14 @@ export const revalidate = 60;
 export default async function NosotrosPage() {
   const [barbers, settings] = await Promise.all([getBarbers(), getBusinessSettings()]);
 
+  const reviewsData = await getPublicGoogleReviews(settings?.google_reviews);
+
   const isReviewsEnabled = isFeatureEnabled("google_reviews", settings?.features, settings?.plan);
   const showAboutReviews =
     isReviewsEnabled &&
     settings?.google_reviews?.enabled !== false &&
-    settings?.google_reviews?.show_in_about !== false;
+    settings?.google_reviews?.show_in_about !== false &&
+    Boolean(reviewsData);
 
   const iconMap: Record<string, React.ReactNode> = {
     instagram: <FaInstagram size={30} className="inline-block" />,
@@ -144,7 +148,7 @@ export default async function NosotrosPage() {
 
       {showAboutReviews && (
         <div className="w-full mt-10 text-left">
-          <GoogleReviewsSection config={settings?.google_reviews} />
+          <GoogleReviewsSection data={reviewsData} />
         </div>
       )}
     </div>
