@@ -47,8 +47,9 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
   const router = useRouter();
   const { isEnabled } = useBusinessContext();
   const ARCA_ENABLED = isEnabled("arca");
+  const controlsStock = isEnabled("stock_control");
 
-  const { data: productsData, loading: loadingProducts } = useFetchOnce<Product[]>(
+  const { data: productsData, loading: loadingProducts, refetch: refetchProducts } = useFetchOnce<Product[]>(
     "products",
     getProducts
   );
@@ -100,6 +101,11 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
 
   const total = price * quantity;
 
+  // Las unidades de esta venta ya salieron del stock: si sigue siendo el mismo producto, cuentan como disponibles
+  const productStock = products.find((p) => p.id === selectedProductId)?.stock ?? 0;
+  const available = productStock + (selectedProductId === initialSale.product_id ? initialSale.quantity : 0);
+  const maxQuantity = controlsStock ? available : Infinity;
+
   // Check if form is dirty
   const isDirty =
     selectedProductId !== initialSale.product_id ||
@@ -114,6 +120,10 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
     const prod = products.find((p) => p.id === newProductId);
     if (prod) {
       setPrice(prod.price);
+      if (controlsStock) {
+        const max = (prod.stock ?? 0) + (newProductId === initialSale.product_id ? initialSale.quantity : 0);
+        setQuantity((q) => Math.max(1, Math.min(q, max)));
+      }
     }
   };
 
@@ -147,9 +157,11 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
 
       if (!res.success) {
         toast.error(res.error || "No se pudo guardar la venta");
+        if (controlsStock) refetchProducts();
         setSaving(false);
         return;
       }
+      if (controlsStock) refetchProducts();
 
       // If user requested to emit an invoice and none existed
       if (emitInvoice && arcaAvailable && !hasExistingInvoice) {
@@ -339,11 +351,17 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
                 <option value={-1} disabled style={{ color: "black" }}>
                   Seleccioná un producto del catálogo
                 </option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id} style={{ color: "black" }}>
-                    {p.name} — ${p.price?.toLocaleString("es-AR") ?? 0}
-                  </option>
-                ))}
+                {products.map((p) => {
+                  const own = p.id === initialSale.product_id ? initialSale.quantity : 0;
+                  const left = (p.stock ?? 0) + own;
+                  const outOfStock = controlsStock && left <= 0;
+                  return (
+                    <option key={p.id} value={p.id} disabled={outOfStock} style={{ color: "black" }}>
+                      {p.name} — ${p.price?.toLocaleString("es-AR") ?? 0}
+                      {controlsStock && (outOfStock ? " · sin stock" : ` · quedan ${left}`)}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -402,22 +420,28 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
                     min={1}
                     disabled={isLocked}
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+                    max={controlsStock ? Math.max(1, available) : undefined}
+                    onChange={(e) => setQuantity(Math.min(maxQuantity, Math.max(1, Number(e.target.value))))}
                     className={`flex-1 text-center font-bold !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none ${
                       isLocked ? "!opacity-60 !cursor-not-allowed" : ""
                     }`}
                   />
                   <button
                     type="button"
-                    disabled={isLocked}
-                    onClick={() => setQuantity((q) => q + 1)}
+                    disabled={isLocked || quantity >= maxQuantity}
+                    onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
                     className={`p-3 rounded-xl !bg-[var(--foreground)]/10 hover:!bg-[var(--foreground)]/20 !text-[var(--foreground)] transition-all border border-[var(--foreground)]/10 active:scale-95 ${
-                      isLocked ? "!opacity-60 !cursor-not-allowed" : "cursor-pointer"
+                      isLocked || quantity >= maxQuantity ? "!opacity-60 !cursor-not-allowed" : "cursor-pointer"
                     }`}
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
+                {controlsStock && !isLocked && (
+                  <p className={`text-[11px] mt-1.5 ${available > 0 ? "text-slate-400" : "text-red-400"}`}>
+                    {available > 0 ? `Quedan ${available}` : "Sin stock"}
+                  </p>
+                )}
               </div>
             </div>
 

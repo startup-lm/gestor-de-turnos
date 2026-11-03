@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { Plus, Loader2 } from "lucide-react";
+import { mutate } from "swr";
 import { Product } from "@/lib/types/Product";
 import { getProducts } from "@/lib/repository/products";
 import ProductForm from "@/components/admin/catalog/ProductForm";
@@ -29,6 +30,8 @@ export default function ProductosSection() {
   const afterSave = () => {
     backToList();
     loadProducts();
+    // Nueva venta lee el catálogo desde la caché compartida: así ve el stock recién cargado
+    mutate("products");
   };
 
   if (view.mode !== "list") {

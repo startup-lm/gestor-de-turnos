@@ -3,10 +3,11 @@ import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { successResponse, errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { revalidateTag } from "next/cache";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
-import { requirePlanFeature } from "@/lib/flags/server";
+import { requirePlanFeature, isServerFeatureEnabled } from "@/lib/flags/server";
 import { canModify } from "@/lib/api/ownership";
 import { SaleUpdateSchema } from "@/lib/schemas";
 import { getBarberRates, lockedByPayoutMessage } from "@/lib/finance/barberRates";
+import { adjustProductStock, stockFailureResponse } from "@/lib/finance/stock";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -30,10 +31,17 @@ export async function GET(request: Request, { params }: RouteParams) {
   return NextResponse.json(data);
 }
 
+/** Deshace ajustes de stock ya aplicados, en orden inverso */
+async function revertStockMoves(moves: { productId: number; delta: number }[]) {
+  for (const move of [...moves].reverse()) {
+    await adjustProductStock(move.productId, -move.delta);
+  }
+}
+
 async function findSaleForChange(id: number) {
   return supabaseAdmin
     .from("sales")
-    .select("id, barber_id, price, quantity, arca_invoice_id, payout_id")
+    .select("id, barber_id, product_id, price, quantity, arca_invoice_id, payout_id")
     .eq("id", id)
     .maybeSingle();
 }
@@ -86,14 +94,41 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     commissionUpdate = { commission_rate: rates.saleCommission };
   }
 
+  // Si cambian el producto o la cantidad, el stock acompaña: primero se toma lo nuevo
+  // y recién después se devuelve lo viejo, así un error nunca deja stock de más
+  const oldProductId = Number(sale.product_id);
+  const oldQuantity = Number(sale.quantity);
+  const productId = updates.product_id ?? oldProductId;
+  const stockMoves = (await isServerFeatureEnabled("stock_control"))
+    ? productId === oldProductId
+      ? [{ productId, delta: oldQuantity - quantity }]
+      : [
+          { productId, delta: -quantity },
+          { productId: oldProductId, delta: oldQuantity },
+        ]
+    : [];
+  const applied: typeof stockMoves = [];
+  for (const move of stockMoves.filter((m) => m.delta !== 0)) {
+    const result = await adjustProductStock(move.productId, move.delta);
+    if (!result.ok) {
+      await revertStockMoves(applied);
+      return stockFailureResponse(result, "sales/id");
+    }
+    applied.push(move);
+  }
+
   const { error } = await supabaseAdmin
     .from("sales")
     .update({ ...updates, ...commissionUpdate, total: price * quantity })
     .eq("id", id);
 
-  if (error) return dbErrorResponse(error, "sales/id");
+  if (error) {
+    await revertStockMoves(applied);
+    return dbErrorResponse(error, "sales/id");
+  }
 
   revalidateTag("sales");
+  if (applied.length > 0) revalidateTag("products");
   return successResponse();
 }
 
@@ -127,6 +162,12 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     .delete()
     .eq("id", id);
   if (error) return dbErrorResponse(error, "sales/id");
+
+  // La venta ya no existe: sus unidades vuelven al stock
+  if (await isServerFeatureEnabled("stock_control")) {
+    await adjustProductStock(Number(sale.product_id), Number(sale.quantity));
+    revalidateTag("products");
+  }
   revalidateTag("sales");
   return successResponse();
 }

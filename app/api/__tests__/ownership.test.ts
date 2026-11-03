@@ -22,6 +22,12 @@ vi.mock("@/lib/flags/server", () => ({
 
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }));
 
+// El stock se prueba aparte (app/api/sales/__tests__/stock.test.ts): acá siempre alcanza
+vi.mock("@/lib/finance/stock", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/finance/stock")>()),
+  adjustProductStock: vi.fn().mockResolvedValue({ ok: true, stock: 99 }),
+}));
+
 const ADMIN = { user: {}, barber: { id: 1, role: "admin" } } as any;
 const BARBER_2 = { user: {}, barber: { id: 2, role: "barber" } } as any;
 

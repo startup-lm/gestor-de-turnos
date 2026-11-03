@@ -15,6 +15,7 @@ Liquidaciones y comisiones confiables, `/admin` como único lugar de gestión y 
 - **Comisión congelada:** cada turno y venta guarda el % del barbero al momento de cobrarse. Si después cambia el %, Métricas, Balance y las liquidaciones de meses anteriores no se recalculan.
 - Filtro "Solo retiros del dueño" en Gastos y total retirado en Balance.
 - **Productos y servicios en `/admin`:** el alta, la edición y la baja se hacen desde Operaciones → Productos y Servicios. La lista de productos muestra el stock y marca los que no tienen.
+- **Control de stock en ventas** (planes estándar y premium): cada venta descuenta las unidades vendidas, y editarla o borrarla las devuelve. En "Nueva venta" cada producto muestra cuántas unidades quedan, los que no tienen stock no se pueden elegir y la cantidad no puede superar lo disponible. Si dos ventas se llevan el último producto a la vez, solo una se registra.
 - **Mi perfil en `/admin`:** cada barbero edita su foto, sus datos y su contraseña desde el menú lateral.
 - **Cerrar sesión en el pie del menú lateral**, junto al nombre del producto y la versión.
 

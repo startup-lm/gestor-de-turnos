@@ -36,6 +36,7 @@ export default function SaleSplitPanel({
 }: Readonly<Props>) {
   const { isEnabled, businessSettings } = useBusinessContext();
   const ARCA_ENABLED = isEnabled("arca");
+  const controlsStock = isEnabled("stock_control");
   const paymentMethods = useMemo(
     () =>
       businessSettings?.payment_methods?.length
@@ -43,7 +44,7 @@ export default function SaleSplitPanel({
         : DEFAULT_PAYMENT_METHODS,
     [businessSettings?.payment_methods]
   );
-  const { data, loading: loadingProducts } = useFetchOnce<Product[]>("products", getProducts);
+  const { data, loading: loadingProducts, refetch: refetchProducts } = useFetchOnce<Product[]>("products", getProducts);
   const { data: barbers = [], loading: loadingBarbers } = useFetchOnce<Barber[]>("barbers", getBarbers);
   const { data: arcaStatus } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);
 
@@ -94,8 +95,16 @@ export default function SaleSplitPanel({
     if (docType === 99) setDocNumber("");
   }, [docType]);
 
+  // Con control de stock no se puede vender más de lo que hay
+  const available = products.find((p) => p.id === selectedProductId)?.stock ?? 0;
+  const maxQuantity = controlsStock ? available : Infinity;
+  useEffect(() => {
+    if (controlsStock && available > 0) setQuantity((q) => Math.min(q, available));
+  }, [controlsStock, available]);
+
   const total = price * quantity;
-  const isDisabled = selectedProductId < 0 || quantity <= 0 || loading;
+  const isDisabled =
+    selectedProductId < 0 || quantity <= 0 || quantity > maxQuantity || loading;
 
   const handleRegisterSale = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,10 +125,13 @@ export default function SaleSplitPanel({
       const createResult = await createSale(sale);
 
       if (!createResult.success) {
-        toast.error("Error al registrar venta de producto");
+        toast.error(createResult.error ?? "Error al registrar venta de producto");
+        // El stock pudo haber cambiado desde que se abrió el panel
+        if (controlsStock) refetchProducts();
         setLoading(false);
         return;
       }
+      if (controlsStock) refetchProducts();
 
       if (emitInvoice && arcaAvailable) {
         const arcaResult = await emitArcaInvoice({
@@ -221,11 +233,15 @@ export default function SaleSplitPanel({
                 <option value={-1} disabled style={{ color: "black" }}>
                   Seleccioná un producto del catálogo
                 </option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id} style={{ color: "black" }}>
-                    {p.name} — ${p.price?.toLocaleString("es-AR") ?? 0}
-                  </option>
-                ))}
+                {products.map((p) => {
+                  const outOfStock = controlsStock && (p.stock ?? 0) <= 0;
+                  return (
+                    <option key={p.id} value={p.id} disabled={outOfStock} style={{ color: "black" }}>
+                      {p.name} — ${p.price?.toLocaleString("es-AR") ?? 0}
+                      {controlsStock && (outOfStock ? " · sin stock" : ` · quedan ${p.stock}`)}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -276,17 +292,24 @@ export default function SaleSplitPanel({
                     type="number"
                     min={1}
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+                    max={controlsStock ? Math.max(1, available) : undefined}
+                    onChange={(e) => setQuantity(Math.min(maxQuantity, Math.max(1, Number(e.target.value))))}
                     className="flex-1 text-center font-bold !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-3 text-sm transition-all outline-none"
                   />
                   <button
                     type="button"
-                    onClick={() => setQuantity((q) => q + 1)}
-                    className="p-3 rounded-xl !bg-[var(--foreground)]/10 hover:!bg-[var(--foreground)]/20 !text-[var(--foreground)] transition-all cursor-pointer border border-[var(--foreground)]/10 active:scale-95"
+                    onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+                    disabled={quantity >= maxQuantity}
+                    className="p-3 rounded-xl !bg-[var(--foreground)]/10 hover:!bg-[var(--foreground)]/20 !text-[var(--foreground)] transition-all cursor-pointer border border-[var(--foreground)]/10 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
+                {controlsStock && selectedProductId > 0 && (
+                  <p className={`text-[11px] mt-1.5 ${available > 0 ? "text-slate-400" : "text-red-400"}`}>
+                    {available > 0 ? `Quedan ${available}` : "Sin stock"}
+                  </p>
+                )}
               </div>
             </div>
 

@@ -4,10 +4,11 @@ import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { canModify } from "@/lib/api/ownership";
-import { requirePlanFeature } from "@/lib/flags/server";
+import { requirePlanFeature, isServerFeatureEnabled } from "@/lib/flags/server";
 import { SaleInsertSchema } from "@/lib/schemas";
 import { revalidateTag } from "next/cache";
 import { getBarberRates } from "@/lib/finance/barberRates";
+import { adjustProductStock, stockFailureResponse } from "@/lib/finance/stock";
 
 // Edición y borrado de ventas: ver /api/sales/[id]
 export async function POST(request: Request) {
@@ -31,6 +32,13 @@ export async function POST(request: Request) {
   if (ratesError) return dbErrorResponse(ratesError, "sales");
   if (!rates) return errorResponse("Profesional no encontrado", 404);
 
+  // Las unidades se descuentan antes de registrar la venta: si no hay stock, no se vende
+  const controlsStock = await isServerFeatureEnabled("stock_control");
+  if (controlsStock) {
+    const taken = await adjustProductStock(product_id, -quantity);
+    if (!taken.ok) return stockFailureResponse(taken, "sales");
+  }
+
   const { data, error } = await supabaseAdmin
     .from("sales")
     .insert({
@@ -46,7 +54,12 @@ export async function POST(request: Request) {
     .select("id")
     .single();
 
-  if (error) return dbErrorResponse(error, "sales");
+  if (error) {
+    // La venta no quedó registrada: se devuelven las unidades descontadas
+    if (controlsStock) await adjustProductStock(product_id, quantity);
+    return dbErrorResponse(error, "sales");
+  }
   revalidateTag("sales");
+  if (controlsStock) revalidateTag("products");
   return NextResponse.json({ success: true, id: data.id });
 }

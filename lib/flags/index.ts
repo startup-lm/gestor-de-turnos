@@ -8,6 +8,7 @@ export type FeatureFlagName =
   | "finances"
   | "expenses"
   | "booking_rules"
+  | "stock_control"
   | (string & {});
 
 /**
@@ -24,6 +25,7 @@ export const DEFAULT_FEATURES: Record<string, boolean> = {
   finances: false,           // Sección finanzas
   expenses: false,           // Registro de gastos y egresos
   booking_rules: false,      // Personalización del criterio de asignación de turnos
+  stock_control: false,      // Las ventas descuentan stock y no se vende sin stock
 };
 
 /**
@@ -42,6 +44,7 @@ const STANDARD_FEATURES: Record<string, boolean> = {
   commission_payouts: true,
   staff_management: true,
   booking_rules: true,
+  stock_control: true,
 };
 
 export const PLAN_FEATURES: Record<PlanName, Record<string, boolean>> = {
