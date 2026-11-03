@@ -88,6 +88,8 @@ export default function AppointmentDetailsSplitPanel({
   const [isCheckoutView, setIsCheckoutView] = useState(false);
   const [paidInfo, setPaidInfo] = useState<{ price: number; payment_method: string } | null>(null);
   const [isPaidLocally, setIsPaidLocally] = useState<boolean>(appointment.paid);
+  // Estado local en vez de mutar la prop: React no se entera si se cambia el objeto appointment
+  const [invoiceId, setInvoiceId] = useState<number | null>(appointment.arca_invoice_id ?? null);
   const [confirmRevertPayment, setConfirmRevertPayment] = useState(false);
   const [reversingPayment, setReversingPayment] = useState(false);
   const [copiedCae, setCopiedCae] = useState(false);
@@ -159,10 +161,10 @@ export default function AppointmentDetailsSplitPanel({
   } = useAppointmentDetailsLogic(appointment, barbers);
 
   const isPaid = isPaidLocally || !!paidInfo;
-  const isDeleteDisabled = !isBlockedRange && (isPaid || !!appointment.arca_invoice_id);
-  const isLocked = !isBlockedRange && !!appointment.arca_invoice_id;
+  const isDeleteDisabled = !isBlockedRange && (isPaid || !!invoiceId);
+  const isLocked = !isBlockedRange && !!invoiceId;
   const invoice = appointment.arca_invoices;
-  const hasInvoice = !isBlockedRange && !!appointment.arca_invoice_id && !!invoice;
+  const hasInvoice = !isBlockedRange && !!invoiceId && !!invoice;
 
   const cleanPhoneDigits = (phone || "").replace(/\D/g, "");
   const showWhatsapp = cleanPhoneDigits.length > 0 && cleanPhoneDigits !== "0000000000";
@@ -174,7 +176,6 @@ export default function AppointmentDetailsSplitPanel({
     try {
       const res = await updateAppointment(appointment.id, { paid: false });
       if (res.success) {
-        appointment.paid = false;
         setPaidInfo(null);
         setIsPaidLocally(false);
         setConfirmRevertPayment(false);
@@ -273,7 +274,6 @@ export default function AppointmentDetailsSplitPanel({
     // Actualizar estado local
     setPaidInfo({ price: checkoutPrice, payment_method: selectedPaymentMethod });
     setIsPaidLocally(true);
-    appointment.paid = true;
     setPrice(checkoutPrice);
 
     // Emitir comprobante ARCA si el toggle está activado
@@ -288,7 +288,7 @@ export default function AppointmentDetailsSplitPanel({
       });
 
       if (result.success) {
-        appointment.arca_invoice_id = result.invoiceId;
+        setInvoiceId(result.invoiceId ?? null);
         toast.success(`Turno cobrado · CAE: ${result.cae}`);
       } else {
         toast.success(`Turno cobrado · Sin comprobante: ${result.error ?? "error desconocido"}`);
@@ -562,7 +562,7 @@ export default function AppointmentDetailsSplitPanel({
             </span>
           )}
 
-          {ARCA_ENABLED && appointment.arca_invoice_id && (
+          {ARCA_ENABLED && invoiceId && (
             <div className="flex items-center gap-1 text-[11px] text-green-300 font-medium px-2.5 py-0.5 bg-green-500/10 border border-green-500/20 rounded-full">
               <Receipt className="w-3 h-3 text-green-400 shrink-0" />
               <span>Comprobante emitido</span>
@@ -945,16 +945,16 @@ export default function AppointmentDetailsSplitPanel({
                 </span>
               </div>
             </div>
-            {ARCA_ENABLED && appointment.arca_invoice_id && (
+            {ARCA_ENABLED && invoiceId && (
               <span className="text-[11px] font-semibold text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded-lg">
-                Comprobante #{appointment.arca_invoice_id}
+                Comprobante #{invoiceId}
               </span>
             )}
           </div>
         )}
 
         {/* Revertir cobro si está cobrado y no tiene comprobante */}
-        {isPaid && !appointment.arca_invoice_id && (
+        {isPaid && !invoiceId && (
           <div className="space-y-2">
             {!confirmRevertPayment ? (
               <button
@@ -1002,7 +1002,7 @@ export default function AppointmentDetailsSplitPanel({
                 <span className="font-mono font-bold text-[var(--foreground)]">
                   {invoice.point_of_sale != null && invoice.voucher_number != null
                     ? `${String(invoice.point_of_sale).padStart(4, "0")}-${String(invoice.voucher_number).padStart(8, "0")}`
-                    : `#${appointment.arca_invoice_id}`}
+                    : `#${invoiceId}`}
                 </span>
               </div>
 
