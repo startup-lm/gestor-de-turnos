@@ -15,7 +15,7 @@ import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
 import ArcaDocFields from "@/components/arca/ArcaDocFields";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { toast } from "@/lib/store/useToastStore";
-import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
+import InlineConfirm from "@/components/ui/InlineConfirm";
 import { Appointment } from "@/lib/types/Appointment";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -302,48 +302,61 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
         </div>
 
         {/* Acciones principales en cabecera */}
-        <div className="flex items-center gap-3 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setIsConfirmingDelete(true)}
-            disabled={deleting || saving || isDeleteDisabled}
-            title={
-              initialAppointment.arca_invoice_id
-                ? "No se puede eliminar un turno que ya posee comprobante fiscal emitido ante ARCA"
-                : initialAppointment.paid
-                ? "No se puede eliminar un turno que ya fue cobrado"
-                : undefined
-            }
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 border border-red-500/20 text-xs md:text-sm font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span>Eliminar turno</span>
-          </button>
+        <div className="flex flex-col gap-3 self-start sm:self-auto w-full sm:w-auto">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsConfirmingDelete(true)}
+              disabled={deleting || saving || isDeleteDisabled}
+              title={
+                initialAppointment.arca_invoice_id
+                  ? "No se puede eliminar un turno que ya posee comprobante fiscal emitido ante ARCA"
+                  : initialAppointment.paid
+                  ? "No se puede eliminar un turno que ya fue cobrado"
+                  : undefined
+              }
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 border border-red-500/20 text-xs md:text-sm font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Eliminar turno</span>
+            </button>
 
-          <button
-            type="submit"
-            form="appointment-edit-form"
-            disabled={!isDirty || saving || isLocked}
-            title={
-              isLocked
-                ? "No se puede editar un turno que ya posee comprobante fiscal emitido ante ARCA"
-                : undefined
-            }
-            className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 min-h-[40px] ${
-              isDirty && !saving && !isLocked
-                ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
-                : "!bg-white/5 !text-slate-500 border border-white/10 cursor-not-allowed opacity-50"
-            }`}
-          >
-            {saving ? (
-              <Loader2 className="w-4 h-4 animate-spin text-inherit" />
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                <span>Guardar cambios</span>
-              </>
-            )}
-          </button>
+            <button
+              type="submit"
+              form="appointment-edit-form"
+              disabled={!isDirty || saving || isLocked}
+              title={
+                isLocked
+                  ? "No se puede editar un turno que ya posee comprobante fiscal emitido ante ARCA"
+                  : undefined
+              }
+              className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 min-h-[40px] ${
+                isDirty && !saving && !isLocked
+                  ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
+                  : "!bg-white/5 !text-slate-500 border border-white/10 cursor-not-allowed opacity-50"
+              }`}
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin text-inherit" />
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Guardar cambios</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {isConfirmingDelete && (
+            <InlineConfirm
+              message="¿Eliminar este turno? Esta acción cancelará y eliminará el turno agendado de la base de datos."
+              confirmText="Eliminar"
+              cancelText="Cancelar"
+              onConfirm={handleDelete}
+              onCancel={() => setIsConfirmingDelete(false)}
+              loading={deleting}
+            />
+          )}
         </div>
       </div>
 
@@ -790,18 +803,6 @@ export default function TurnoDetailClient({ initialAppointment }: Readonly<Props
           </div>
         </div>
       </form>
-
-      {/* Modal de confirmación de eliminación */}
-      <DeleteConfirmModal
-        isOpen={isConfirmingDelete}
-        onClose={() => setIsConfirmingDelete(false)}
-        onConfirm={handleDelete}
-        title="¿Eliminar este turno?"
-        description="Esta acción cancelará y eliminará el turno agendado de la base de datos."
-        confirmText="Eliminar"
-        cancelText="Cancelar"
-        loading={deleting}
-      />
     </div>
   );
 }

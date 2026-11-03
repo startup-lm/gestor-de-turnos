@@ -21,7 +21,7 @@ import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
 import ArcaDocFields from "@/components/arca/ArcaDocFields";
 import { toast } from "@/lib/store/useToastStore";
-import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
+import InlineConfirm from "@/components/ui/InlineConfirm";
 import {
   Receipt,
   X,
@@ -889,7 +889,7 @@ export default function AppointmentDetailsSplitPanel({
         )}
 
         {/* FILA DE ACCIONES SECUNDARIAS: Eliminar y Guardar cambios */}
-        <div className="pt-2">
+        <div className="pt-2 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
@@ -910,64 +910,64 @@ export default function AppointmentDetailsSplitPanel({
               <span>{isBlockedRange ? "Desbloquear" : "Eliminar"}</span>
             </button>
 
-              <button
-                type="submit"
-                id="btn-appt-save"
-                aria-label="Guardar cambios"
-                disabled={!hasChanges || loadingUpdate || isLocked}
-                title={
-                  isLocked
-                    ? "No se puede editar un turno que ya posee comprobante fiscal emitido ante ARCA"
-                    : undefined
+            <button
+              type="submit"
+              id="btn-appt-save"
+              aria-label="Guardar cambios"
+              disabled={!hasChanges || loadingUpdate || isLocked}
+              title={
+                isLocked
+                  ? "No se puede editar un turno que ya posee comprobante fiscal emitido ante ARCA"
+                  : undefined
+              }
+              className={`w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl transition-all text-xs font-black active:scale-95 ${
+                hasChanges && !loadingUpdate && !isLocked
+                  ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-md shadow-[var(--accent)]/20 cursor-pointer animate-pulse"
+                  : "!bg-[var(--foreground)]/5 !text-[var(--foreground)]/30 border border-[var(--foreground)]/10 cursor-not-allowed"
+              }`}
+            >
+              {loadingUpdate ? (
+                <Loader2 className="w-4 h-4 animate-spin text-inherit" />
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>{hasChanges ? "Guardar cambios" : "Sin cambios"}</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {confirmDelete && (
+            <InlineConfirm
+              message={
+                isBlockedRange
+                  ? "¿Desbloquear este horario? El horario volverá a quedar disponible para reservas en la agenda pública."
+                  : "¿Eliminar este turno? Esta acción no se puede deshacer y el horario quedará libre para otros clientes."
+              }
+              confirmText={isBlockedRange ? "Desbloquear" : "Eliminar"}
+              cancelText="Cancelar"
+              onConfirm={async () => {
+                const ok = await handleDelete();
+                if (ok) {
+                  setConfirmDelete(false);
+                  onClose();
+                  onAppointmentChanged?.();
                 }
-                className={`w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl transition-all text-xs font-black active:scale-95 ${
-                  hasChanges && !loadingUpdate && !isLocked
-                    ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-md shadow-[var(--accent)]/20 cursor-pointer animate-pulse"
-                    : "!bg-[var(--foreground)]/5 !text-[var(--foreground)]/30 border border-[var(--foreground)]/10 cursor-not-allowed"
-                }`}
-              >
-                {loadingUpdate ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-inherit" />
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    <span>{hasChanges ? "Guardar cambios" : "Sin cambios"}</span>
-                  </>
-                )}
-              </button>
-            </div>
-            {(isDeleteDisabled || isLocked) && (
-              <p className="text-[11px] text-amber-400/90 text-center font-medium mt-2">
-                {isLocked
-                  ? "Este turno ya cuenta con comprobante fiscal emitido ante ARCA y no puede ser modificado ni eliminado."
-                  : "Este turno ya fue cobrado y no puede ser eliminado."}
-              </p>
-            )}
+              }}
+              onCancel={() => setConfirmDelete(false)}
+              loading={loading}
+            />
+          )}
+
+          {(isDeleteDisabled || isLocked) && (
+            <p className="text-[11px] text-amber-400/90 text-center font-medium mt-2">
+              {isLocked
+                ? "Este turno ya cuenta con comprobante fiscal emitido ante ARCA y no puede ser modificado ni eliminado."
+                : "Este turno ya fue cobrado y no puede ser eliminado."}
+            </p>
+          )}
         </div>
       </form>
-
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmModal
-        isOpen={confirmDelete}
-        onClose={() => setConfirmDelete(false)}
-        onConfirm={async () => {
-          const ok = await handleDelete();
-          if (ok) {
-            setConfirmDelete(false);
-            onClose();
-            onAppointmentChanged?.();
-          }
-        }}
-        title={isBlockedRange ? "¿Desbloquear este horario?" : "¿Eliminar este turno?"}
-        description={
-          isBlockedRange
-            ? "El horario volverá a quedar disponible para reservas en la agenda pública."
-            : "Esta acción no se puede deshacer y el horario quedará libre para otros clientes."
-        }
-        confirmText={isBlockedRange ? "Desbloquear" : "Eliminar"}
-        cancelText="Cancelar"
-        loading={loading}
-      />
     </div>
   );
 }

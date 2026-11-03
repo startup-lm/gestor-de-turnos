@@ -19,7 +19,7 @@ import { updateService, deleteService } from "@/lib/repository/services";
 import { uploadImage, deleteImage } from "@/lib/repository/storage";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { toast } from "@/lib/store/useToastStore";
-import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
+import InlineConfirm from "@/components/ui/InlineConfirm";
 import logo from "@/public/images/logo.png";
 
 interface Props {
@@ -160,36 +160,49 @@ export default function ServicioDetailClient({ initialService }: Readonly<Props>
         </div>
 
         {isAdmin && (
-          <div className="flex items-center gap-3 self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setIsConfirmingDelete(true)}
-              disabled={deleting || saving}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 border border-red-500/20 text-xs md:text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>Eliminar servicio</span>
-            </button>
+          <div className="flex flex-col gap-3 self-start sm:self-auto w-full sm:w-auto">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsConfirmingDelete(true)}
+                disabled={deleting || saving}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 border border-red-500/20 text-xs md:text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Eliminar servicio</span>
+              </button>
 
-            <button
-              type="submit"
-              form="service-edit-form"
-              disabled={!isDirty || saving}
-              className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 min-h-[40px] ${
-                isDirty && !saving
-                  ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
-                  : "!bg-[var(--foreground)]/5 !text-[var(--foreground)]/30 border border-[var(--foreground)]/10 cursor-not-allowed opacity-50"
-              }`}
-            >
-              {saving ? (
-                <Loader2 className="w-4 h-4 animate-spin text-inherit" />
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>Guardar cambios</span>
-                </>
-              )}
-            </button>
+              <button
+                type="submit"
+                form="service-edit-form"
+                disabled={!isDirty || saving}
+                className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 min-h-[40px] ${
+                  isDirty && !saving
+                    ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
+                    : "!bg-[var(--foreground)]/5 !text-[var(--foreground)]/30 border border-[var(--foreground)]/10 cursor-not-allowed opacity-50"
+                }`}
+              >
+                {saving ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-inherit" />
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>Guardar cambios</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {isConfirmingDelete && (
+              <InlineConfirm
+                message="¿Eliminar servicio? Esta acción no se puede deshacer. Se eliminará del menú de turnos."
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+                onConfirm={handleDelete}
+                onCancel={() => setIsConfirmingDelete(false)}
+                loading={deleting}
+              />
+            )}
           </div>
         )}
       </div>
@@ -337,18 +350,6 @@ export default function ServicioDetailClient({ initialService }: Readonly<Props>
             </div>
           </div>
         </form>
-
-        {/* Delete Confirmation Modal */}
-        <DeleteConfirmModal
-          isOpen={isConfirmingDelete}
-          onClose={() => setIsConfirmingDelete(false)}
-          onConfirm={handleDelete}
-          title="¿Eliminar servicio?"
-          description="Esta acción no se puede deshacer. Se eliminará del menú de turnos."
-          confirmText="Eliminar"
-          cancelText="Cancelar"
-          loading={deleting}
-        />
         </>
       ) : (
         /* Guest Showcase View */
