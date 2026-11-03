@@ -250,12 +250,14 @@ export default function FacturasSection() {
   const [viewMode, setViewMode] = useState<"list" | "emit">("list");
 
   const {
+    data: config,
     loading: loadingConfig,
   } = useFetchOnce<ArcaConfig>("arcaConfig", getArcaConfig);
   const {
     data: status,
     loading: loadingStatus,
   } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);
+  const isMock = config?.environment === "mock" || status?.environment === "mock";
 
   // Período de facturación ARCA (diario, semanal, quincenal, mensual, personalizado)
   const [periodPreset, setPeriodPreset] = useState<ArcaPeriod>("monthly");
@@ -323,6 +325,7 @@ export default function FacturasSection() {
   // Turnos en el período (facturados vs pendientes de facturar)
   const [periodAppointments, setPeriodAppointments] = useState<Appointment[]>([]);
   const [batchBilling, setBatchBilling] = useState(false);
+  const [confirmBatch, setConfirmBatch] = useState(false);
 
   // Emisión manual
   const [emitTotal, setEmitTotal] = useState("");
@@ -383,7 +386,7 @@ export default function FacturasSection() {
   // Turnos pendientes de facturar en el período
   const unbilledAppointments = useMemo(() => {
     return periodAppointments.filter(
-      (a) => !a.arca_invoice_id && a.price && a.price > 0 && a.phone !== "0000000000"
+      (a) => !a.arca_invoice_id && a.paid && a.price && a.price > 0 && a.phone !== "0000000000"
     );
   }, [periodAppointments]);
 
@@ -409,6 +412,7 @@ export default function FacturasSection() {
 
     setBatchBilling(true);
     let successCount = 0;
+    let failureCount = 0;
     try {
       for (const appt of unbilledAppointments) {
         const res = await emitArcaInvoice({
@@ -420,9 +424,17 @@ export default function FacturasSection() {
         });
         if (res.success) {
           successCount++;
+        } else {
+          failureCount++;
         }
       }
-      toast.success(`Se emitieron ${successCount} comprobantes electrónicos con éxito.`);
+      if (successCount > 0) {
+        toast.success(`Se emitieron ${successCount} comprobantes.`);
+      }
+      if (failureCount > 0) {
+        toast.error(`No se pudieron emitir ${failureCount} comprobantes.`);
+      }
+      setConfirmBatch(false);
       await Promise.all([loadInvoices(), loadPeriodAppointments()]);
       setViewMode("list");
     } catch (err) {
@@ -460,9 +472,11 @@ export default function FacturasSection() {
       if (!res.success) {
         toast.error(res.error ?? "Error al emitir comprobante");
       } else {
-        toast.success(
-          `Factura emitida con éxito. CAE: ${res.cae ?? "Demo"} (Comp. #${res.voucherNumber ?? "1"})`
-        );
+        if (res.cae) {
+          toast.success(`Factura emitida. CAE: ${res.cae}`);
+        } else {
+          toast.success("Factura emitida");
+        }
         setEmitTotal("");
         setEmitCustomerName("");
         setEmitDocNumber("");
@@ -503,6 +517,12 @@ export default function FacturasSection() {
   if (viewMode === "emit") {
     return (
       <div className="space-y-6 animate-in fade-in duration-300 w-full">
+        {isMock && (
+          <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-medium">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
+            <span>Modo demo: los comprobantes son de prueba y no tienen validez fiscal.</span>
+          </div>
+        )}
         {/* Cabecera con botón Volver arriba a la izquierda estilo estándar de /admin */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/60 pb-5">
           <div className="space-y-1.5">
@@ -633,20 +653,45 @@ export default function FacturasSection() {
 
             <button
               type="button"
-              onClick={handleBatchInvoice}
+              onClick={() => setConfirmBatch(true)}
               disabled={!status?.ready || batchBilling || unbilledAppointments.length === 0 || !isPeriodValid}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-xs transition-all cursor-pointer shadow-md shadow-[var(--accent)]/15 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap active:scale-95 self-start sm:self-auto"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-xs transition-all cursor-pointer shadow-md shadow-[var(--accent)]/15 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap active:scale-95 self-start sm:self-auto min-h-[44px] sm:min-h-0"
             >
               {batchBilling ? (
                 <Loader2 className="w-4 h-4 animate-spin text-inherit" />
               ) : (
-                <>
-                  <Zap className="w-4 h-4" />
-                  <span>Facturar turnos pendientes</span>
-                </>
+                <Zap className="w-4 h-4" />
               )}
+              <span>Facturar turnos pendientes</span>
             </button>
           </div>
+
+          {confirmBatch && (
+            <div className="mt-4 pt-4 border-t border-[var(--foreground)]/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-in fade-in duration-200">
+              <p className="text-xs text-slate-200">
+                Vas a emitir {unbilledAppointments.length} comprobantes por ${unbilledTotal.toLocaleString("es-AR", { minimumFractionDigits: 0 })}. ¿Confirmás?
+              </p>
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <button
+                  type="button"
+                  disabled={batchBilling}
+                  onClick={() => setConfirmBatch(false)}
+                  className="px-3.5 py-1.5 rounded-xl border border-[var(--foreground)]/20 text-xs text-slate-300 hover:bg-white/5 font-medium transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={batchBilling}
+                  onClick={handleBatchInvoice}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-xs transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0"
+                >
+                  {batchBilling && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>Sí, emitir</span>
+                </button>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* ── Opción 2: Emisión Manual Individual ───────────────────── */}
@@ -709,6 +754,12 @@ export default function FacturasSection() {
   // ── MODO 1: LISTADO DE COMPROBANTES (VISTA PRINCIPAL POR DEFECTO) ────────
   return (
     <div className="space-y-6 animate-in fade-in duration-300 w-full">
+      {isMock && (
+        <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-medium">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
+          <span>Modo demo: los comprobantes son de prueba y no tienen validez fiscal.</span>
+        </div>
+      )}
       {/* Cabecera Estilo Ventas */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
