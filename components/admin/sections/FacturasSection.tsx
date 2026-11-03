@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArcaSkeleton, SalesTableSkeleton } from "@/components/loading/Skeleton";
+import { ArcaSkeleton } from "@/components/loading/Skeleton";
 import SendButton from "@/components/buttons/SendButton";
 import { toast } from "@/lib/store/useToastStore";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
@@ -18,6 +18,7 @@ import type {
   ArcaInvoiceRecord,
   ArcaStatus,
 } from "@/lib/types/Arca";
+import ArcaDocFields from "@/components/arca/ArcaDocFields";
 import { Appointment } from "@/lib/types/Appointment";
 import {
   Receipt,
@@ -54,13 +55,6 @@ const DOC_TYPE_LABELS: Record<number, string> = {
   96: "DNI",
   99: "Cons. Final",
 };
-
-const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
-  { value: 99, label: "Consumidor final" },
-  { value: 96, label: "DNI" },
-  { value: 80, label: "CUIT" },
-  { value: 86, label: "CUIL" },
-];
 
 type ArcaPeriod = "daily" | "weekly" | "biweekly" | "monthly" | "custom";
 
@@ -141,7 +135,7 @@ function MetricCard({
         <Icon className="w-5 h-5" />
       </div>
       <div>
-        <p className="text-xs font-medium opacity-70 uppercase tracking-wider">{label}</p>
+        <p className="text-xs font-medium opacity-70 tracking-wider">{label}</p>
         <p className="text-xl font-bold">{value}</p>
         {sub && <p className="text-[10px] opacity-60 mt-0.5">{sub}</p>}
       </div>
@@ -215,30 +209,30 @@ function InvoiceRow({ inv }: { inv: ArcaInvoiceRecord }) {
           <td colSpan={8} className="px-4 py-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div>
-                <p className="text-[var(--foreground)]/40 uppercase tracking-wider text-[10px] mb-0.5">Punto de venta</p>
+                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Punto de venta</p>
                 <p className="font-medium">{inv.point_of_sale ?? "—"}</p>
               </div>
               <div>
-                <p className="text-[var(--foreground)]/40 uppercase tracking-wider text-[10px] mb-0.5">Tipo comprobante</p>
+                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Tipo comprobante</p>
                 <p className="font-medium">{inv.invoice_type ?? inv.voucher_type ?? "—"}</p>
               </div>
               <div>
-                <p className="text-[var(--foreground)]/40 uppercase tracking-wider text-[10px] mb-0.5">Tipo documento</p>
+                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Tipo documento</p>
                 <p className="font-medium">
                   {inv.doc_type ? `${DOC_TYPE_LABELS[inv.doc_type] ?? inv.doc_type}` : "—"}
                 </p>
               </div>
               <div>
-                <p className="text-[var(--foreground)]/40 uppercase tracking-wider text-[10px] mb-0.5">Nro. documento</p>
+                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Nro. documento</p>
                 <p className="font-medium">{inv.doc_number ?? "—"}</p>
               </div>
               <div>
-                <p className="text-[var(--foreground)]/40 uppercase tracking-wider text-[10px] mb-0.5">Vto. CAE</p>
+                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Vto. CAE</p>
                 <p className="font-medium">{inv.cae_due_date ?? "—"}</p>
               </div>
               {inv.source_id && (
                 <div>
-                  <p className="text-[var(--foreground)]/40 uppercase tracking-wider text-[10px] mb-0.5">ID origen</p>
+                  <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">ID origen</p>
                   <p className="font-medium">#{inv.source_id}</p>
                 </div>
               )}
@@ -256,12 +250,14 @@ export default function FacturasSection() {
   const [viewMode, setViewMode] = useState<"list" | "emit">("list");
 
   const {
+    data: config,
     loading: loadingConfig,
   } = useFetchOnce<ArcaConfig>("arcaConfig", getArcaConfig);
   const {
     data: status,
     loading: loadingStatus,
   } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);
+  const isMock = config?.environment === "mock" || status?.environment === "mock";
 
   // Período de facturación ARCA (diario, semanal, quincenal, mensual, personalizado)
   const [periodPreset, setPeriodPreset] = useState<ArcaPeriod>("monthly");
@@ -329,6 +325,7 @@ export default function FacturasSection() {
   // Turnos en el período (facturados vs pendientes de facturar)
   const [periodAppointments, setPeriodAppointments] = useState<Appointment[]>([]);
   const [batchBilling, setBatchBilling] = useState(false);
+  const [confirmBatch, setConfirmBatch] = useState(false);
 
   // Emisión manual
   const [emitTotal, setEmitTotal] = useState("");
@@ -389,7 +386,7 @@ export default function FacturasSection() {
   // Turnos pendientes de facturar en el período
   const unbilledAppointments = useMemo(() => {
     return periodAppointments.filter(
-      (a) => !a.arca_invoice_id && a.price && a.price > 0 && a.phone !== "0000000000"
+      (a) => !a.arca_invoice_id && a.paid && a.price && a.price > 0 && a.phone !== "0000000000"
     );
   }, [periodAppointments]);
 
@@ -415,6 +412,7 @@ export default function FacturasSection() {
 
     setBatchBilling(true);
     let successCount = 0;
+    let failureCount = 0;
     try {
       for (const appt of unbilledAppointments) {
         const res = await emitArcaInvoice({
@@ -426,9 +424,17 @@ export default function FacturasSection() {
         });
         if (res.success) {
           successCount++;
+        } else {
+          failureCount++;
         }
       }
-      toast.success(`Se emitieron ${successCount} comprobantes electrónicos con éxito.`);
+      if (successCount > 0) {
+        toast.success(`Se emitieron ${successCount} comprobantes.`);
+      }
+      if (failureCount > 0) {
+        toast.error(`No se pudieron emitir ${failureCount} comprobantes.`);
+      }
+      setConfirmBatch(false);
       await Promise.all([loadInvoices(), loadPeriodAppointments()]);
       setViewMode("list");
     } catch (err) {
@@ -466,9 +472,11 @@ export default function FacturasSection() {
       if (!res.success) {
         toast.error(res.error ?? "Error al emitir comprobante");
       } else {
-        toast.success(
-          `Factura emitida con éxito. CAE: ${res.cae ?? "Demo"} (Comp. #${res.voucherNumber ?? "1"})`
-        );
+        if (res.cae) {
+          toast.success(`Factura emitida. CAE: ${res.cae}`);
+        } else {
+          toast.success("Factura emitida");
+        }
         setEmitTotal("");
         setEmitCustomerName("");
         setEmitDocNumber("");
@@ -493,7 +501,7 @@ export default function FacturasSection() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-              Comprobantes fiscales
+              Comprobantes
             </h2>
             <p className="text-xs text-slate-400 mt-1">
               Historial y registro de facturación electrónica ARCA con CAE
@@ -509,16 +517,22 @@ export default function FacturasSection() {
   if (viewMode === "emit") {
     return (
       <div className="space-y-6 animate-in fade-in duration-300 w-full">
+        {isMock && (
+          <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-medium">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
+            <span>Modo demo: los comprobantes son de prueba y no tienen validez fiscal.</span>
+          </div>
+        )}
         {/* Cabecera con botón Volver arriba a la izquierda estilo estándar de /admin */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/60 pb-5">
           <div className="space-y-1.5">
             <button
               type="button"
               onClick={() => setViewMode("list")}
-              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
+              className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
             >
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              <span>Volver a facturas</span>
+              <span>Volver a comprobantes</span>
             </button>
             <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
               Emitir comprobante
@@ -639,20 +653,45 @@ export default function FacturasSection() {
 
             <button
               type="button"
-              onClick={handleBatchInvoice}
+              onClick={() => setConfirmBatch(true)}
               disabled={!status?.ready || batchBilling || unbilledAppointments.length === 0 || !isPeriodValid}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-xs transition-all cursor-pointer shadow-md shadow-[var(--accent)]/15 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap active:scale-95 self-start sm:self-auto"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 font-bold text-xs transition-all cursor-pointer shadow-md shadow-[var(--accent)]/15 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap active:scale-95 self-start sm:self-auto min-h-[44px] sm:min-h-0"
             >
               {batchBilling ? (
                 <Loader2 className="w-4 h-4 animate-spin text-inherit" />
               ) : (
-                <>
-                  <Zap className="w-4 h-4" />
-                  <span>Facturar turnos pendientes</span>
-                </>
+                <Zap className="w-4 h-4" />
               )}
+              <span>Facturar turnos pendientes</span>
             </button>
           </div>
+
+          {confirmBatch && (
+            <div className="mt-4 pt-4 border-t border-[var(--foreground)]/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-in fade-in duration-200">
+              <p className="text-xs text-slate-200">
+                Vas a emitir {unbilledAppointments.length} comprobantes por ${unbilledTotal.toLocaleString("es-AR", { minimumFractionDigits: 0 })}. ¿Confirmás?
+              </p>
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <button
+                  type="button"
+                  disabled={batchBilling}
+                  onClick={() => setConfirmBatch(false)}
+                  className="px-3.5 py-1.5 rounded-xl border border-[var(--foreground)]/20 text-xs text-slate-300 hover:bg-white/5 font-medium transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={batchBilling}
+                  onClick={handleBatchInvoice}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 font-bold text-xs transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0"
+                >
+                  {batchBilling && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>Sí, emitir</span>
+                </button>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* ── Opción 2: Emisión Manual Individual ───────────────────── */}
@@ -688,36 +727,14 @@ export default function FacturasSection() {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Tipo de documento
-              </label>
-              <select
-                value={emitDocType}
-                onChange={(e) => setEmitDocType(Number(e.target.value) as ArcaDocType)}
-                className="w-full border rounded-xl px-3 py-2 text-sm bg-[var(--background)] border-[var(--foreground)]/15 focus:border-[var(--accent)] outline-none"
-              >
-                {DOC_TYPES.map((d) => (
-                  <option key={d.value} value={d.value}>
-                    {d.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {emitDocType !== 99 && (
-              <div className="md:col-span-3">
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Número de documento <span className="text-[var(--accent)]">*</span>
-                </label>
-                <input
-                  value={emitDocNumber}
-                  onChange={(e) => setEmitDocNumber(e.target.value)}
-                  className="w-full border rounded-xl px-3 py-2 text-sm bg-transparent border-[var(--foreground)]/15 focus:border-[var(--accent)] outline-none"
-                  placeholder={emitDocType === 80 ? "20-XXXXXXXX-X" : "XX.XXX.XXX"}
-                />
-              </div>
-            )}
+            <ArcaDocFields
+              idPrefix="factura-emit"
+              docType={emitDocType}
+              onDocTypeChange={setEmitDocType}
+              docNumber={emitDocNumber}
+              onDocNumberChange={setEmitDocNumber}
+              numberClassName="md:col-span-3"
+            />
 
             <div className="md:col-span-3 flex justify-end pt-4 border-t border-white/5">
               <SendButton
@@ -737,16 +754,22 @@ export default function FacturasSection() {
   // ── MODO 1: LISTADO DE COMPROBANTES (VISTA PRINCIPAL POR DEFECTO) ────────
   return (
     <div className="space-y-6 animate-in fade-in duration-300 w-full">
+      {isMock && (
+        <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-medium">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
+          <span>Modo demo: los comprobantes son de prueba y no tienen validez fiscal.</span>
+        </div>
+      )}
       {/* Cabecera Estilo Ventas */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-              Comprobantes fiscales
+              Comprobantes
             </h2>
             {status?.environment && (
               <span
-                className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border ${
+                className={`text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md border ${
                   status.environment === "prod"
                     ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                     : status.environment === "homo"
@@ -765,7 +788,7 @@ export default function FacturasSection() {
         <button
           type="button"
           onClick={() => setViewMode("emit")}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           <span>Emitir factura</span>
@@ -948,7 +971,13 @@ export default function FacturasSection() {
           </div>
         )}
 
-        {loadingInvoices && <SalesTableSkeleton />}
+        {loadingInvoices && (
+          <div className="space-y-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-12 rounded-xl bg-white/5 animate-pulse" />
+            ))}
+          </div>
+        )}
 
         {!loadingInvoices && invoices.length === 0 && (
           <p className="text-sm text-gray-400 text-center py-6">
@@ -962,7 +991,7 @@ export default function FacturasSection() {
           <div className="overflow-x-auto">
             <table className="min-w-full text-xs md:text-sm">
               <thead>
-                <tr className="border-b border-gray-700 text-left text-[var(--foreground)]/50 text-[11px] uppercase tracking-wider">
+                <tr className="border-b border-gray-700 text-left text-[var(--foreground)]/50 text-[11px] tracking-wider">
                   <th className="py-2 pr-3">Fecha</th>
                   <th className="py-2 pr-3">Estado</th>
                   <th className="py-2 pr-3">Total</th>

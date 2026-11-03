@@ -12,9 +12,11 @@ import { DetailFormSkeleton } from "@/components/loading/Skeleton";
 import { updateSale, deleteSale } from "@/lib/repository/sales";
 import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
+import ArcaDocFields from "@/components/arca/ArcaDocFields";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { toast } from "@/lib/store/useToastStore";
-import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
+import InlineConfirm from "@/components/ui/InlineConfirm";
 import { SaleWithRelations } from "@/lib/types/Sale";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -37,13 +39,6 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
-  { value: 99, label: "Consumidor final" },
-  { value: 96, label: "DNI" },
-  { value: 80, label: "CUIT" },
-  { value: 86, label: "CUIL" },
-];
-
 interface Props {
   initialSale: SaleWithRelations;
 }
@@ -64,6 +59,14 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
   const { data: arcaStatus } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);
 
   const products = useMemo<Product[]>(() => productsData ?? [], [productsData]);
+
+  // Un barbero no puede pasarle la venta a otro: el selector le muestra solo a él
+  const { role, barberId } = useAuth();
+  const isAdmin = role === "admin";
+  const selectableBarbers = useMemo(() => {
+    const active = (barbers ?? []).filter((b) => b.active !== false);
+    return isAdmin ? active : active.filter((b) => b.id === barberId);
+  }, [isAdmin, barbers, barberId]);
 
   // Form states initialized with initialSale
   const [selectedProductId, setSelectedProductId] = useState<number>(initialSale.product_id);
@@ -217,7 +220,7 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
           <button
             type="button"
             onClick={handleBack}
-            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
+            className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             <span>Volver a ventas</span>
@@ -233,46 +236,59 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
         </div>
 
         {/* Acciones principales en cabecera */}
-        <div className="flex items-center gap-3 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setIsConfirmingDelete(true)}
-            disabled={deleting || saving || hasExistingInvoice}
-            title={
-              hasExistingInvoice
-                ? "No se puede eliminar una venta con comprobante fiscal emitido ante ARCA"
-                : undefined
-            }
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 border border-red-500/20 text-xs md:text-sm font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span>Eliminar venta</span>
-          </button>
+        <div className="flex flex-col gap-3 self-start sm:self-auto w-full sm:w-auto">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsConfirmingDelete(true)}
+              disabled={deleting || saving || hasExistingInvoice}
+              title={
+                hasExistingInvoice
+                  ? "No se puede eliminar una venta con comprobante fiscal emitido ante ARCA"
+                  : undefined
+              }
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 border border-red-500/20 text-xs md:text-sm font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Eliminar venta</span>
+            </button>
 
-          <button
-            type="submit"
-            form="sale-edit-form"
-            disabled={!isDirty || saving || isLocked}
-            title={
-              isLocked
-                ? "No se puede editar una venta con comprobante fiscal emitido ante ARCA"
-                : undefined
-            }
-            className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 min-h-[40px] ${
-              isDirty && !saving && !isLocked
-                ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
-                : "!bg-white/5 !text-slate-500 border border-white/10 cursor-not-allowed opacity-50"
-            }`}
-          >
-            {saving ? (
-              <Loader2 className="w-4 h-4 animate-spin text-inherit" />
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                <span>Guardar cambios</span>
-              </>
-            )}
-          </button>
+            <button
+              type="submit"
+              form="sale-edit-form"
+              disabled={!isDirty || saving || isLocked}
+              title={
+                isLocked
+                  ? "No se puede editar una venta con comprobante fiscal emitido ante ARCA"
+                  : undefined
+              }
+              className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 min-h-[40px] ${
+                isDirty && !saving && !isLocked
+                  ? "!bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
+                  : "!bg-white/5 !text-slate-500 border border-white/10 cursor-not-allowed opacity-50"
+              }`}
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin text-inherit" />
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Guardar cambios</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {isConfirmingDelete && (
+            <InlineConfirm
+              message="¿Eliminar esta venta? Esta acción no se puede deshacer y ajustará los registros de caja del salón."
+              confirmText="Eliminar"
+              cancelText="Cancelar"
+              onConfirm={handleDelete}
+              onCancel={() => setIsConfirmingDelete(false)}
+              loading={deleting}
+            />
+          )}
         </div>
       </div>
 
@@ -338,7 +354,7 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
               </label>
               <BarberSelector
                 id="sale-edit-barber"
-                barbers={barbers ?? []}
+                barbers={selectableBarbers}
                 selectedBarberId={selectedBarberId}
                 onChange={setSelectedBarberId}
                 disabled={isLocked}
@@ -580,38 +596,13 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
 
                     {emitInvoice && (
                       <div className="space-y-4 pt-3 border-t border-white/10 animate-in fade-in duration-200">
-                        <div>
-                          <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
-                            Tipo de documento
-                          </label>
-                          <select
-                            value={docType}
-                            onChange={(e) => setDocType(Number(e.target.value) as ArcaDocType)}
-                            className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-2.5 text-xs outline-none"
-                          >
-                            {DOC_TYPES.map((dt) => (
-                              <option key={dt.value} value={dt.value} style={{ color: "black" }}>
-                                {dt.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {docType !== 99 && (
-                          <div>
-                            <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
-                              Número de documento
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              value={docNumber}
-                              onChange={(e) => setDocNumber(e.target.value)}
-                              placeholder="Sin puntos ni guiones"
-                              className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-2.5 text-xs outline-none"
-                            />
-                          </div>
-                        )}
+                        <ArcaDocFields
+                          idPrefix="venta-detail"
+                          docType={docType}
+                          onDocTypeChange={setDocType}
+                          docNumber={docNumber}
+                          onDocNumberChange={setDocNumber}
+                        />
                       </div>
                     )}
                   </>
@@ -625,18 +616,6 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
           </div>
         </div>
       </form>
-
-      {/* Modal de confirmación de eliminación */}
-      <DeleteConfirmModal
-        isOpen={isConfirmingDelete}
-        onClose={() => setIsConfirmingDelete(false)}
-        onConfirm={handleDelete}
-        title="¿Eliminar esta venta?"
-        description="Esta acción no se puede deshacer y ajustará los registros de caja del salón."
-        confirmText="Eliminar"
-        cancelText="Cancelar"
-        loading={deleting}
-      />
     </div>
   );
 }

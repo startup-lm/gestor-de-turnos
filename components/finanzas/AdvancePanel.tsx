@@ -1,15 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Barber } from "@/lib/types/Barbers";
 import { createCashMovement } from "@/lib/repository/cash";
+import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { DEFAULT_PAYMENT_METHODS } from "@/lib/flags";
 import { toast } from "@/lib/store/useToastStore";
+import { formatARS } from "@/lib/format/currency";
+import { roleLabel } from "@/lib/format/roles";
 import {
   HandCoins,
   Check,
   Banknote,
   ArrowRightLeft,
+  CreditCard,
+  Wallet,
   ArrowLeft,
+  Loader2,
 } from "lucide-react";
 
 interface Props {
@@ -19,18 +26,51 @@ interface Props {
   onSuccess: () => void;
 }
 
+const getMethodIcon = (name: string) => {
+  const lower = name.toLowerCase();
+  if (lower.includes("efectivo")) return Banknote;
+  if (lower.includes("transf")) return ArrowRightLeft;
+  if (
+    lower.includes("débito") ||
+    lower.includes("debito") ||
+    lower.includes("crédito") ||
+    lower.includes("credito") ||
+    lower.includes("tarjeta")
+  ) {
+    return CreditCard;
+  }
+  return Wallet;
+};
+
 export default function AdvancePanel({
   barbers,
   initialBarberId,
   onClose,
   onSuccess,
 }: Readonly<Props>) {
+  const { businessSettings } = useBusinessContext();
+  const paymentMethods = useMemo(
+    () =>
+      businessSettings?.payment_methods?.length
+        ? businessSettings.payment_methods
+        : DEFAULT_PAYMENT_METHODS,
+    [businessSettings?.payment_methods]
+  );
+
   const [barberId, setBarberId] = useState<number>(initialBarberId || barbers[0]?.id || 0);
   const [amount, setAmount] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] = useState<string>("Efectivo");
+  const [paymentMethod, setPaymentMethod] = useState<string>(
+    () => paymentMethods[0] || "Efectivo"
+  );
   const [description, setDescription] = useState<string>("Adelanto de comisión");
   const [referenceCode, setReferenceCode] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (paymentMethods.length > 0 && !paymentMethods.includes(paymentMethod)) {
+      setPaymentMethod(paymentMethods[0]);
+    }
+  }, [paymentMethods, paymentMethod]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +103,7 @@ export default function AdvancePanel({
         return;
       }
 
-      toast.success(`Adelanto de $${numAmount.toLocaleString("es-AR")} registrado correctamente`);
+      toast.success(`Adelanto de ${formatARS(numAmount)} registrado correctamente`);
       onSuccess();
     } catch (err) {
       console.error(err);
@@ -81,7 +121,7 @@ export default function AdvancePanel({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-2 text-xs font-semibold cursor-pointer"
+            className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-2 text-xs font-semibold cursor-pointer min-h-[44px] sm:min-h-0"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Volver</span>
@@ -113,7 +153,7 @@ export default function AdvancePanel({
           >
             {barbers.map((b) => (
               <option key={b.id} value={b.id}>
-                {b.name} ({b.role})
+                {b.name} ({roleLabel(b.role)})
               </option>
             ))}
           </select>
@@ -147,31 +187,26 @@ export default function AdvancePanel({
           <span className="block text-xs font-semibold text-slate-300">
             Medio de entrega
           </span>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setPaymentMethod("Efectivo")}
-              className={`p-3 rounded-xl border flex items-center justify-center gap-2.5 text-xs font-bold transition-all cursor-pointer ${
-                paymentMethod === "Efectivo"
-                  ? "!bg-amber-500/15 !border-amber-500/40 !text-amber-300"
-                  : "!bg-slate-950 !border-white/5 !text-slate-400 hover:!text-white"
-              }`}
-            >
-              <Banknote className="w-4 h-4" />
-              <span>Efectivo de caja</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaymentMethod("Transferencia")}
-              className={`p-3 rounded-xl border flex items-center justify-center gap-2.5 text-xs font-bold transition-all cursor-pointer ${
-                paymentMethod === "Transferencia"
-                  ? "!bg-purple-500/15 !border-purple-500/40 !text-purple-300"
-                  : "!bg-slate-950 !border-white/5 !text-slate-400 hover:!text-white"
-              }`}
-            >
-              <ArrowRightLeft className="w-4 h-4" />
-              <span>Transferencia</span>
-            </button>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            {paymentMethods.map((m) => {
+              const Icon = getMethodIcon(m);
+              const isSelected = paymentMethod === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setPaymentMethod(m)}
+                  className={`p-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer min-h-[44px] sm:min-h-0 ${
+                    isSelected
+                      ? "!bg-amber-500/15 !border-amber-500/40 !text-amber-300 shadow-sm"
+                      : "!bg-slate-950 !border-white/5 !text-slate-400 hover:!text-white"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{m}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -191,7 +226,7 @@ export default function AdvancePanel({
         </div>
 
         {/* Referencia opcional */}
-        {paymentMethod === "Transferencia" && (
+        {paymentMethod !== "Efectivo" && (
           <div className="space-y-1.5">
             <label htmlFor="advance-ref-input" className="block text-xs font-semibold text-slate-300">
               Nº de operación o comprobante (opcional)
@@ -213,17 +248,21 @@ export default function AdvancePanel({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[44px] sm:min-h-0"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-xs shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 disabled:scale-100 flex items-center gap-2"
+            className="px-6 py-2.5 rounded-xl !bg-[var(--accent)] hover:opacity-90 !text-slate-950 font-bold text-xs shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 disabled:scale-100 flex items-center gap-2 min-h-[44px] sm:min-h-0"
           >
-            <Check className="w-4 h-4 stroke-[3]" />
-            <span>{isSubmitting ? "Registrando..." : "Guardar adelanto"}</span>
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+            ) : (
+              <Check className="w-4 h-4 stroke-[3]" />
+            )}
+            <span>Guardar adelanto</span>
           </button>
         </div>
       </form>

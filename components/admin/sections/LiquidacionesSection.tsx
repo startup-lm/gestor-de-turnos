@@ -39,11 +39,11 @@ export default function LiquidacionesSection({ barbers }: Readonly<Props>) {
               <Receipt className="w-4 h-4" />
             </div>
             <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
-              Historial de liquidaciones
+              Liquidaciones
             </h2>
           </div>
           <p className="text-xs text-slate-400">
-            Registro histórico de comisiones abonadas a profesionales, recibos digitales emitidos y copia para WhatsApp
+            Liquidaciones registradas por profesional. Podés anular una si te equivocaste.
           </p>
         </div>
 
@@ -52,7 +52,7 @@ export default function LiquidacionesSection({ barbers }: Readonly<Props>) {
           <button
             type="button"
             onClick={() => setViewMode("new-liquidation")}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 text-xs font-bold transition-all cursor-pointer shadow-md shadow-[var(--accent)]/15 hover:scale-105 active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl !bg-[var(--accent)] hover:opacity-90 !text-slate-950 text-xs font-bold transition-all cursor-pointer shadow-md shadow-[var(--accent)]/15 hover:scale-105 active:scale-95"
           >
             <Plus className="w-3.5 h-3.5 stroke-[3]" />
             <span>Nueva liquidación</span>

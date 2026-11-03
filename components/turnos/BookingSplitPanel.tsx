@@ -254,7 +254,7 @@ export default function BookingSplitPanel({
                 </div>
               )}
               <div className="min-w-0">
-                <span className="block text-[11px] uppercase font-bold text-[var(--foreground)]/50 tracking-wider">
+                <span className="block text-[11px] font-bold text-[var(--foreground)]/50 tracking-wider">
                   Servicio
                 </span>
                 {currentService ? (
@@ -311,7 +311,7 @@ export default function BookingSplitPanel({
                 </div>
               )}
               <div className="min-w-0">
-                <span className="block text-[11px] uppercase font-bold text-[var(--foreground)]/50 tracking-wider">
+                <span className="block text-[11px] font-bold text-[var(--foreground)]/50 tracking-wider">
                   Profesional
                 </span>
                 <span className="font-extrabold text-base md:text-lg text-[var(--foreground)] truncate block leading-tight">
@@ -340,7 +340,7 @@ export default function BookingSplitPanel({
                 <Calendar className="w-6 h-6" />
               </div>
               <div className="min-w-0">
-                <span className="block text-[11px] uppercase font-bold text-[var(--foreground)]/50 tracking-wider">
+                <span className="block text-[11px] font-bold text-[var(--foreground)]/50 tracking-wider">
                   Fecha y Horario
                 </span>
                 <span className="font-extrabold text-base md:text-lg text-[var(--foreground)] block leading-tight">
@@ -456,7 +456,7 @@ export default function BookingSplitPanel({
             id="btn-reservar-submit"
             type="submit"
             disabled={isDisabled || loading}
-            className="w-full flex items-center justify-center gap-2.5 bg-[var(--accent)] hover:bg-[#E8CA8C] text-slate-950 font-extrabold py-3.5 px-5 rounded-xl shadow-lg shadow-[var(--accent)]/20 border border-[var(--accent)]/40 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed text-sm md:text-base cursor-pointer"
+            className="w-full flex items-center justify-center gap-2.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-slate-950 font-extrabold py-3.5 px-5 rounded-xl shadow-lg shadow-[var(--accent)]/20 border border-[var(--accent)]/40 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed text-sm md:text-base cursor-pointer"
           >
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />

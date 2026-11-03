@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import React from "react";
 import CountUp from "react-countup";
 import { Scissors, ShoppingBag, TrendingUp, DollarSign, Wallet, Award } from "lucide-react";
+import { formatARS } from "@/lib/format/currency";
 
 interface Props {
   turnos: number;
@@ -53,8 +54,8 @@ export default function Metrics({
         <div className="kpi-card kpi-card--net p-5 flex flex-col justify-between gap-3">
           <div className="flex items-start justify-between">
             <div>
-              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Mis Ganancias Totales
+              <span className="block text-[10px] font-bold text-slate-400 tracking-wider mb-1">
+                Mis ganancias totales
               </span>
               <h4 className="text-2xl font-extrabold text-emerald-400">
                 <CountUp start={0} end={gananciaTotal} duration={2} separator="." prefix="$" />
@@ -65,8 +66,8 @@ export default function Metrics({
             </div>
           </div>
           <div className="pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
-            <span>Por cortes: ${Math.round(gananciaCortes).toLocaleString("es-AR")}</span>
-            <span>Por ventas: ${Math.round(gananciaVentas).toLocaleString("es-AR")}</span>
+            <span>Por cortes: {formatARS(gananciaCortes)}</span>
+            <span>Por ventas: {formatARS(gananciaVentas)}</span>
           </div>
         </div>
 
@@ -74,8 +75,8 @@ export default function Metrics({
         <div className="kpi-card kpi-card--cuts p-5 flex flex-col justify-between gap-3">
           <div className="flex items-start justify-between">
             <div>
-              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Turnos Realizados
+              <span className="block text-[10px] font-bold text-slate-400 tracking-wider mb-1">
+                Turnos realizados
               </span>
               <h4 className="text-2xl font-extrabold text-white">
                 <CountUp start={0} end={turnos} duration={2} separator="." />
@@ -88,7 +89,7 @@ export default function Metrics({
           </div>
           <div className="pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
             <span>Facturado:</span>
-            <span className="font-bold text-white">${ingresos.toLocaleString("es-AR")}</span>
+            <span className="font-bold text-white">{formatARS(ingresos)}</span>
           </div>
         </div>
 
@@ -96,8 +97,8 @@ export default function Metrics({
         <div className="kpi-card kpi-card--sales p-5 flex flex-col justify-between gap-3">
           <div className="flex items-start justify-between">
             <div>
-              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Productos Vendidos
+              <span className="block text-[10px] font-bold text-slate-400 tracking-wider mb-1">
+                Productos vendidos
               </span>
               <h4 className="text-2xl font-extrabold text-white">
                 <CountUp start={0} end={ventas} duration={2} separator="." />
@@ -110,7 +111,7 @@ export default function Metrics({
           </div>
           <div className="pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
             <span>Facturado:</span>
-            <span className="font-bold text-white">${ingresosVentas.toLocaleString("es-AR")}</span>
+            <span className="font-bold text-white">{formatARS(ingresosVentas)}</span>
           </div>
         </div>
       </div>
@@ -124,8 +125,8 @@ export default function Metrics({
       <div className="kpi-card kpi-card--revenue flex flex-col justify-between gap-3.5 p-5 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1.5 truncate">
-              Facturación Total
+            <span className="block text-[11px] font-bold text-slate-400 tracking-wider leading-none mb-1.5 truncate">
+              Facturación total
             </span>
             <h4 className="text-2xl lg:text-3xl font-black text-white leading-tight truncate">
               <CountUp start={0} end={facturacionTotal} duration={2} prefix="$" separator="." />
@@ -137,8 +138,8 @@ export default function Metrics({
         </div>
 
         <div className="pt-2.5 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
-          <span className="truncate">Cortes: ${ingresos.toLocaleString("es-AR")}</span>
-          <span className="truncate">Ventas: ${ingresosVentas.toLocaleString("es-AR")}</span>
+          <span className="truncate">Cortes: {formatARS(ingresos)}</span>
+          <span className="truncate">Ventas: {formatARS(ingresosVentas)}</span>
         </div>
       </div>
 
@@ -146,8 +147,8 @@ export default function Metrics({
       <div className="kpi-card kpi-card--cuts flex flex-col justify-between gap-3.5 p-5 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1.5 truncate">
-              Cortes y Servicios
+            <span className="block text-[11px] font-bold text-slate-400 tracking-wider leading-none mb-1.5 truncate">
+              Cortes y servicios
             </span>
             <h4 className="text-2xl lg:text-3xl font-black text-white leading-tight">
               <CountUp start={0} end={turnos} duration={2} separator="." />
@@ -171,8 +172,8 @@ export default function Metrics({
       <div className="kpi-card kpi-card--sales flex flex-col justify-between gap-3.5 p-5 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1.5 truncate">
-              Venta de Productos
+            <span className="block text-[11px] font-bold text-slate-400 tracking-wider leading-none mb-1.5 truncate">
+              Venta de productos
             </span>
             <h4 className="text-2xl lg:text-3xl font-black text-white leading-tight">
               <CountUp start={0} end={ventas} duration={2} separator="." />
@@ -196,8 +197,8 @@ export default function Metrics({
       <div className="kpi-card kpi-card--net flex flex-col justify-between gap-3.5 p-5 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1.5 truncate">
-              {isGlobalView ? "Comisiones a Liquidar" : "Ganancia del Profesional"}
+            <span className="block text-[11px] font-bold text-slate-400 tracking-wider leading-none mb-1.5 truncate">
+              {isGlobalView ? "Comisiones a liquidar" : "Ganancia del profesional"}
             </span>
             <h4 className="text-2xl lg:text-3xl font-black text-emerald-400 leading-tight truncate">
               <CountUp start={0} end={comisionesFinales} duration={2} prefix="$" separator="." />
@@ -210,10 +211,10 @@ export default function Metrics({
 
         <div className="pt-2.5 border-t border-white/5 flex items-center justify-between text-[11px]">
           <span className="text-slate-400 truncate">
-            {isGlobalView ? `Margen local: ${margenRetencion}%` : `Ticket prom: $${ticketPromedio.toLocaleString("es-AR")}`}
+            {isGlobalView ? `Margen local: ${margenRetencion}%` : `Ticket prom: ${formatARS(ticketPromedio)}`}
           </span>
           <span className="font-semibold text-slate-300 text-xs">
-            {isGlobalView ? `Ticket: $${ticketPromedio.toLocaleString("es-AR")}` : `Comisión: ${(comision * 100).toFixed(0)}%`}
+            {isGlobalView ? `Ticket: ${formatARS(ticketPromedio)}` : `Comisión: ${(comision * 100).toFixed(0)}%`}
           </span>
         </div>
       </div>

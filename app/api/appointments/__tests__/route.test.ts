@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { GET, POST, PUT, DELETE } from "@/app/api/appointments/route";
+import { GET, POST, PATCH, DELETE } from "@/app/api/appointments/route";
+
+const ADMIN = { user: {}, barber: { id: 1, role: "admin" } } as any;
+const BARBER_2 = { user: {}, barber: { id: 2, role: "barber" } } as any;
 import * as auth from "@/lib/api/auth";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 
@@ -89,88 +92,74 @@ describe("API /api/appointments", () => {
     });
   });
 
-  describe("PUT - Cobro y protección fiscal ARCA", () => {
-    it("debe bloquear la modificación de un turno con comprobante fiscal emitido", async () => {
-      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce({} as any);
-
-      const mockSupabase = {
-        from: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          is: vi.fn().mockReturnThis(),
-          maybeSingle: vi.fn().mockResolvedValueOnce({
-            data: { id: 1, arca_invoice_id: 1234 },
-            error: null,
-          }),
-        }),
-      };
-
-      vi.mocked(supabaseAdmin.from).mockImplementation(mockSupabase.from as any);
-
-      const response = await PUT(
-        new Request("http://localhost:3000/api/appointments", {
-          method: "PUT",
-          body: JSON.stringify({
-            appointmentId: 1,
-            isPaid: true,
-            price: 15000,
-            payment_method: "Efectivo",
-          }),
-        })
-      );
-
-      const json = await response.json();
-      expect(response.status).toBe(400);
-      expect(json.error).toMatch(/comprobante fiscal emitido ante ARCA/i);
-    });
-
-    it("debe permitir revertir o registrar cobro si no tiene comprobante fiscal", async () => {
-      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce({} as any);
-
-      const mockSupabase = {
-        from: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          is: vi.fn().mockReturnThis(),
-          maybeSingle: vi.fn().mockResolvedValueOnce({
-            data: { id: 1, arca_invoice_id: null },
-            error: null,
-          }),
-          update: vi.fn().mockReturnThis(),
-        }),
-      };
-
-      mockSupabase.from().update.mockReturnValue({
+  describe("PATCH - Edición, dueño y protección fiscal ARCA", () => {
+    /** Mockea la búsqueda del turno y captura lo que se manda al update. */
+    function mockExisting(existing: Record<string, unknown>) {
+      const update = vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockResolvedValueOnce({
-            data: [{ id: 1, barber_id: 1, date: "2026-11-20" }],
-            error: null,
-          }),
+          select: vi.fn().mockResolvedValue({ data: [{ id: 1, barber_id: 1, date: "2026-11-20" }], error: null }),
         }),
       });
+      vi.mocked(supabaseAdmin.from).mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: existing, error: null }),
+        update,
+      } as any);
+      return update;
+    }
 
-      vi.mocked(supabaseAdmin.from).mockImplementation(mockSupabase.from as any);
+    const patch = (body: unknown) =>
+      PATCH(new Request("http://localhost:3000/api/appointments", { method: "PATCH", body: JSON.stringify(body) }));
 
-      const response = await PUT(
-        new Request("http://localhost:3000/api/appointments", {
-          method: "PUT",
-          body: JSON.stringify({
-            appointmentId: 1,
-            isPaid: false, // Reversión de cobro
-            price: 15000,
-          }),
-        })
-      );
+    it("bloquea la modificación de un turno con comprobante fiscal emitido", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
+      mockExisting({ id: 1, barber_id: 1, arca_invoice_id: 1234 });
 
-      const json = await response.json();
+      const response = await patch({ appointmentId: 1, updates: { paid: true, price: 15000 } });
+      expect(response.status).toBe(400);
+      expect((await response.json()).error).toMatch(/comprobante fiscal emitido ante ARCA/i);
+    });
+
+    it("permite registrar o revertir el cobro si no tiene comprobante", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
+      const update = mockExisting({ id: 1, barber_id: 1, arca_invoice_id: null });
+
+      const response = await patch({ appointmentId: 1, updates: { paid: false, price: 15000 } });
       expect(response.status).toBe(200);
-      expect(json.success).toBe(true);
+      expect(update).toHaveBeenCalledWith({ paid: false, price: 15000 });
+    });
+
+    it("un barbero no puede modificar el turno de otro barbero", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(BARBER_2);
+      const update = mockExisting({ id: 1, barber_id: 1, arca_invoice_id: null });
+
+      const response = await patch({ appointmentId: 1, updates: { price: 1 } });
+      expect(response.status).toBe(403);
+      expect(update).not.toHaveBeenCalled();
+    });
+
+    it("un barbero puede modificar su propio turno", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(BARBER_2);
+      mockExisting({ id: 1, barber_id: 2, arca_invoice_id: null });
+
+      const response = await patch({ appointmentId: 1, updates: { client: "Ana" } });
+      expect(response.status).toBe(200);
+    });
+
+    it("descarta los campos protegidos que vengan del navegador", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
+      const update = mockExisting({ id: 1, barber_id: 1, arca_invoice_id: null });
+
+      await patch({ appointmentId: 1, updates: { client: "Ana", deleted_at: null, arca_invoice_id: 99 } });
+      expect(update).toHaveBeenCalledWith({ client: "Ana" });
     });
   });
 
   describe("DELETE - Reglas de eliminación", () => {
     it("debe impedir eliminar un turno que ya fue cobrado", async () => {
-      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce({} as any);
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
 
       const mockSupabase = {
         from: vi.fn().mockReturnValue({
@@ -196,6 +185,31 @@ describe("API /api/appointments", () => {
       const json = await response.json();
       expect(response.status).toBe(400);
       expect(json.error).toMatch(/ya fue cobrado/i);
+    });
+
+    it("un barbero no puede eliminar el turno de otro barbero", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(BARBER_2);
+      const update = vi.fn();
+      vi.mocked(supabaseAdmin.from).mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: { id: 1, barber_id: 1, paid: false, arca_invoice_id: null, type: "appointment" },
+          error: null,
+        }),
+        update,
+      } as any);
+
+      const response = await DELETE(
+        new Request("http://localhost:3000/api/appointments", {
+          method: "DELETE",
+          body: JSON.stringify({ id: 1 }),
+        })
+      );
+
+      expect(response.status).toBe(403);
+      expect(update).not.toHaveBeenCalled();
     });
   });
 
@@ -224,7 +238,7 @@ describe("API /api/appointments", () => {
     });
 
     it("debe rechazar si el turno se solapa con otro turno activo del mismo barbero", async () => {
-      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce({} as any); // Staff
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN); // Staff
 
       const overlapQueryMock = {
         select: vi.fn().mockReturnThis(),

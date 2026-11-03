@@ -5,9 +5,9 @@ import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { checkRateLimit, getClientIp } from "@/lib/api/rateLimit";
 import { revalidateTag } from "next/cache";
+import { canModify } from "@/lib/api/ownership";
 import {
   AppointmentInsertSchema,
-  AppointmentPutSchema,
   AppointmentPatchSchema,
   AppointmentDeleteSchema,
 } from "@/lib/schemas";
@@ -186,55 +186,6 @@ export async function POST(request: Request) {
   return NextResponse.json({ success: true, id: data?.[0]?.id });
 }
 
-export async function PUT(request: Request) {
-  const staff = await requireBarberOrAdmin();
-  if (!staff) return errorResponse("No autorizado", 401);
-
-  const body = await request.json();
-  const parsed = AppointmentPutSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return errorResponse("Datos inválidos para actualizar el turno", 400);
-  }
-
-  const { appointmentId, isPaid, price, payment_method } = parsed.data;
-
-  // Validar si el turno ya cuenta con comprobante fiscal emitido
-  const { data: existingAppt, error: findError } = await supabaseAdmin
-    .from("appointments")
-    .select("id, arca_invoice_id")
-    .eq("id", appointmentId)
-    .is("deleted_at", null)
-    .maybeSingle();
-
-  if (findError) return dbErrorResponse(findError, "appointments");
-  if (!existingAppt) return errorResponse("No existe ese número de turno o ya fue eliminado", 404);
-
-  if (existingAppt.arca_invoice_id) {
-    return errorResponse(
-      `No es posible modificar un turno que ya posee comprobante fiscal emitido ante ARCA (Factura #${existingAppt.arca_invoice_id}).`,
-      400
-    );
-  }
-
-  const { data, error } = await supabaseAdmin
-    .from("appointments")
-    .update({ paid: isPaid, price, payment_method })
-    .eq("id", appointmentId)
-    .select();
-
-  if (error) return dbErrorResponse(error, "appointments");
-  
-  revalidateTag("appointments");
-  if (data && data.length > 0) {
-    const updated = data[0];
-    if (updated.barber_id && updated.date) {
-      revalidateTag(`appointments-${updated.barber_id}-${updated.date}`);
-    }
-  }
-  return successResponse();
-}
-
 export async function DELETE(request: Request) {
   const staff = await requireBarberOrAdmin();
   if (!staff) return errorResponse("No autorizado", 401);
@@ -251,13 +202,16 @@ export async function DELETE(request: Request) {
   // Validar existencia y estado del turno antes de eliminar
   const { data: appt, error: findError } = await supabaseAdmin
     .from("appointments")
-    .select("id, paid, arca_invoice_id, type")
+    .select("id, barber_id, paid, arca_invoice_id, type")
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
 
   if (findError) return dbErrorResponse(findError, "appointments");
   if (!appt) return errorResponse("No existe ese número de turno o ya fue eliminado", 404);
+  if (!canModify(staff, appt.barber_id)) {
+    return errorResponse("Solo podés eliminar tus propios turnos", 403);
+  }
 
   // Un bloqueo de horario no es un turno de cliente, se puede desbloquear normalmente
   if (appt.type !== "block") {
@@ -311,13 +265,16 @@ export async function PATCH(request: Request) {
   // Validar si el turno ya cuenta con comprobante fiscal emitido
   const { data: existingAppt, error: findError } = await supabaseAdmin
     .from("appointments")
-    .select("id, arca_invoice_id")
+    .select("id, barber_id, arca_invoice_id")
     .eq("id", appointmentId)
     .is("deleted_at", null)
     .maybeSingle();
 
   if (findError) return dbErrorResponse(findError, "appointments");
   if (!existingAppt) return errorResponse("No existe ese número de turno o ya fue eliminado", 404);
+  if (!canModify(staff, existingAppt.barber_id)) {
+    return errorResponse("Solo podés modificar tus propios turnos", 403);
+  }
 
   if (existingAppt.arca_invoice_id) {
     return errorResponse(

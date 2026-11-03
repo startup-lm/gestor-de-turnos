@@ -11,7 +11,10 @@ import { DetailFormSkeleton } from "../loading/Skeleton";
 import { createSale } from "@/lib/repository/sales";
 import { emitArcaInvoice, getArcaStatus } from "@/lib/repository/arca";
 import { ArcaStatus, ArcaDocType } from "@/lib/types/Arca";
+import ArcaDocFields from "@/components/arca/ArcaDocFields";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { DEFAULT_PAYMENT_METHODS } from "@/lib/flags";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { toast } from "@/lib/store/useToastStore";
 import {
   ShoppingBag,
@@ -22,13 +25,6 @@ import {
   Loader2,
 } from "lucide-react";
 
-const DOC_TYPES: { value: ArcaDocType; label: string }[] = [
-  { value: 99, label: "Consumidor final" },
-  { value: 96, label: "DNI" },
-  { value: 80, label: "CUIT" },
-  { value: 86, label: "CUIL" },
-];
-
 interface Props {
   onClose: () => void;
   onSaleCreated?: () => void;
@@ -38,19 +34,46 @@ export default function SaleSplitPanel({
   onClose,
   onSaleCreated,
 }: Readonly<Props>) {
-  const { isEnabled } = useBusinessContext();
+  const { isEnabled, businessSettings } = useBusinessContext();
   const ARCA_ENABLED = isEnabled("arca");
+  const paymentMethods = useMemo(
+    () =>
+      businessSettings?.payment_methods?.length
+        ? businessSettings.payment_methods
+        : DEFAULT_PAYMENT_METHODS,
+    [businessSettings?.payment_methods]
+  );
   const { data, loading: loadingProducts } = useFetchOnce<Product[]>("products", getProducts);
   const { data: barbers = [], loading: loadingBarbers } = useFetchOnce<Barber[]>("barbers", getBarbers);
   const { data: arcaStatus } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);
 
   const [selectedBarberId, setSelectedBarberId] = useState(-1);
+
+  // Un barbero solo registra ventas a su nombre: el selector le muestra solo a él
+  const { role, barberId } = useAuth();
+  const isAdmin = role === "admin";
+  const selectableBarbers = useMemo(() => {
+    const active = (barbers ?? []).filter((b) => b.active !== false);
+    return isAdmin ? active : active.filter((b) => b.id === barberId);
+  }, [isAdmin, barbers, barberId]);
+  useEffect(() => {
+    if (!isAdmin && barberId > 0) setSelectedBarberId(barberId);
+  }, [isAdmin, barberId]);
   const products = useMemo<Product[]>(() => data ?? [], [data]);
   const [selectedProductId, setSelectedProductId] = useState(-1);
   const [loading, setLoading] = useState(false);
   const [price, setPrice] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState<string>(
+    () => paymentMethods[0] || "Efectivo"
+  );
   const [details, setDetails] = useState("");
+
+  useEffect(() => {
+    if (paymentMethods.length > 0 && !paymentMethods.includes(paymentMethod)) {
+      setPaymentMethod(paymentMethods[0]);
+    }
+  }, [paymentMethods, paymentMethod]);
 
   // ARCA
   const arcaAvailable = ARCA_ENABLED && !!arcaStatus?.ready;
@@ -86,6 +109,7 @@ export default function SaleSplitPanel({
       quantity,
       details,
       total,
+      payment_method: paymentMethod,
     };
 
     try {
@@ -137,7 +161,7 @@ export default function SaleSplitPanel({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
+            className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             <span>Volver a ventas</span>
@@ -157,7 +181,7 @@ export default function SaleSplitPanel({
           disabled={isDisabled}
           className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 min-h-[40px] ${
             !isDisabled
-              ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
+              ? "!bg-[var(--accent)] hover:opacity-90 !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer"
               : "!bg-white/5 !text-slate-500 border border-white/10 cursor-not-allowed opacity-50"
           }`}
         >
@@ -177,14 +201,14 @@ export default function SaleSplitPanel({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Columna Izquierda: Datos de la Venta */}
           <div className="lg:col-span-7 bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 border border-white/10 rounded-2xl p-6 backdrop-blur-md shadow-lg space-y-5">
-            <div className="flex items-center gap-2 text-[var(--accent)] text-sm font-bold uppercase tracking-wider border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2 text-[var(--accent)] text-sm font-bold tracking-wider border-b border-white/10 pb-3">
               <ShoppingBag className="w-4 h-4" />
               <span>Detalle de la venta</span>
             </div>
 
             {/* Selector de Producto */}
             <div>
-              <label htmlFor="sale-panel-product" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+              <label htmlFor="sale-panel-product" className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
                 Producto *
               </label>
               <select
@@ -207,12 +231,12 @@ export default function SaleSplitPanel({
 
             {/* Selector de Barbero */}
             <div>
-              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
                 Barbero / vendedor
               </label>
               <BarberSelector
                 id="sale-panel-barber"
-                barbers={barbers ?? []}
+                barbers={selectableBarbers}
                 selectedBarberId={selectedBarberId}
                 onChange={setSelectedBarberId}
                 className="w-full"
@@ -222,7 +246,7 @@ export default function SaleSplitPanel({
             {/* Fila: Precio y Cantidad */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="sale-panel-price" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                <label htmlFor="sale-panel-price" className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
                   Precio unitario ($)
                 </label>
                 <input
@@ -237,7 +261,7 @@ export default function SaleSplitPanel({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
                   Cantidad
                 </label>
                 <div className="flex items-center gap-2">
@@ -266,9 +290,35 @@ export default function SaleSplitPanel({
               </div>
             </div>
 
+            {/* Selector de Medio de Pago */}
+            <div>
+              <label className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
+                Medio de pago
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {paymentMethods.map((m) => {
+                  const isSelected = paymentMethod === m;
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setPaymentMethod(m)}
+                      className={`p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer min-h-[44px] sm:min-h-0 flex items-center justify-center text-center ${
+                        isSelected
+                          ? "!bg-[var(--accent)] !text-slate-950 !border-[var(--accent)] font-bold shadow-sm"
+                          : "!bg-[var(--background)] !text-[var(--foreground)] !border-[var(--foreground)]/15 hover:!bg-white/5"
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Observaciones */}
             <div>
-              <label htmlFor="sale-panel-details" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+              <label htmlFor="sale-panel-details" className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
                 Observaciones (opcional)
               </label>
               <textarea
@@ -287,7 +337,7 @@ export default function SaleSplitPanel({
             {/* Tarjeta Destacada de Total */}
             <div className="bg-gradient-to-b from-[var(--accent)]/15 to-[var(--accent)]/5 border border-[var(--accent)]/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
               <div>
-                <span className="text-[11px] font-bold text-[var(--accent)] uppercase tracking-wider block mb-1">
+                <span className="text-[11px] font-bold text-[var(--accent)] tracking-wider block mb-1">
                   Total a cobrar
                 </span>
                 <p className="text-xs text-slate-400">
@@ -331,38 +381,13 @@ export default function SaleSplitPanel({
 
                 {emitInvoice && (
                   <div className="space-y-4 pt-3 border-t border-white/10 animate-fadeIn">
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
-                        Tipo de documento
-                      </label>
-                      <select
-                        value={docType}
-                        onChange={(e) => setDocType(Number(e.target.value) as ArcaDocType)}
-                        className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-2.5 text-xs outline-none"
-                      >
-                        {DOC_TYPES.map((dt) => (
-                          <option key={dt.value} value={dt.value} style={{ color: "black" }}>
-                            {dt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {docType !== 99 && (
-                      <div>
-                        <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
-                          Número de documento
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={docNumber}
-                          onChange={(e) => setDocNumber(e.target.value)}
-                          placeholder="Sin puntos ni guiones"
-                          className="w-full !bg-[var(--background)] !text-[var(--foreground)] !border !border-[var(--foreground)]/15 focus:!border-[var(--accent)] rounded-xl p-2.5 text-xs outline-none"
-                        />
-                      </div>
-                    )}
+                    <ArcaDocFields
+                      idPrefix="sale"
+                      docType={docType}
+                      onDocTypeChange={setDocType}
+                      docNumber={docNumber}
+                      onDocNumberChange={setDocNumber}
+                    />
                   </div>
                 )}
               </div>

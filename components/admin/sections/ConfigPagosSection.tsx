@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Banknote,
   Wallet,
@@ -21,6 +21,7 @@ import { toast } from "@/lib/store/useToastStore";
 import { DEFAULT_PAYMENT_METHODS } from "@/lib/flags";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { CashClosingFrequency } from "@/lib/types/cash";
+import { useSettingsForm } from "@/lib/hooks/useSettingsForm";
 
 type PresetMethod = {
   name: string;
@@ -62,6 +63,8 @@ const PRESET_METHODS: PresetMethod[] = [
   },
 ];
 
+const PRESET_NAMES = new Set(PRESET_METHODS.map((p) => p.name));
+
 const CLOSING_FREQUENCIES: Array<{
   id: CashClosingFrequency;
   title: string;
@@ -70,81 +73,79 @@ const CLOSING_FREQUENCIES: Array<{
 }> = [
   {
     id: "daily",
-    title: "Diario (al final del día)",
-    description: "Cierre y arqueo de caja al concluir cada jornada laboral.",
+    title: "Diario (hoy)",
+    description: "Muestra las operaciones y métricas de hoy al abrir Balance.",
     icon: Clock,
   },
   {
     id: "weekly",
-    title: "Semanal (al finalizar la semana)",
-    description: "Cierre acumulado en el último día de trabajo de la semana.",
+    title: "Semanal (esta semana)",
+    description: "Muestra las operaciones y métricas de esta semana al abrir Balance.",
     icon: Calendar,
   },
   {
     id: "manual",
-    title: "Personalizado / Manual",
-    description: "El administrador abre y cierra la caja a demanda según necesidad.",
+    title: "Manual (este mes)",
+    description: "Muestra las operaciones y métricas de este mes al abrir Balance.",
     icon: Sliders,
   },
 ];
+
+type PagosDraft = {
+  payment_methods: string[];
+  cash_closing_frequency: CashClosingFrequency;
+};
 
 export default function ConfigPagosSection() {
   const { isEnabled, limits } = useBusinessContext();
   const isFinancesEnabled = isEnabled("finances");
   const maxPaymentMethods = limits.maxPaymentMethods;
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
-  const [initialMethods, setInitialMethods] = useState<string[]>([]);
   const [newMethod, setNewMethod] = useState("");
 
-  const [cashClosingFrequency, setCashClosingFrequency] = useState<CashClosingFrequency>("daily");
-  const [initialFrequency, setInitialFrequency] = useState<CashClosingFrequency>("daily");
+  const { draft, setDraft, loading, hasChanges, saving, save, reset } =
+    useSettingsForm<PagosDraft>({
+      pick: (settings) => ({
+        payment_methods: settings.payment_methods || DEFAULT_PAYMENT_METHODS,
+        cash_closing_frequency:
+          (settings.cash_closing_frequency as CashClosingFrequency) || "daily",
+      }),
+      toPayload: (currentDraft) => ({
+        payment_methods: currentDraft.payment_methods,
+        ...(isFinancesEnabled && {
+          cash_closing_frequency: currentDraft.cash_closing_frequency,
+        }),
+      }),
+    });
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/business-settings");
-        if (res.ok) {
-          const data = await res.json();
-          const loaded = data.payment_methods || DEFAULT_PAYMENT_METHODS;
-          setPaymentMethods(loaded);
-          setInitialMethods(loaded);
-
-          const loadedFreq = (data.cash_closing_frequency as CashClosingFrequency) || "daily";
-          setCashClosingFrequency(loadedFreq);
-          setInitialFrequency(loadedFreq);
-        }
-      } catch (err) {
-        console.error("Error al cargar configuración de pagos:", err);
-        toast.error("Error al cargar configuración de pagos");
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
-
+  const paymentMethods = draft?.payment_methods || [];
+  const cashClosingFrequency = draft?.cash_closing_frequency || "daily";
   const isAtLimit = paymentMethods.length >= maxPaymentMethods;
   const limitMessage = `Tu plan permite hasta ${maxPaymentMethods} medios de cobro`;
 
   const handleTogglePreset = (name: string) => {
-    if (paymentMethods.includes(name)) {
-      setPaymentMethods(paymentMethods.filter((m) => m !== name));
+    if (!draft) return;
+    if (draft.payment_methods.includes(name)) {
+      setDraft({
+        ...draft,
+        payment_methods: draft.payment_methods.filter((m) => m !== name),
+      });
     } else if (isAtLimit) {
       toast.error(limitMessage);
     } else {
-      setPaymentMethods([...paymentMethods, name]);
+      setDraft({
+        ...draft,
+        payment_methods: [...draft.payment_methods, name],
+      });
     }
   };
 
   const handleAddCustom = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!draft) return;
     const clean = newMethod.trim();
     if (!clean) return;
-    if (paymentMethods.includes(clean)) {
+    if (draft.payment_methods.includes(clean)) {
       toast.error(`"${clean}" ya está en la lista`);
       return;
     }
@@ -152,64 +153,33 @@ export default function ConfigPagosSection() {
       toast.error(limitMessage);
       return;
     }
-    setPaymentMethods([...paymentMethods, clean]);
+    setDraft({
+      ...draft,
+      payment_methods: [...draft.payment_methods, clean],
+    });
     setNewMethod("");
   };
 
   const handleRemove = (name: string) => {
-    setPaymentMethods(paymentMethods.filter((m) => m !== name));
+    if (!draft) return;
+    setDraft({
+      ...draft,
+      payment_methods: draft.payment_methods.filter((m) => m !== name),
+    });
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const payload: {
-        payment_methods: string[];
-        cash_closing_frequency?: CashClosingFrequency;
-      } = {
-        payment_methods: paymentMethods,
-      };
-
-      if (isFinancesEnabled) {
-        payload.cash_closing_frequency = cashClosingFrequency;
-      }
-
-      const res = await fetch("/api/business-settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        setInitialMethods([...paymentMethods]);
-        setInitialFrequency(cashClosingFrequency);
-        toast.success("Configuración actualizada con éxito");
-      } else {
-        toast.error("Error al guardar la configuración");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Error de conexión al guardar");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const hasChanges =
-    paymentMethods.length !== initialMethods.length ||
-    paymentMethods.some((m) => !initialMethods.includes(m)) ||
-    (isFinancesEnabled && cashClosingFrequency !== initialFrequency);
-
-  if (loading) {
+  if (loading || !draft) {
     return <ConfigFormSkeleton />;
   }
+
+  const customMethods = paymentMethods.filter((m) => !PRESET_NAMES.has(m));
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-            {isFinancesEnabled ? "Medios de pago y caja" : "Medios de pago"}
+            Medios de pago
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             {isFinancesEnabled
@@ -217,36 +187,40 @@ export default function ConfigPagosSection() {
               : "Habilitá los métodos de pago aceptados para turnos y ventas en el local"}
           </p>
         </div>
-        <SaveButton
-          type="button"
-          onClick={handleSave}
-          loading={saving}
-          disabled={!hasChanges || saving}
-          className="w-full sm:w-auto"
-        />
+        <div className="flex items-center gap-2">
+          {hasChanges && (
+            <button
+              type="button"
+              onClick={reset}
+              disabled={saving}
+              className="px-4 py-2.5 rounded-xl border border-[var(--foreground)]/20 text-xs text-slate-300 hover:bg-white/5 hover:text-white font-medium transition-all cursor-pointer min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Descartar
+            </button>
+          )}
+          <SaveButton
+            type="button"
+            onClick={() => void save()}
+            loading={saving}
+            disabled={!hasChanges || saving}
+            className="w-full sm:w-auto min-h-[44px]"
+          />
+        </div>
       </div>
 
       {/* Frecuencia de Cierre de Caja (solo visible si el plan incluye finanzas) */}
       {isFinancesEnabled && (
-        <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)]">
-              <Receipt className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-                <span>Caja y Cierres de Turno</span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                  Plan Activo
-                </span>
-              </h3>
-              <p className="text-xs text-slate-400">
-                Elegí la periodicidad con la que tu barbería realiza el balance y arqueo de caja
-              </p>
-            </div>
+        <div className="bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10 space-y-4">
+          <div className="flex items-center gap-2 text-[var(--accent)] font-bold text-sm tracking-wider">
+            <Receipt className="w-4 h-4" />
+            <span>Frecuencia de cierre de balance</span>
           </div>
+          <p className="text-xs text-slate-400">
+            Definí el período que se muestra por defecto al entrar a la sección Balance. Podés cambiarlo
+            en cualquier momento con los filtros de período.
+          </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
             {CLOSING_FREQUENCIES.map((freq) => {
               const Icon = freq.icon;
               const isSelected = cashClosingFrequency === freq.id;
@@ -254,19 +228,24 @@ export default function ConfigPagosSection() {
                 <button
                   key={freq.id}
                   type="button"
-                  onClick={() => setCashClosingFrequency(freq.id)}
-                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                  onClick={() =>
+                    setDraft({
+                      ...draft,
+                      cash_closing_frequency: freq.id,
+                    })
+                  }
+                  className={`p-4 rounded-xl border text-left transition-all flex flex-col justify-between gap-3 cursor-pointer ${
                     isSelected
-                      ? "!bg-[var(--accent)]/15 !border-[var(--accent)]/50 shadow-md shadow-[var(--accent)]/5"
-                      : "!bg-slate-950/40 !border-white/5 opacity-70 hover:opacity-100"
+                      ? "!bg-[var(--accent)]/10 !border-[var(--accent)] shadow-md shadow-[var(--accent)]/10"
+                      : "!bg-[var(--foreground)]/5 !border-[var(--foreground)]/10 hover:!border-[var(--foreground)]/25"
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div
-                      className={`p-2 rounded-lg border ${
+                      className={`p-2 rounded-lg ${
                         isSelected
-                          ? "bg-[var(--accent)]/20 border-[var(--accent)]/40 text-[var(--accent)]"
-                          : "bg-white/5 border-white/10 text-slate-400"
+                          ? "bg-[var(--accent)] text-slate-950 font-bold"
+                          : "bg-[var(--foreground)]/10 text-slate-300"
                       }`}
                     >
                       <Icon className="w-4 h-4" />
@@ -334,7 +313,7 @@ export default function ConfigPagosSection() {
       {/* Métodos personalizados */}
       <div className="bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10 space-y-4">
         <h3 className="text-sm font-bold tracking-wider text-[var(--accent)]">
-          Otros métodos habilitados
+          Otros medios
         </h3>
 
         <form onSubmit={handleAddCustom} className="flex gap-2 max-w-md">
@@ -348,7 +327,7 @@ export default function ConfigPagosSection() {
           <button
             type="submit"
             disabled={isAtLimit}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-xs transition-all cursor-pointer shadow-md shadow-[var(--accent)]/15 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 font-bold text-xs transition-all cursor-pointer shadow-md shadow-[var(--accent)]/15 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
           >
             <Plus className="w-4 h-4" />
             Agregar
@@ -359,7 +338,7 @@ export default function ConfigPagosSection() {
         )}
 
         <div className="flex flex-wrap gap-2 pt-2">
-          {paymentMethods.map((m) => (
+          {customMethods.map((m) => (
             <span
               key={m}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--foreground)]/10 border border-[var(--foreground)]/15 text-[var(--foreground)]"

@@ -1,7 +1,5 @@
 export type CashClosingFrequency = "daily" | "weekly" | "manual";
 
-export type CashShiftStatus = "open" | "closed";
-
 export type CashMovementType =
   | "income"
   | "expense"
@@ -18,21 +16,6 @@ export type CashMovementCategory =
   | "comision"
   | "otro";
 
-export interface CashShift {
-  id: number;
-  opened_at: string;
-  closed_at?: string | null;
-  opened_by: string;
-  closed_by?: string | null;
-  initial_cash: number;
-  expected_cash?: number | null;
-  actual_cash?: number | null;
-  cash_difference?: number | null;
-  status: CashShiftStatus;
-  notes?: string | null;
-  created_at?: string;
-}
-
 export interface CashMovement {
   id: number;
   shift_id?: number | null;
@@ -45,6 +28,8 @@ export interface CashMovement {
   reference_code?: string | null;
   created_by: string;
   created_at: string;
+  voided_at?: string | null;
+  payout_id?: number | null;
   barbers?: { name: string };
 }
 
@@ -67,5 +52,6 @@ export interface CommissionPayout {
   receipt_notes?: string | null;
   paid_by: string;
   created_at?: string;
+  voided_at?: string | null;
   barbers?: { name: string; role?: string };
 }

@@ -21,8 +21,8 @@ export default function ChartSection({
   return (
     <div className="flex flex-col dashboard-card p-5 sm:p-6 justify-between gap-6 min-w-0 w-full">
       <div className="flex justify-between items-center flex-wrap gap-3 border-b border-white/5 pb-3">
-        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-          Análisis de Actividad Temporal
+        <span className="text-xs font-bold text-slate-400 tracking-wider">
+          Análisis de actividad temporal
         </span>
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-slate-500 font-semibold hidden sm:inline">Agrupar por:</span>

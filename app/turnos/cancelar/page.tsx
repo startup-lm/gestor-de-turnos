@@ -211,7 +211,7 @@ export default function CancelarTurnoPage() {
                 <button
                   type="submit"
                   disabled={!appointmentId || !phone || loading}
-                  className="w-full sm:w-auto min-w-[200px] max-w-xs h-11 flex items-center justify-center gap-2 px-8 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-black text-sm shadow-lg shadow-[var(--accent)]/20 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  className="w-full sm:w-auto min-w-[200px] max-w-xs h-11 flex items-center justify-center gap-2 px-8 rounded-xl !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 font-black text-sm shadow-lg shadow-[var(--accent)]/20 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {loading ? (
                     <Loader2 className="w-5 h-5 animate-spin text-slate-950" />
@@ -377,7 +377,7 @@ export default function CancelarTurnoPage() {
                 </button>
                 <Link
                   href="/"
-                  className="flex-1 h-9 min-h-[36px] inline-flex items-center justify-center px-3 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 text-xs font-bold transition-all cursor-pointer shadow-sm"
+                  className="flex-1 h-9 min-h-[36px] inline-flex items-center justify-center px-3 rounded-xl !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 text-xs font-bold transition-all cursor-pointer shadow-sm"
                 >
                   Ir al inicio
                 </Link>

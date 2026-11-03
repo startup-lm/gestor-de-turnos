@@ -16,6 +16,7 @@ interface Props {
   onPhoneChange: (v: string) => void;
   onClientResolved: (clientId: number | null) => void;
   showWhatsapp?: boolean;
+  phoneSuffix?: React.ReactNode;
   disabled?: boolean;
 }
 
@@ -33,6 +34,7 @@ export default function ClientAutocompleteFields({
   onPhoneChange,
   onClientResolved,
   showWhatsapp = false,
+  phoneSuffix,
   disabled = false,
 }: Readonly<Props>) {
   const [suggestions, setSuggestions] = useState<Client[]>([]);
@@ -170,7 +172,8 @@ export default function ClientAutocompleteFields({
             />
             {!disabled && <Dropdown field="phone" />}
           </div>
-          {showWhatsapp && (
+          {phoneSuffix}
+          {showWhatsapp && !phoneSuffix && (
             <button
               id="btn-client-whatsapp"
               type="button"

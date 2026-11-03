@@ -6,6 +6,48 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.8.0] - 2026-11-03
+
+Revisión integral del panel `/admin`: seguridad, cálculo de plata, código duplicado y experiencia de uso.
+
+### Corregido
+- **Datos de clientes expuestos sin login:** `/turno/[id]` y `/venta/[id]` se podían abrir sin sesión (nombre, teléfono, precio y datos fiscales, enumerables por número). Ahora exigen sesión en el middleware y en la propia página.
+- **Permisos del staff:** un barbero podía editar, cobrar o borrar turnos y ventas de otros, y el PATCH de turnos aceptaba cualquier columna (`deleted_at`, `arca_invoice_id`, `price`...). Ahora el barbero ve todo el local pero solo modifica lo suyo, y el PATCH acepta una lista cerrada de campos.
+- **Totales calculados en el navegador:** el total de una venta y el de un comprobante ARCA se tomaban de lo que mandaba el navegador. Ahora los calcula el servidor (`price × quantity`, o el monto del turno o la venta).
+- **Doble facturación:** un turno o una venta se podían facturar dos veces (doble clic o dos pestañas). La marca del comprobante es condicional y el segundo intento se deshace.
+- **Comisiones:** se calculaban sobre todos los turnos del período, incluso los no cobrados. Ahora cuentan solo los cobrados, se calculan en el servidor y no se puede liquidar dos veces el mismo período.
+- **Adelantos:** se descontaban por rango de fechas (podían descontarse dos veces o nunca). Ahora cada adelanto queda atado a la liquidación que lo descontó.
+- **Egreso de caja de una liquidación:** si fallaba, quedaba la liquidación sin su movimiento y sin aviso. Ahora se revisa el error y se deshace todo.
+- **Zona horaria:** los filtros por fecha usaban medianoche UTC; lo cargado entre las 21 y las 24 h caía en el día siguiente. Ahora usan el día de Argentina.
+- **Tope de 1000 filas:** métricas, comisiones y caja sumaban como máximo 1000 registros sin avisar. Ahora se pagina hasta traer todo.
+- **Error de hidratación en todas las páginas:** el menú se renderizaba distinto en el servidor y en el navegador.
+- **Reseñas ocultas:** el id de algunas reseñas dependía de su posición; al reordenar Google, se podía ocultar otra.
+
+### Agregado
+- Anulación de liquidaciones, gastos y adelantos (con confirmación en línea; anular una liquidación libera sus adelantos).
+- "Caja por medio de pago" en Balance: lo que debería haber en cada medio al cerrar la caja.
+- Medio de pago en las ventas.
+- Vista previa de la liquidación calculada en el servidor, con aviso de período superpuesto y de adelantos que superan la comisión.
+- Barberos inactivos visibles y reactivables; se pueden liquidar aunque ya no trabajen.
+- Reseñas de Google en vivo, con atribución de Google, y moderación por reseña.
+- Detalle de turno con comprobante emitido (CAE copiable), WhatsApp del cliente y "Revertir cobro".
+- Banner de modo demo en Comprobantes y confirmación antes de facturar en lote.
+- Aviso de cambios sin guardar y botón "Descartar" en la configuración.
+
+### Cambiado
+- Un solo detalle de turno: `/turno/[id]` usa el mismo panel que la agenda.
+- El sidebar se genera desde una sola configuración; cada ítem coincide con el título de su pantalla.
+- Selector de período, formato de moneda, campos fiscales de ARCA y confirmaciones compartidos entre pantallas.
+- Textos en sentence case, sin mayúsculas forzadas; fechas y roles legibles.
+- La tabla de turnos se ve como tarjetas en mobile.
+
+### Eliminado
+- Carga manual de reseñas y edición de la calificación de Google.
+- Reseñas guardadas en la base (las políticas de Google no permiten almacenarlas).
+- Modal de confirmación de borrado (reemplazado por confirmación en línea).
+- Endpoints sin uso: `GET/PUT/DELETE /api/sales` y `PUT /api/appointments`.
+- Código muerto: `ArcaPage`, `TurnoDetailClient`, `useSalesRevenueForBarber`, layout de `/dashboard`; `/operaciones/turnos` y `/operaciones/ventas` redirigen al panel.
+
 ## [1.7.0] - 2026-11-02
 
 ### Cambiado

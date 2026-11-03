@@ -78,7 +78,7 @@ export default function ArcaConfigView({
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
+              className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
             >
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               <span>Volver a facturación</span>
@@ -86,7 +86,7 @@ export default function ArcaConfigView({
           )}
           <div className="flex items-center gap-3">
             <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
-              Configuración Fiscal ARCA
+              Configuración ARCA
             </h2>
             {status && (
               <span
@@ -112,7 +112,7 @@ export default function ArcaConfigView({
             disabled={!hasConfigChanges || savingConfig}
             className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md min-h-[40px] ${
               hasConfigChanges && !savingConfig
-                ? "!bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer active:scale-95"
+                ? "!bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 shadow-[var(--accent)]/20 cursor-pointer active:scale-95"
                 : "!bg-white/5 !text-slate-500 border border-white/10 cursor-not-allowed opacity-50"
             }`}
           >
@@ -135,7 +135,7 @@ export default function ArcaConfigView({
           <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--foreground)]/10">
             <Building2 className="w-4 h-4 text-[var(--accent)]" />
             <div>
-              <h3 className="text-sm font-bold text-[var(--foreground)]">Datos del Contribuyente</h3>
+              <h3 className="text-sm font-bold text-[var(--foreground)]">Datos del contribuyente</h3>
               <p className="text-xs text-slate-400">Identificación fiscal del negocio y punto de venta asignado</p>
             </div>
           </div>
@@ -196,7 +196,7 @@ export default function ArcaConfigView({
           <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--foreground)]/10">
             <ShieldCheck className="w-4 h-4 text-[var(--accent)]" />
             <div>
-              <h3 className="text-sm font-bold text-[var(--foreground)]">Certificados Digitales X.509</h3>
+              <h3 className="text-sm font-bold text-[var(--foreground)]">Certificados digitales X.509</h3>
               <p className="text-xs text-slate-400">
                 Clave privada y certificado emitido por la delegación de ARCA (ex AFIP)
               </p>
@@ -278,7 +278,7 @@ export default function ArcaConfigView({
             <Globe className="w-4 h-4 text-[var(--accent)]" />
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-[var(--foreground)]">Endpoints Web Services SOAP</h3>
+                <h3 className="text-sm font-bold text-[var(--foreground)]">Endpoints web services SOAP</h3>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10">
                   Opcional / Avanzado
                 </span>

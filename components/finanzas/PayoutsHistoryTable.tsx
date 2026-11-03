@@ -1,17 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Barber } from "@/lib/types/Barbers";
 import { CommissionPayout } from "@/lib/types/cash";
-import { getCommissionPayouts } from "@/lib/repository/cash";
+import { getCommissionPayouts, voidCommissionPayout } from "@/lib/repository/cash";
+import { buildPayoutWhatsAppText } from "@/lib/finance/payoutText";
 import { toast } from "@/lib/store/useToastStore";
+import { formatARS } from "@/lib/format/currency";
 import {
   FileText,
   Copy,
   Check,
   Banknote,
-  ArrowRightLeft,
+  Wallet,
   Filter,
+  Loader2,
 } from "lucide-react";
 
 interface Props {
@@ -19,55 +22,72 @@ interface Props {
   refreshKey?: number;
 }
 
+function formatDate(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return dateStr;
+  const [, y, m, d] = match;
+  return `${d}/${m}/${y}`;
+}
+
 export default function PayoutsHistoryTable({ barbers, refreshKey }: Readonly<Props>) {
   const [payouts, setPayouts] = useState<CommissionPayout[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [selectedBarberId, setSelectedBarberId] = useState<string>("all");
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [confirmingVoidId, setConfirmingVoidId] = useState<number | null>(null);
+  const [voidingId, setVoidingId] = useState<number | null>(null);
+
+  const loadPayouts = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const filter = selectedBarberId !== "all" ? { barberId: Number(selectedBarberId) } : undefined;
+      const data = await getCommissionPayouts(filter);
+      setPayouts(data);
+    } catch (err) {
+      console.error(err);
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedBarberId]);
 
   useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      setLoading(true);
-      try {
-        const filter = selectedBarberId !== "all" ? { barberId: Number(selectedBarberId) } : undefined;
-        const data = await getCommissionPayouts(filter);
-        if (isMounted) setPayouts(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    })();
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedBarberId, refreshKey]);
+    loadPayouts();
+  }, [loadPayouts, refreshKey]);
+
+  const activePayouts = useMemo(() => payouts.filter((p) => !p.voided_at), [payouts]);
 
   const handleCopyWhatsApp = (p: CommissionPayout) => {
     const barberName = p.barbers?.name || "Profesional";
-    const text =
-      `💈 *RECIBO DE LIQUIDACIÓN #${p.id}*\n` +
-      `👤 *Profesional:* ${barberName}\n` +
-      `📅 *Período liquidado:* ${p.period_start} al ${p.period_end}\n` +
-      `━━━━━━━━━━━━━━━━━━━━\n` +
-      `✂️ *Cortes (${p.cuts_count} turnos):* $${Math.round(p.cuts_commission_amount).toLocaleString("es-AR")}\n` +
-      `🛍️ *Ventas (${p.sales_count} prod.):* $${Math.round(p.sales_commission_amount).toLocaleString("es-AR")}\n` +
-      (p.advances_deducted > 0
-        ? `💸 *Adelantos descontados:* -$${Math.round(p.advances_deducted).toLocaleString("es-AR")}\n`
-        : "") +
-      `━━━━━━━━━━━━━━━━━━━━\n` +
-      `✅ *TOTAL ABONADO: $${Math.round(p.total_paid).toLocaleString("es-AR")}*\n` +
-      `💳 *Medio de pago:* ${p.payment_method}` +
-      (p.reference_code ? ` (Ref: ${p.reference_code})` : "") +
-      `\n📅 *Fecha de pago:* ${p.payment_date}\n\n` +
-      `_Comprobante emitido automáticamente por el sistema de gestión._`;
+    const text = buildPayoutWhatsAppText(p, barberName);
 
     if (typeof window !== "undefined" && navigator?.clipboard) {
       navigator.clipboard.writeText(text);
       setCopiedId(p.id);
       setTimeout(() => setCopiedId(null), 2500);
       toast.success("Recibo copiado para WhatsApp");
+    }
+  };
+
+  const handleVoid = async (id: number) => {
+    setVoidingId(id);
+    try {
+      const res = await voidCommissionPayout(id);
+      if (res.success) {
+        toast.success("Liquidación anulada");
+        setConfirmingVoidId(null);
+        await loadPayouts();
+      } else {
+        toast.error(res.error || "No se pudo anular la liquidación");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al anular la liquidación");
+    } finally {
+      setVoidingId(null);
     }
   };
 
@@ -81,7 +101,7 @@ export default function PayoutsHistoryTable({ barbers, refreshKey }: Readonly<Pr
           <select
             value={selectedBarberId}
             onChange={(e) => setSelectedBarberId(e.target.value)}
-            className="p-1.5 rounded-lg border border-white/10 bg-slate-950 text-xs text-white focus:border-[var(--accent)] outline-none"
+            className="p-1.5 rounded-lg border border-white/10 bg-slate-950 text-xs text-white focus:border-[var(--accent)] outline-none min-h-[44px] sm:min-h-0"
           >
             <option value="all">Todos los profesionales</option>
             {barbers.map((b) => (
@@ -93,7 +113,7 @@ export default function PayoutsHistoryTable({ barbers, refreshKey }: Readonly<Pr
         </div>
 
         <span className="text-xs text-slate-400">
-          Total registros: <strong className="text-white">{payouts.length}</strong>
+          Total registros: <strong className="text-white">{activePayouts.length}</strong>
         </span>
       </div>
 
@@ -101,12 +121,16 @@ export default function PayoutsHistoryTable({ barbers, refreshKey }: Readonly<Pr
         <div className="p-8 rounded-2xl bg-slate-900/30 border border-white/5 text-center text-xs text-slate-400 animate-pulse">
           Cargando historial de liquidaciones...
         </div>
+      ) : loadError ? (
+        <div className="p-12 rounded-2xl bg-red-950/20 border border-red-500/20 text-center space-y-2">
+          <p className="text-xs text-red-300">No se pudo cargar el historial. Probá de nuevo.</p>
+        </div>
       ) : payouts.length === 0 ? (
         <div className="p-12 rounded-2xl bg-slate-900/20 border border-white/5 text-center space-y-2">
           <FileText className="w-8 h-8 text-slate-500 mx-auto" />
           <h4 className="text-sm font-bold text-white">No hay liquidaciones registradas</h4>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            Cuando abones comisiones a tus profesionales desde la tabla de resumen, quedarán registradas aquí con su recibo correspondiente.
+            Cuando registres una liquidación con «Nueva liquidación», va a aparecer acá.
           </p>
         </div>
       ) : (
@@ -124,70 +148,120 @@ export default function PayoutsHistoryTable({ barbers, refreshKey }: Readonly<Pr
                   <th className="py-3 px-4 text-right">Adelantos</th>
                   <th className="py-3 px-4 text-right font-bold text-emerald-400">Total abonado</th>
                   <th className="py-3 px-4">Medio de pago</th>
-                  <th className="py-3 px-4 text-center">Recibo</th>
+                  <th className="py-3 px-4 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {payouts.map((p) => {
                   const isCopied = copiedId === p.id;
+                  const isVoided = !!p.voided_at;
+                  const isConfirming = confirmingVoidId === p.id;
+                  const isVoiding = voidingId === p.id;
+
                   return (
-                    <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
+                    <tr
+                      key={p.id}
+                      className={`hover:bg-white/[0.02] transition-colors ${
+                        isVoided ? "opacity-50" : ""
+                      }`}
+                    >
                       <td className="py-3 px-4 font-mono font-bold text-[var(--accent)]">
-                        #{p.id}
+                        <div className="flex items-center gap-2">
+                          <span>#{p.id}</span>
+                          {isVoided && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/15 border border-red-500/30 text-red-400">
+                              Anulada
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-slate-300">
-                        {p.payment_date}
+                        {formatDate(p.payment_date)}
                       </td>
                       <td className="py-3 px-4 font-semibold text-white">
                         {p.barbers?.name || "Profesional"}
                       </td>
                       <td className="py-3 px-4 text-slate-400 text-[11px]">
-                        {p.period_start} al {p.period_end}
+                        {formatDate(p.period_start)} al {formatDate(p.period_end)}
                       </td>
                       <td className="py-3 px-4 text-center text-slate-300">
                         <span className="font-semibold">{p.cuts_count}</span> cortes •{" "}
                         <span className="font-semibold">{p.sales_count}</span> prod.
                       </td>
                       <td className="py-3 px-4 text-right text-amber-400 font-medium">
-                        {p.advances_deducted > 0
-                          ? `-$${Math.round(p.advances_deducted).toLocaleString("es-AR")}`
+                        {Math.round(p.advances_deducted) > 0
+                          ? `-${formatARS(p.advances_deducted)}`
                           : "—"}
                       </td>
                       <td className="py-3 px-4 text-right font-extrabold text-sm text-emerald-400">
-                        ${Math.round(p.total_paid).toLocaleString("es-AR")}
+                        {formatARS(p.total_paid)}
                       </td>
                       <td className="py-3 px-4 text-slate-300">
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[11px]">
                           {p.payment_method === "Efectivo" ? (
                             <Banknote className="w-3 h-3 text-amber-400" />
                           ) : (
-                            <ArrowRightLeft className="w-3 h-3 text-purple-400" />
+                            <Wallet className="w-3 h-3 text-purple-400" />
                           )}
                           <span>{p.payment_method}</span>
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleCopyWhatsApp(p)}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer border ${
-                            isCopied
-                              ? "!bg-emerald-500/20 !border-emerald-500/40 !text-emerald-400"
-                              : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white"
-                          }`}
-                        >
-                          {isCopied ? (
-                            <>
-                              <Check className="w-3 h-3 text-emerald-400" />
-                              <span>Copiado</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3 h-3" />
-                              <span>WhatsApp</span>
-                            </>
-                          )}
-                        </button>
+                        {isVoided ? (
+                          <span className="text-[11px] text-slate-500 font-medium">—</span>
+                        ) : isConfirming ? (
+                          <div className="inline-flex items-center gap-2">
+                            <span className="text-[11px] text-slate-300">¿Anular la liquidación?</span>
+                            <button
+                              type="button"
+                              disabled={isVoiding}
+                              onClick={() => handleVoid(p.id)}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all cursor-pointer disabled:opacity-50"
+                            >
+                              {isVoiding && <Loader2 className="w-3 h-3 animate-spin" />}
+                              <span>Sí, anular</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isVoiding}
+                              onClick={() => setConfirmingVoidId(null)}
+                              className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-all cursor-pointer disabled:opacity-50"
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleCopyWhatsApp(p)}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer border ${
+                                isCopied
+                                  ? "!bg-emerald-500/20 !border-emerald-500/40 !text-emerald-400"
+                                  : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white"
+                              }`}
+                            >
+                              {isCopied ? (
+                                <>
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                  <span>Copiado</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>WhatsApp</span>
+                                </>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmingVoidId(p.id)}
+                              className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/5 border border-white/10 text-red-400 hover:bg-red-500/10 transition-all cursor-pointer"
+                            >
+                              Anular
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
@@ -200,10 +274,16 @@ export default function PayoutsHistoryTable({ barbers, refreshKey }: Readonly<Pr
           <div className="lg:hidden space-y-3">
             {payouts.map((p) => {
               const isCopied = copiedId === p.id;
+              const isVoided = !!p.voided_at;
+              const isConfirming = confirmingVoidId === p.id;
+              const isVoiding = voidingId === p.id;
+
               return (
                 <div
                   key={p.id}
-                  className="p-4 rounded-xl bg-slate-900/50 border border-white/10 space-y-3"
+                  className={`p-4 rounded-xl bg-slate-900/50 border border-white/10 space-y-3 ${
+                    isVoided ? "opacity-50" : ""
+                  }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -213,51 +293,100 @@ export default function PayoutsHistoryTable({ barbers, refreshKey }: Readonly<Pr
                       <span className="text-xs font-bold text-white">
                         {p.barbers?.name || "Profesional"}
                       </span>
+                      {isVoided && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/15 border border-red-500/30 text-red-400">
+                          Anulada
+                        </span>
+                      )}
                     </div>
                     <span className="text-sm font-extrabold text-emerald-400">
-                      ${Math.round(p.total_paid).toLocaleString("es-AR")}
+                      {formatARS(p.total_paid)}
                     </span>
                   </div>
 
                   <div className="text-[11px] text-slate-400 space-y-1">
                     <div>
                       <span>Período: </span>
-                      <strong className="text-slate-300">{p.period_start} al {p.period_end}</strong>
+                      <strong className="text-slate-300">{formatDate(p.period_start)} al {formatDate(p.period_end)}</strong>
                     </div>
-                    <div>
+                    <div className="flex items-center gap-1.5">
                       <span>Fecha de pago: </span>
-                      <strong className="text-slate-300">{p.payment_date}</strong> • {p.payment_method}
+                      <strong className="text-slate-300">{formatDate(p.payment_date)}</strong> •
+                      <span className="inline-flex items-center gap-1 text-slate-300">
+                        {p.payment_method === "Efectivo" ? (
+                          <Banknote className="w-3 h-3 text-amber-400" />
+                        ) : (
+                          <Wallet className="w-3 h-3 text-purple-400" />
+                        )}
+                        <span>{p.payment_method}</span>
+                      </span>
                     </div>
                     {p.advances_deducted > 0 && (
                       <div className="text-amber-400">
-                        Adelantos descontados: -${Math.round(p.advances_deducted).toLocaleString("es-AR")}
+                        Adelantos descontados: -{formatARS(p.advances_deducted)}
                       </div>
                     )}
                   </div>
 
-                  <div className="pt-2 border-t border-white/5 flex items-center justify-end">
-                    <button
-                      type="button"
-                      onClick={() => handleCopyWhatsApp(p)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border ${
-                        isCopied
-                          ? "!bg-emerald-500/20 !border-emerald-500/40 !text-emerald-400"
-                          : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"
-                      }`}
-                    >
-                      {isCopied ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Recibo copiado</span>
-                        </>
+                  {!isVoided && (
+                    <div className="pt-2 border-t border-white/5">
+                      {isConfirming ? (
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <span className="text-xs text-slate-300">¿Anular la liquidación?</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              disabled={isVoiding}
+                              onClick={() => handleVoid(p.id)}
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all cursor-pointer disabled:opacity-50 min-h-[44px] sm:min-h-0 flex-1 sm:flex-none"
+                            >
+                              {isVoiding && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                              <span>Sí, anular</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isVoiding}
+                              onClick={() => setConfirmingVoidId(null)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-all cursor-pointer disabled:opacity-50 min-h-[44px] sm:min-h-0 flex-1 sm:flex-none text-center"
+                            >
+                              No
+                            </button>
+                          </div>
+                        </div>
                       ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" />
-                          <span>Copiar para WhatsApp</span>
-                        </>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyWhatsApp(p)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border min-h-[44px] sm:min-h-0 ${
+                              isCopied
+                                ? "!bg-emerald-500/20 !border-emerald-500/40 !text-emerald-400"
+                                : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"
+                            }`}
+                          >
+                            {isCopied ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>Recibo copiado</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>Copiar para WhatsApp</span>
+                              </>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmingVoidId(p.id)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 text-red-400 hover:bg-red-500/10 transition-all cursor-pointer min-h-[44px] sm:min-h-0"
+                          >
+                            Anular
+                          </button>
+                        </div>
                       )}
-                    </button>
-                  </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

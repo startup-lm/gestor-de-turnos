@@ -24,24 +24,30 @@ export const getBusinessSettings = async (): Promise<BusinessSettings> => {
 
   try {
     const res = await fetch(`${BASE}/api/business-settings`, {
-      next: { tags: ["business-settings"] },
+      cache: "no-store",
     });
-    if (!res.ok) return fallback;
+    if (!res.ok) throw new Error("No se pudo cargar la configuración. Probá de nuevo.");
     const text = await res.text();
-    if (!text.trim().startsWith("{")) return fallback;
+    if (!text.trim().startsWith("{")) throw new Error("No se pudo cargar la configuración. Probá de nuevo.");
     return JSON.parse(text);
   } catch (err) {
     console.error("getBusinessSettings error:", err);
-    return fallback;
+    throw err;
   }
 };
 
-export const updateBusinessSettings = async (payload: BusinessSettings): Promise<BusinessSettings | null> => {
+export const updateBusinessSettings = async (
+  payload: Partial<BusinessSettings>
+): Promise<BusinessSettings | null> => {
   const res = await fetch(`${BASE}/api/business-settings`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) return null;
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    const message = data?.error || "No se pudieron guardar los cambios";
+    throw new Error(message);
+  }
   return await res.json();
 };

@@ -1,14 +1,22 @@
 import { getSaleById } from "@/lib/repository/sales";
 import VentaDetailClient from "./VentaDetailClient";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
+// Datos de clientes: solo staff, se renderiza por pedido y nunca se cachea.
+export const dynamic = "force-dynamic";
+
 export default async function VentaDetailPage({ params }: Props) {
   const { id } = await params;
+  const staff = await requireBarberOrAdmin();
+  if (!staff) redirect(`/login?redirect=/venta/${id}`);
+
   const numId = Number(id);
   const sale = isNaN(numId) ? null : await getSaleById(numId);
 
@@ -22,7 +30,7 @@ export default async function VentaDetailPage({ params }: Props) {
         </p>
         <Link
           href="/admin?tab=ventas"
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-sm shadow-md transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 font-bold text-sm shadow-md transition-all cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" /> Volver a Ventas
         </Link>

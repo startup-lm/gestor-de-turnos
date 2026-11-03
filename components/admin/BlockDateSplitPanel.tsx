@@ -133,7 +133,7 @@ export default function BlockDateSplitPanel({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
+            className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             <span>Volver a turnos</span>
@@ -173,14 +173,14 @@ export default function BlockDateSplitPanel({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Columna Izquierda: Barbero y Fechas */}
           <div className="lg:col-span-6 bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 border border-white/10 rounded-2xl p-6 backdrop-blur-md shadow-lg space-y-5">
-            <div className="flex items-center gap-2 text-[var(--accent)] text-sm font-bold uppercase tracking-wider border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2 text-[var(--accent)] text-sm font-bold tracking-wider border-b border-white/10 pb-3">
               <Calendar className="w-4 h-4" />
               <span>Barbero y período</span>
             </div>
 
             {/* Selector de Barbero */}
             <div>
-              <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
                 Barbero *
               </label>
               <BarberSelector
@@ -220,7 +220,7 @@ export default function BlockDateSplitPanel({
             {/* Selectores de Fechas */}
             <div className={useRange ? "grid grid-cols-1 sm:grid-cols-2 gap-3" : ""}>
               <div>
-                <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
                   {useRange ? "Fecha desde *" : "Fecha *"}
                 </label>
                 <DatePickerField
@@ -236,7 +236,7 @@ export default function BlockDateSplitPanel({
 
               {useRange && (
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
                     Fecha hasta *
                   </label>
                   <DatePickerField
@@ -257,7 +257,7 @@ export default function BlockDateSplitPanel({
 
           {/* Columna Derecha: Horarios y Motivo */}
           <div className="lg:col-span-6 bg-gradient-to-b from-[var(--foreground)]/5 to-[var(--foreground)]/2 border border-white/10 rounded-2xl p-6 backdrop-blur-md shadow-lg space-y-5">
-            <div className="flex items-center gap-2 text-[var(--accent)] text-sm font-bold uppercase tracking-wider border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2 text-[var(--accent)] text-sm font-bold tracking-wider border-b border-white/10 pb-3">
               <Lock className="w-4 h-4" />
               <span>Franja horaria y motivo</span>
             </div>
@@ -282,7 +282,7 @@ export default function BlockDateSplitPanel({
 
             {/* Motivo */}
             <div>
-              <label htmlFor="block-panel-reason" className="block text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1.5">
+              <label htmlFor="block-panel-reason" className="block text-xs font-semibold text-[var(--accent)] tracking-wider mb-1.5">
                 Motivo del bloqueo *
               </label>
               <input

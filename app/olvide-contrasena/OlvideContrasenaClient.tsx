@@ -117,7 +117,7 @@ export default function OlvideContrasenaClient() {
               id="btn-recovery-submit"
               type="submit"
               disabled={isDisabled || loading}
-              className="w-full h-11 min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl !bg-[var(--accent)] hover:!bg-[#E8CA8C] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 border border-[var(--accent)]/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full h-11 min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 border border-[var(--accent)]/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin text-inherit" />

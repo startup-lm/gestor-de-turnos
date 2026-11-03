@@ -1,12 +1,15 @@
 import { redirect } from "next/navigation";
 import { getBarbersWithPrivateFields } from "@/lib/repository/barbers";
 import { isServerFeatureEnabled } from "@/lib/flags/server";
+import { requireAdmin } from "@/lib/api/auth";
 import BackButton from "@/components/ui/BackButton";
 import AdminBarberosClient from "./AdminBarberosClient";
 
 export const revalidate = 0; // Don't cache admin page
 
 export default async function AdminBarberosPage() {
+  // Datos privados de todo el staff: solo el admin
+  if (!(await requireAdmin())) redirect("/admin?tab=turnos");
   if (!(await isServerFeatureEnabled("staff_management"))) redirect("/admin?tab=turnos");
   const barbers = await getBarbersWithPrivateFields();
 
