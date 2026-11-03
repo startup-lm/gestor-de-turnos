@@ -14,6 +14,16 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 ### Cambiado
 - Los medios de cobro son Efectivo y Mercado Pago. Los adelantos a profesionales y el cierre de caja con arqueo quedan ocultos. La caja la ve solo el admin.
 
+## [1.9.3] - 2026-11-03
+
+### Cambiado
+- El botón de cerrar sesión pasó del pie del menú de `/admin` al navbar: con la sesión iniciada, a la derecha se ve el icono de cerrar sesión en lugar del de ingresar. El pie del menú vuelve a mostrar solo el producto y la versión.
+
+## [1.9.2] - 2026-11-03
+
+### Corregido
+- Migración `20261105000000_payout_links_and_commission_snapshot.sql`: el relleno de ventas tomaba la fecha de cada venta como del día anterior, así que podía dejar sin marcar las ventas del primer día de una liquidación y marcar las del día siguiente al cierre. Solo afecta a las bases donde todavía no se aplicó.
+
 ## [1.9.1] - 2026-11-03
 
 ### Corregido
