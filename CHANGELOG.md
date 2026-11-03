@@ -6,6 +6,15 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.9.1] - 2026-11-03
+
+### Corregido
+- Las ventas ya no aparecen en dos días ni un día antes en listados, Resumen, Balance y liquidaciones; las ventas cargadas de noche quedan con la fecha de Argentina. El detalle de una venta ya no muestra una hora inventada.
+- Resumen ya no queda cargando para siempre al entrar al admin.
+- Error de lint en la configuración de ARCA.
+- Las tarjetas de barberos ya no se superponen en pantallas medianas.
+- "Registrar venta", "Confirmar cobro", "Confirmar cierre" y el resto de los botones de acción mantienen el texto mientras cargan.
+
 ## [1.9.0] - 2026-11-03
 
 Liquidaciones y comisiones confiables, `/admin` como único lugar de gestión y menú ajustable. **Requiere aplicar las migraciones `20261105000000_payout_links_and_commission_snapshot.sql` y `20261106000000_cash_register.sql`.**

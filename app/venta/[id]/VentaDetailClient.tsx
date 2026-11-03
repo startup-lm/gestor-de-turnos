@@ -19,7 +19,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { toast } from "@/lib/store/useToastStore";
 import InlineConfirm from "@/components/ui/InlineConfirm";
 import { SaleWithRelations } from "@/lib/types/Sale";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
 import {
@@ -216,7 +216,7 @@ export default function VentaDetailClient({ initialSale }: Readonly<Props>) {
   };
 
   const formattedCreationDate = initialSale.created_at
-    ? format(new Date(initialSale.created_at), "EEE d MMM yyyy, HH:mm'hs'", { locale: es })
+    ? format(parseISO(initialSale.created_at), "EEE d MMM yyyy", { locale: es })
     : null;
 
   if (loadingProducts || loadingBarbers) {

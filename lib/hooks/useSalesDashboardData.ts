@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { getBarberSalesFromDates } from "@/lib/repository/sales";
 import { ViewMode, DataPoint } from "./useDashboardData";
+import { parseISO } from "date-fns";
+import { formatLocalDate } from "@/lib/dates/argentina";
 
 const getMonday = (date: Date) => {
   const day = date.getDay();
@@ -44,13 +46,13 @@ export function useSalesDashboardData(
     const grouped: Record<string, { count: number; revenue: number; label: string }> = {};
 
     sales.forEach((sale) => {
-      const dateObj = new Date(sale.created_at);
+      const dateObj = parseISO(sale.created_at.slice(0, 10));
 
       let key: string;
       let label: string;
 
       if (viewMode === "day") {
-        key = dateObj.toISOString().slice(0, 10);
+        key = sale.created_at.slice(0, 10);
         const day = dateObj.getDate();
         const month = dateObj.getMonth() + 1;
         label = `${day}/${month}`;
@@ -59,7 +61,7 @@ export function useSalesDashboardData(
         const sunday = new Date(monday);
         sunday.setDate(sunday.getDate() + 6);
 
-        key = monday.toISOString().slice(0, 10);
+        key = formatLocalDate(monday);
         const startDay = monday.getDate();
         const endDay = sunday.getDate();
         const month = sunday.toLocaleDateString("es-AR", { month: "long" });

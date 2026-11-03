@@ -200,14 +200,8 @@ export default function SaleSplitPanel({
               : "!bg-white/5 !text-slate-500 border border-white/10 cursor-not-allowed opacity-50"
           }`}
         >
-          {loading ? (
-            <Loader2 className="w-4 h-4 animate-spin text-inherit" />
-          ) : (
-            <>
-              <ShoppingBag className="w-4 h-4" />
-              <span>Registrar venta</span>
-            </>
-          )}
+          {loading ? <Loader2 className="w-4 h-4 animate-spin text-inherit" /> : <ShoppingBag className="w-4 h-4" />}
+          <span>Registrar venta</span>
         </button>
       </div>
 

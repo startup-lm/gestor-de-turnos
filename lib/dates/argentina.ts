@@ -35,3 +35,11 @@ export function createdAtBound(value: string, edge: "start" | "end"): string {
   if (value.includes("T")) return value;
   return argentinaDayRangeUtc(value)[edge];
 }
+
+/**
+ * Límite para filtrar columnas DATE (ej. `sales.created_at`): se usa el día "YYYY-MM-DD" tal cual,
+ * sin pasarlo a UTC. Si viene con hora, se queda solo con la parte de la fecha.
+ */
+export function dateColumnBound(value: string): string {
+  return value.slice(0, 10);
+}

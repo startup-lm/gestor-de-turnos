@@ -192,7 +192,7 @@ export default function ArcaConfigView({
                 placeholder="1"
               />
               <p className="text-[11px] text-slate-400 mt-1">
-                Punto de venta de ARCA dado de alta como "Factura electrónica - Web services".
+                Punto de venta de ARCA dado de alta como &quot;Factura electrónica - Web services&quot;.
               </p>
             </div>
           </div>

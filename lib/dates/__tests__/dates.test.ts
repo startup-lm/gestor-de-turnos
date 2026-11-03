@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { argentinaDayRangeUtc, todayInArgentina, formatLocalDate, createdAtBound } from "@/lib/dates/argentina";
+import { argentinaDayRangeUtc, todayInArgentina, formatLocalDate, createdAtBound, dateColumnBound } from "@/lib/dates/argentina";
 import { getPresetRange, presetFromClosingFrequency } from "@/lib/dates/presets";
 
 describe("argentinaDayRangeUtc", () => {
@@ -14,6 +14,11 @@ describe("argentinaDayRangeUtc", () => {
   it("createdAtBound respeta los valores que ya traen hora", () => {
     expect(createdAtBound("2026-11-02T10:00:00Z", "start")).toBe("2026-11-02T10:00:00Z");
     expect(createdAtBound("2026-11-02", "end")).toBe("2026-11-03T02:59:59.999Z");
+  });
+
+  it("dateColumnBound deja el día tal cual", () => {
+    expect(dateColumnBound("2026-11-02")).toBe("2026-11-02");
+    expect(dateColumnBound("2026-11-02T10:00:00Z")).toBe("2026-11-02");
   });
 });
 

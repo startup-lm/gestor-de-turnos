@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
-import { createdAtBound } from "@/lib/dates/argentina";
+import { dateColumnBound } from "@/lib/dates/argentina";
 
 export async function GET(request: Request) {
   const staff = await requireBarberOrAdmin();
@@ -22,10 +22,10 @@ export async function GET(request: Request) {
     );
 
   if (startDate) {
-    query = query.gte("created_at", createdAtBound(startDate, "start"));
+    query = query.gte("created_at", dateColumnBound(startDate));
   }
   if (endDate) {
-    query = query.lte("created_at", createdAtBound(endDate, "end"));
+    query = query.lte("created_at", dateColumnBound(endDate));
   }
 
   query = query.order("created_at", { ascending: false });

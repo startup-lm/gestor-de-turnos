@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
-import { createdAtBound, todayInArgentina } from "@/lib/dates/argentina";
+import { createdAtBound, dateColumnBound, todayInArgentina } from "@/lib/dates/argentina";
 import { commissionOf } from "@/lib/finance/commission";
 import { CashMovement } from "@/lib/types/cash";
 
@@ -82,7 +82,7 @@ export async function loadPayoutData(
         .select("id, total, commission_rate, created_at")
         .eq("barber_id", barberId)
         .is("payout_id", null)
-        .lte("created_at", createdAtBound(end, "end"))
+        .lte("created_at", dateColumnBound(end))
         .order("id", { ascending: true })
         .range(from, to)
     ),
@@ -102,7 +102,6 @@ export async function loadPayoutData(
 
   const commission = Number(barber.commission ?? 0);
   const saleCommission = Number(barber.sale_commission ?? 0);
-  const startBound = createdAtBound(start, "start");
 
   return {
     data: {
@@ -117,13 +116,12 @@ export async function loadPayoutData(
         appointments.data.map((a) => ({ id: a.id, amount: a.price, commission_rate: a.commission_rate, late: a.date < start })),
         commission
       ),
-      // Las ventas se comparan por instante UTC: el día argentino empieza a las 03:00 UTC
       sales: summarize(
         sales.data.map((s) => ({
           id: s.id,
           amount: s.total,
           commission_rate: s.commission_rate,
-          late: new Date(s.created_at).getTime() < new Date(startBound).getTime(),
+          late: s.created_at.slice(0, 10) < start,
         })),
         saleCommission
       ),

@@ -33,7 +33,9 @@ export default function MetricasSection({ initialBarbers }: Readonly<Props>) {
   const isAdmin = role === "admin";
   const activeBarbers = useMemo(() => initialBarbers.filter((b) => b.active !== false), [initialBarbers]);
   const barbers = isAdmin ? activeBarbers : activeBarbers.filter((b) => b.id === barberId);
-  const [selectedBarberId, setSelectedBarberId] = useState(isAdmin ? 0 : barberId);
+  const [adminSelectedBarberId, setAdminSelectedBarberId] = useState(0);
+  // El barbero siempre ve lo suyo; el admin elige (0 = todos). Derivado para que se actualice cuando carga la auth
+  const selectedBarberId = isAdmin ? adminSelectedBarberId : barberId;
 
   // Inicialización de rango de fechas: "Este Mes"
   const initialDates = useMemo(() => {
@@ -93,7 +95,7 @@ export default function MetricasSection({ initialBarbers }: Readonly<Props>) {
   const isDataLoading = turnosTotales === null;
 
   const handleBarberChange = useCallback((id: number) => {
-    setSelectedBarberId(id);
+    setAdminSelectedBarberId(id);
   }, []);
 
   const handleDateChange = useCallback((range: { startDate: Date; endDate: Date }) => {

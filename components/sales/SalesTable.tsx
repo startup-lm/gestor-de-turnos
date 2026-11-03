@@ -7,7 +7,7 @@ import { SalesTableSkeleton } from "@/components/loading/Skeleton";
 import { SaleWithRelations } from "@/lib/types/Sale";
 import { Receipt, Calendar, RefreshCw } from "lucide-react";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
 type PeriodPreset = "week" | "today" | "month" | "last_month" | "custom" | "all";
@@ -276,7 +276,7 @@ export default function SalesTable() {
             <tbody className="divide-y divide-[var(--border)]/60 text-[var(--foreground)]">
               {filteredSales.map((sale) => {
                 const dateLabel = sale.created_at
-                  ? format(new Date(sale.created_at), "EEE d MMM yyyy", { locale: es })
+                  ? format(parseISO(sale.created_at), "EEE d MMM yyyy", { locale: es })
                   : "-";
 
                 const barberName = sale.barbers?.name ?? "-";
