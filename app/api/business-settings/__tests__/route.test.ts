@@ -39,29 +39,28 @@ describe("PUT /api/business-settings con límites del plan", () => {
     vi.mocked(auth.requireAdmin).mockResolvedValue({ email: "admin@test.com" } as any);
   });
 
-  it("standard rechaza más de 3 medios de cobro", async () => {
-    withPlan("standard", { custom_payment_methods: true });
+  it("standard guarda más de 3 medios de cobro (sin límite)", async () => {
+    withPlan("standard");
     const upsert = mockUpsert();
 
-    const response = await put({ payment_methods: ["A", "B", "C", "D"] });
-
-    expect(response.status).toBe(403);
-    expect((await response.json()).error).toMatch(/hasta 3 medios de cobro/);
-    expect(upsert).not.toHaveBeenCalled();
-  });
-
-  it("standard guarda hasta 3 medios de cobro", async () => {
-    withPlan("standard", { custom_payment_methods: true });
-    const upsert = mockUpsert();
-
-    const response = await put({ payment_methods: ["A", "B", "C"] });
+    const response = await put({ payment_methods: ["A", "B", "C", "D", "E"] });
 
     expect(response.status).toBe(200);
-    expect(upsert).toHaveBeenCalledWith({ id: 1, payment_methods: ["A", "B", "C"] });
+    expect(upsert).toHaveBeenCalledWith({ id: 1, payment_methods: ["A", "B", "C", "D", "E"] });
   });
 
-  it("premium sin override no guarda payment_methods", async () => {
+  it("premium guarda más de 3 medios de cobro (sin límite)", async () => {
     withPlan("premium");
+    const upsert = mockUpsert();
+
+    const response = await put({ payment_methods: ["A", "B", "C", "D", "E"] });
+
+    expect(response.status).toBe(200);
+    expect(upsert).toHaveBeenCalledWith({ id: 1, payment_methods: ["A", "B", "C", "D", "E"] });
+  });
+
+  it("standard con override en false no guarda payment_methods", async () => {
+    withPlan("standard", { custom_payment_methods: false });
     const upsert = mockUpsert();
 
     const response = await put({ payment_methods: ["A"] });

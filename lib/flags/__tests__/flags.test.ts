@@ -17,6 +17,8 @@ const STANDARD = [
   "booking_rules",
   "stock_control",
   "cash_register",
+  "custom_payment_methods",
+  "cash_closing",
 ];
 const PREMIUM_ONLY = ["finances", "expenses"];
 
@@ -63,15 +65,12 @@ describe("planes comerciales", () => {
     expect(isFeatureEnabled("finances", { finances: true }, "basic")).toBe(true);
   });
 
-  it("custom_payment_methods, advances y cash_closing están apagados en basic, standard y premium y se prenden con override", () => {
-    const flags = ["custom_payment_methods", "advances", "cash_closing"] as const;
+  it("advances está apagado en basic, standard y premium y se prende con override", () => {
     const plans = ["basic", "standard", "premium"] as const;
-    for (const flag of flags) {
-      for (const plan of plans) {
-        expect(isFeatureEnabled(flag, null, plan)).toBe(false);
-      }
-      expect(isFeatureEnabled(flag, { [flag]: true }, "basic")).toBe(true);
+    for (const plan of plans) {
+      expect(isFeatureEnabled("advances", null, plan)).toBe(false);
     }
+    expect(isFeatureEnabled("advances", { advances: true }, "basic")).toBe(true);
   });
 });
 
@@ -80,8 +79,13 @@ describe("getPlanLimits", () => {
     expect(getPlanLimits("basic")).toEqual({ maxBarbers: 1, maxPaymentMethods: 0 });
   });
 
-  it("standard: hasta 4 profesionales y 3 medios de cobro", () => {
-    expect(getPlanLimits("standard")).toEqual({ maxBarbers: 4, maxPaymentMethods: 3 });
+  it("standard: hasta 4 profesionales y medios de cobro sin límite", () => {
+    expect(getPlanLimits("standard")).toEqual({ maxBarbers: 4, maxPaymentMethods: Infinity });
+  });
+
+  it("standard y premium: medios de cobro sin límite", () => {
+    expect(getPlanLimits("standard").maxPaymentMethods).toBe(Infinity);
+    expect(getPlanLimits("premium").maxPaymentMethods).toBe(Infinity);
   });
 
   it("premium: sin límites", () => {
