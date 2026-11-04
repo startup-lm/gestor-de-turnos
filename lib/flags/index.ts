@@ -54,6 +54,8 @@ const STANDARD_FEATURES: Record<string, boolean> = {
   booking_rules: true,
   stock_control: true,
   cash_register: true,
+  custom_payment_methods: true,
+  cash_closing: true,  
 };
 
 export const PLAN_FEATURES: Record<PlanName, Record<string, boolean>> = {
