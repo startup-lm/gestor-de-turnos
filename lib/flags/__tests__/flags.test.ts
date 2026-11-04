@@ -83,6 +83,11 @@ describe("getPlanLimits", () => {
     expect(getPlanLimits("standard")).toEqual({ maxBarbers: 4, maxPaymentMethods: Infinity });
   });
 
+  it("standard y premium: medios de cobro sin límite", () => {
+    expect(getPlanLimits("standard").maxPaymentMethods).toBe(Infinity);
+    expect(getPlanLimits("premium").maxPaymentMethods).toBe(Infinity);
+  });
+
   it("premium: sin límites", () => {
     expect(getPlanLimits("premium")).toEqual({ maxBarbers: Infinity, maxPaymentMethods: Infinity });
   });

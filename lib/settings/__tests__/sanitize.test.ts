@@ -41,9 +41,9 @@ describe("applyPlanToSettings", () => {
     expect(result.payment_methods).toEqual(["A", "B", "C", "D"]);
   });
 
-  it("premium conserva los medios de cobro configurados", () => {
-    const result = applyPlanToSettings({ plan: "premium", payment_methods: ["Transferencia", "Efectivo"] });
-    expect(result.payment_methods).toEqual(["Transferencia", "Efectivo"]);
+  it("premium conserva todos los medios de cobro configurados (sin límite)", () => {
+    const result = applyPlanToSettings({ plan: "premium", payment_methods: ["A", "B", "C", "D", "E"] });
+    expect(result.payment_methods).toEqual(["A", "B", "C", "D", "E"]);
   });
 
   it("un override en false apaga los medios de cobro configurables aunque el plan los incluya", () => {

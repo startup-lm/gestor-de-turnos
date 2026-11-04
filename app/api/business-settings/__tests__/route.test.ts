@@ -49,6 +49,16 @@ describe("PUT /api/business-settings con límites del plan", () => {
     expect(upsert).toHaveBeenCalledWith({ id: 1, payment_methods: ["A", "B", "C", "D", "E"] });
   });
 
+  it("premium guarda más de 3 medios de cobro (sin límite)", async () => {
+    withPlan("premium");
+    const upsert = mockUpsert();
+
+    const response = await put({ payment_methods: ["A", "B", "C", "D", "E"] });
+
+    expect(response.status).toBe(200);
+    expect(upsert).toHaveBeenCalledWith({ id: 1, payment_methods: ["A", "B", "C", "D", "E"] });
+  });
+
   it("standard con override en false no guarda payment_methods", async () => {
     withPlan("standard", { custom_payment_methods: false });
     const upsert = mockUpsert();
