@@ -6,6 +6,14 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.11.0] - 2026-11-03
+
+### Agregado
+- El plan standard incluye el cierre de caja con arqueo (`cash_closing`) y los medios de cobro configurables (`custom_payment_methods`). Premium también los incluye, porque hereda todo lo de standard.
+
+### Cambiado
+- El plan standard ya no tiene límite de medios de cobro (antes eran 3).
+
 ## [1.10.2] - 2026-11-03
 
 ### Cambiado

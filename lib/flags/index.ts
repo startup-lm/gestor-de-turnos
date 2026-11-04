@@ -55,7 +55,7 @@ const STANDARD_FEATURES: Record<string, boolean> = {
   stock_control: true,
   cash_register: true,
   custom_payment_methods: true,
-  cash_closing: true,  
+  cash_closing: true,
 };
 
 export const PLAN_FEATURES: Record<PlanName, Record<string, boolean>> = {
@@ -77,7 +77,7 @@ export interface PlanLimits {
 
 export const PLAN_LIMITS: Record<PlanName, PlanLimits> = {
   basic: { maxBarbers: 1, maxPaymentMethods: 0 },
-  standard: { maxBarbers: 4, maxPaymentMethods: 3 },
+  standard: { maxBarbers: 4, maxPaymentMethods: Infinity },
   premium: { maxBarbers: Infinity, maxPaymentMethods: Infinity },
 };
 

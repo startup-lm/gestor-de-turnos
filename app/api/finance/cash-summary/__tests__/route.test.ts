@@ -56,13 +56,17 @@ describe("GET /api/finance/cash-summary", () => {
     expect((await response.json()).error).toBe("Tu plan no incluye esta función");
   });
 
-  it("admin, solo cash_register → 200 con medios por defecto cuando el plan es standard", async () => {
+  it("admin, solo cash_register → 200 con medios por defecto si custom_payment_methods está apagado", async () => {
     vi.mocked(planServer.getServerPlanContext).mockResolvedValue({
       plan: "standard",
-      limits: { maxBarbers: 4, maxPaymentMethods: 3 },
+      limits: { maxBarbers: 4, maxPaymentMethods: Infinity },
       isEnabled: (flag: string) => flag === "cash_register",
     });
-    mockSettings({ payment_methods: ["Transferencia"], plan: "standard", features: null });
+    mockSettings({
+      payment_methods: ["Transferencia"],
+      plan: "standard",
+      features: { custom_payment_methods: false },
+    });
 
     const response = await get();
 
