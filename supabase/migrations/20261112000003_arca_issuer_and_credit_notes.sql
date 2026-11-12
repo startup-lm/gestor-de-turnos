@@ -20,3 +20,7 @@ ALTER TABLE public.arca_invoices
 
 CREATE INDEX IF NOT EXISTS idx_arca_invoices_credit_note_of_id
   ON public.arca_invoices(credit_note_of_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_arca_invoices_one_credit_note
+  ON public.arca_invoices(credit_note_of_id)
+  WHERE credit_note_of_id IS NOT NULL AND status <> 'rejected';

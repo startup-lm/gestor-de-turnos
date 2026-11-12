@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Printer, Loader2, AlertCircle } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { getInvoiceReceipt } from "@/lib/repository/arca";
+import { todayInArgentina } from "@/lib/dates/argentina";
 import type { ArcaReceiptData } from "@/lib/types/Arca";
 
 interface InvoiceReceiptProps {
@@ -123,7 +124,12 @@ export default function InvoiceReceipt({ invoiceId, onBack }: InvoiceReceiptProp
   const voucherCode = isCreditNote ? "COD. 013" : "COD. 011";
   const ptoVta = String(invoice.point_of_sale ?? issuer.pointOfSale ?? 1).padStart(5, "0");
   const compNro = String(invoice.voucher_number ?? 0).padStart(8, "0");
-  const issueDate = formatDate(invoice.voucher_date ?? invoice.created_at);
+  const rawIssueDate = invoice.voucher_date
+    ? invoice.voucher_date.slice(0, 10)
+    : invoice.created_at
+    ? todayInArgentina(new Date(invoice.created_at))
+    : null;
+  const issueDate = formatDate(rawIssueDate);
   const caeDueDate = formatDate(invoice.cae_due_date);
   const docType = Number(invoice.doc_type ?? 99);
   const docLabel = DOC_LABELS[docType] ?? "Documento";

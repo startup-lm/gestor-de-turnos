@@ -1,3 +1,5 @@
+import { todayInArgentina } from "@/lib/dates/argentina";
+
 export type ArcaQrPayload = {
   ver: 1;
   fecha: string;
@@ -39,7 +41,7 @@ export function buildArcaQrPayload(
   const fecha = invoice.voucher_date
     ? invoice.voucher_date.slice(0, 10)
     : invoice.created_at
-    ? invoice.created_at.slice(0, 10)
+    ? todayInArgentina(new Date(invoice.created_at))
     : "";
   const tipoDocRec = Number(invoice.doc_type ?? 99);
   const docDigits = invoice.doc_number ? String(invoice.doc_number).replace(/\D/g, "") : "";

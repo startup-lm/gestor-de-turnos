@@ -204,6 +204,32 @@ describe("POST /api/arca/invoices/[id]/credit-note", () => {
     expect((await res.json()).error).toBe("Esta factura ya tiene una nota de crédito");
   });
 
+  it("responde 409 si ocurre colisión por pedidos simultáneos (código 23505)", async () => {
+    const origQuery = chain({ data: ORIGINAL_INVOICE, error: null });
+    const settingsQuery = chain({ data: SETTINGS, error: null });
+    const cnCheckQuery = chain({ data: null, error: null });
+    const pendingQuery = chain({
+      data: null,
+      error: { code: "23505", message: "duplicate key value violates unique constraint" },
+    });
+
+    let invCalls = 0;
+    vi.mocked(supabaseAdmin.from).mockImplementation(((table: string) => {
+      if (table === "arca_settings") return settingsQuery;
+      if (table === "arca_invoices") {
+        invCalls++;
+        if (invCalls === 1) return origQuery;
+        if (invCalls === 2) return cnCheckQuery;
+        return pendingQuery;
+      }
+      return chain();
+    }) as any);
+
+    const res = await callCreditNote();
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("Esta factura ya tiene una nota de crédito");
+  });
+
   it("emisión exitosa: emite nota tipo 13 con comprobante asociado, anula original y libera cobro", async () => {
     const origQuery = chain({ data: ORIGINAL_INVOICE, error: null });
     const settingsQuery = chain({ data: SETTINGS, error: null });
@@ -279,6 +305,55 @@ describe("POST /api/arca/invoices/[id]/credit-note", () => {
 
     // 5. El turno asociado se libera
     expect(appointmentsQuery.update).toHaveBeenCalledWith({ arca_invoice_id: null });
+  });
+
+  it("si la factura original no tiene voucher_date y created_at está en UTC nocturno, usa la fecha argentina para CbtesAsoc", async () => {
+    const origWithoutVoucherDate = {
+      ...ORIGINAL_INVOICE,
+      voucher_date: null,
+      created_at: "2026-11-12T01:30:00Z", // 22:30 del 11/11 en Argentina (UTC-3)
+    };
+    const origQuery = chain({ data: origWithoutVoucherDate, error: null });
+    const settingsQuery = chain({ data: SETTINGS, error: null });
+    const cnCheckQuery = chain({ data: null, error: null });
+    const pendingQuery = chain({
+      data: {
+        id: 78,
+        cae: APPROVED_CN.cae,
+        cae_due_date: APPROVED_CN.caeDueDate,
+        voucher_number: 2,
+        voucher_type: 13,
+        point_of_sale: 3,
+      },
+      error: null,
+    });
+    const appointmentsQuery = chain({ data: [{ id: 7 }], error: null });
+
+    let invCalls = 0;
+    vi.mocked(supabaseAdmin.from).mockImplementation(((table: string) => {
+      if (table === "arca_settings") return settingsQuery;
+      if (table === "appointments") return appointmentsQuery;
+      if (table === "arca_invoices") {
+        invCalls++;
+        if (invCalls === 1) return origQuery;
+        if (invCalls === 2) return cnCheckQuery;
+        return pendingQuery;
+      }
+      return chain();
+    }) as any);
+
+    const res = await callCreditNote(10);
+    expect(res.status).toBe(200);
+
+    expect(wsfe.requestCae).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.anything(),
+      expect.objectContaining({
+        associated: expect.objectContaining({
+          date: "20261111",
+        }),
+      })
+    );
   });
 
   it("rechazada por ARCA: guarda nota de crédito como rejected y no anula la original", async () => {

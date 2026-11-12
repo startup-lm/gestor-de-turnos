@@ -71,4 +71,16 @@ describe("ARCA: QR de comprobantes fiscales", () => {
     expect(parsed.tipoCmp).toBe(13);
     expect(parsed.nroCmp).toBe(5);
   });
+
+  it("una factura sin voucher_date con created_at en UTC nocturno usa la fecha argentina", () => {
+    const payload = buildArcaQrPayload(
+      {
+        ...invoice,
+        voucher_date: null,
+        created_at: "2026-11-12T01:30:00Z", // 22:30 del 11 de noviembre en Argentina (UTC-3)
+      },
+      cuit
+    );
+    expect(payload.fecha).toBe("2026-11-11");
+  });
 });

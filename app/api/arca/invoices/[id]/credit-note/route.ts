@@ -7,6 +7,7 @@ import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { ArcaError } from "@/lib/arca/soap";
 import { resolveEndpoints } from "@/lib/arca/endpoints";
 import { withAccessTicket } from "@/lib/arca/wsaa";
+import { todayInArgentina } from "@/lib/dates/argentina";
 import {
   ERR_WRONG_NUMBER,
   FACTURA_C,
@@ -128,7 +129,12 @@ export async function POST(
     .select("id")
     .single();
 
-  if (pendingError) return dbErrorResponse(pendingError, "arca/credit-note");
+  if (pendingError) {
+    if ((pendingError as { code?: string }).code === "23505") {
+      return errorResponse("Esta factura ya tiene una nota de crédito", 409);
+    }
+    return dbErrorResponse(pendingError, "arca/credit-note");
+  }
   const creditNoteId: number = pending.id;
 
   const discard = async () => {
@@ -139,7 +145,7 @@ export async function POST(
   const origDateRaw = original.voucher_date
     ? original.voucher_date.replace(/-/g, "")
     : original.created_at
-    ? original.created_at.slice(0, 10).replace(/-/g, "")
+    ? todayInArgentina(new Date(original.created_at)).replace(/-/g, "")
     : dateStr;
 
   const associated = {

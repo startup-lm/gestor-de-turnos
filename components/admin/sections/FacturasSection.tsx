@@ -24,6 +24,7 @@ import type {
 import ArcaDocFields from "@/components/arca/ArcaDocFields";
 import InvoiceReceipt from "@/components/arca/InvoiceReceipt";
 import { CONSUMIDOR_FINAL } from "@/lib/arca/receiverConditions";
+import { todayInArgentina } from "@/lib/dates/argentina";
 import { Appointment } from "@/lib/types/Appointment";
 import {
   Receipt,
@@ -749,7 +750,7 @@ export default function FacturasSection() {
                 {voidingInvoice.voucher_date
                   ? voidingInvoice.voucher_date
                   : voidingInvoice.created_at
-                  ? new Date(voidingInvoice.created_at).toLocaleDateString("es-AR")
+                  ? todayInArgentina(new Date(voidingInvoice.created_at))
                   : "—"}
               </p>
             </div>
