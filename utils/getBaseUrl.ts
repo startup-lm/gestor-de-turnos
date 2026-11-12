@@ -15,6 +15,5 @@ export function getBaseUrl() {
   // Quitar la barra final si existe
   url = url.replace(/\/$/, "");
   
-  console.log("[API URL RESOLVED]:", url);
   return url;
 }
