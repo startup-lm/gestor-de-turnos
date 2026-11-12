@@ -3,6 +3,8 @@ import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/api/auth";
 import { requirePlanFeature } from "@/lib/flags/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
+import { parseBody } from "@/lib/api/parseBody";
+import { CashMovementInsertSchema } from "@/lib/schemas";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { createdAtBound } from "@/lib/dates/argentina";
 import { currentShiftId } from "@/lib/finance/openShift";
@@ -57,7 +59,9 @@ export async function POST(request: Request) {
   if (!admin) return errorResponse("No autorizado", 401);
 
   try {
-    const body = await request.json();
+    const { data: body, error: bodyError } = await parseBody(request, CashMovementInsertSchema);
+    if (bodyError) return bodyError;
+
     const {
       type: requestedType,
       category,

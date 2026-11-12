@@ -3,6 +3,8 @@ import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/api/auth";
 import { requirePlanFeature } from "@/lib/flags/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
+import { parseBody } from "@/lib/api/parseBody";
+import { PayoutInsertSchema } from "@/lib/schemas";
 import { currentShiftId } from "@/lib/finance/openShift";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { computePayout } from "@/lib/finance/payout";
@@ -51,16 +53,18 @@ export async function POST(request: Request) {
   const planError = await requirePlanFeature("commission_payouts");
   if (planError) return planError;
 
-  const body = await request.json().catch(() => null);
-  const barberId = Number(body?.barber_id);
-  const periodStart: string | undefined = body?.period_start;
-  const periodEnd: string | undefined = body?.period_end;
-  const advanceIds: number[] = Array.isArray(body?.advance_ids) ? body.advance_ids.map(Number) : [];
-  const paymentMethod = typeof body?.payment_method === "string" ? body.payment_method.trim() : "";
+  const { data: body, error: bodyError } = await parseBody(request, PayoutInsertSchema);
+  if (bodyError) return bodyError;
+
+  const barberId = body.barber_id;
+  const periodStart = body.period_start;
+  const periodEnd = body.period_end;
+  const advanceIds = body.advance_ids ?? [];
+  const paymentMethod = body.payment_method;
 
   if (!barberId) return errorResponse("Elegí un profesional", 400);
   if (!isValidPeriod(periodStart, periodEnd)) return errorResponse("El período no es válido", 400);
-  if (endsInTheFuture(periodEnd!)) return errorResponse("El período a liquidar no puede terminar después de hoy", 400);
+  if (endsInTheFuture(periodEnd)) return errorResponse("El período a liquidar no puede terminar después de hoy", 400);
   if (!paymentMethod) return errorResponse("Elegí un medio de pago", 400);
 
   const { data: payoutData, error: loadError, notFound } = await loadPayoutData(barberId, periodStart, periodEnd!);
