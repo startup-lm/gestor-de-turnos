@@ -6,6 +6,37 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.12.0] - 2026-11-12
+
+### Agregado
+- ARCA: nota de crédito C para anular una factura aprobada; la original queda "Anulada" y el turno o la venta vuelve a poder facturarse.
+- ARCA: comprobante imprimible con el código QR oficial, CAE y datos fiscales del emisor (razón social, domicilio comercial, ingresos brutos e inicio de actividades), que se cargan en la configuración de ARCA.
+- ARCA: botón "Verificar en ARCA" para las facturas que quedaron sin respuesta; las confirma con su CAE o libera el cobro si no se emitieron.
+- ARCA: "Probar conexión" informa el vencimiento del certificado y si el punto de venta está habilitado; aviso en Facturas cuando el certificado está por vencer.
+- Guía para pasar un cliente a producción en ARCA (`docs/arca-produccion.md`).
+- Content-Security-Policy en modo solo reporte (avisa a Sentry, no bloquea nada).
+
+### Cambiado
+- La reserva pública ya no acepta bloqueos de agenda ni horarios elegidos por el navegador: el fin del turno sale de la duración del servicio y se valida contra el horario del local y el profesional activo.
+- La base impide dos turnos superpuestos del mismo profesional, aunque las reservas lleguen al mismo tiempo.
+- El listado público de turnos exige un rango de fechas y devuelve solo los datos necesarios para mostrar la agenda.
+- Las liquidaciones se registran en una sola transacción.
+- Cada factura guarda su entorno de ARCA y Facturas muestra solo las del entorno activo.
+- La clave privada del certificado de ARCA se guarda cifrada (requiere `ARCA_ENCRYPTION_KEY`).
+- Todas las rutas de escritura del admin validan los datos que reciben.
+- La PWA usa Serwist en lugar de `@ducanh2912/next-pwa`.
+- El build falla ante errores de tipos o de lint; CI con Node 24 y build.
+- Sentry reporta los errores del servidor.
+
+### Corregido
+- La conexión con el servidor de producción de ARCA fallaba por su cifrado TLS.
+- Una factura sin respuesta de ARCA podía emitirse dos veces al reintentar.
+- El motivo de rechazo de una factura no se mostraba y el filtro por fecha dejaba afuera el último día.
+- El chequeo de turnos en el pasado usaba la hora del servidor (UTC) en lugar de la de Argentina.
+- La búsqueda por teléfono en la reserva ya no devuelve el nombre completo del cliente, y la cancelación online no revela si existe un número de turno.
+- Los listados de turnos del staff ya no se cortan en 1000 registros y la búsqueda de usuarios ya no se corta en 50.
+- Dependencias con vulnerabilidades conocidas (incluida una crítica de Next.js).
+
 ## [1.11.0] - 2026-11-03
 
 ### Agregado
