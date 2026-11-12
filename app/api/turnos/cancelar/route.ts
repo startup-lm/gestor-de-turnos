@@ -44,8 +44,13 @@ export async function POST(request: Request) {
     return errorResponse("Error en el servidor al buscar el turno", 500);
   }
 
-  if (!appt) {
-    return errorResponse("No existe ningún turno activo con ese número", 404);
+  if (
+    !appt ||
+    !arePhonesEqual(phone, appt.phone) ||
+    appt.type === "block" ||
+    appt.phone === "0000000000"
+  ) {
+    return errorResponse("No encontramos un turno activo con ese número y teléfono", 404);
   }
 
   if (appt.arca_invoice_id) {
@@ -54,16 +59,6 @@ export async function POST(request: Request) {
 
   if (appt.paid) {
     return errorResponse("Este turno ya fue cobrado y no es posible cancelarlo online", 400);
-  }
-
-  if (appt.phone === "0000000000" || appt.type === "block") {
-    return errorResponse("Este registro corresponde a un bloqueo y no puede cancelarse", 400);
-  }
-
-  // Validar coincidencia de teléfono estandarizado
-  const isMatch = arePhonesEqual(phone, appt.phone);
-  if (!isMatch) {
-    return errorResponse("El número de teléfono no coincide con el registrado en el turno", 400);
   }
 
   if (action === "search") {

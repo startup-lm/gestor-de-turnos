@@ -57,14 +57,12 @@ export function useReservarLogic(
     }
 
     lookupClientByPhone(phone).then((res) => {
-      if (res.found && res.name) {
-        setBienvenidaName(res.firstName || res.name.split(" ")[0]);
-        if (!name) setName(res.name);
+      if (res.found && res.firstName) {
+        setBienvenidaName(res.firstName);
       } else {
         setBienvenidaName(null);
       }
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phone, isGuest]);
 
   const setTimeOn = (base: Date, hhmm?: string | null) => {
