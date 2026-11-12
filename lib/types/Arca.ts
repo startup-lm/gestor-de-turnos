@@ -29,6 +29,7 @@ export type ArcaStatus = {
   point_of_sale: number | null;
   has_cert: boolean;
   has_key: boolean;
+  cert_expires_at: string | null;
   wsaa_url: string | null;
   wsfe_url: string | null;
 };
@@ -76,6 +77,7 @@ export type ArcaInvoiceRecord = {
   invoice_type: number | null;
   receiver_iva_condition: number | null;
   error_message: string | null;
+  environment: "homo" | "prod" | null;
 };
 
 export type ArcaInvoiceStatus = "pending" | "approved" | "rejected" | "error";

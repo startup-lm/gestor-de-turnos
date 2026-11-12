@@ -12,6 +12,17 @@ export const ARCA_ENDPOINTS: Record<ArcaEnvironment, { wsaa: string; wsfe: strin
   },
 };
 
+export function urlMatchesEnvironment(url: string, env: ArcaEnvironment): boolean {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    const isHomo = host.includes("homo");
+    return env === "homo" ? isHomo : !isHomo;
+  } catch {
+    return false;
+  }
+}
+
 export function resolveEndpoints(config: {
   environment: string | null;
   wsaa_url?: string | null;

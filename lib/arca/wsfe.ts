@@ -249,6 +249,46 @@ export async function consultVoucher(
   return parseConsultVoucher(xml);
 }
 
+export type PointOfSaleInfo = { number: number; emissionType: string; blocked: boolean; deregistered: boolean };
+
+export function parsePointsOfSale(xml: string): PointOfSaleInfo[] | null {
+  assertNoFault(xml);
+  const result = xmlTag(xml, "FEParamGetPtosVentaResult") ?? "";
+  const errors = serviceErrors(result);
+  if (errors.some((e) => e.code === 602)) {
+    return null;
+  }
+  if (errors.length > 0) {
+    throw new ArcaError(formatArcaMessages(errors), "service", errors.map((e) => e.code));
+  }
+
+  const resultGet = xmlTag(result, "ResultGet");
+  if (!resultGet) return [];
+  const ptos = xmlTags(resultGet, "PtoVenta");
+  return ptos.map((p) => {
+    const number = Number(xmlTag(p, "Nro") ?? 0);
+    const emissionType = decodeXml(xmlTag(p, "EmisionTipo") ?? "");
+    const blocked = xmlTag(p, "Bloqueado") === "S";
+    const fchBaja = xmlTag(p, "FchBaja");
+    const deregistered = !!fchBaja && fchBaja.trim() !== "" && fchBaja.trim().toUpperCase() !== "NULL";
+    return {
+      number,
+      emissionType,
+      blocked,
+      deregistered,
+    };
+  });
+}
+
+export async function pointsOfSale(wsfeUrl: string, auth: WsfeAuth): Promise<PointOfSaleInfo[] | null> {
+  const xml = await soapRequest(
+    wsfeUrl,
+    envelope("FEParamGetPtosVenta", authXml(auth)),
+    `${NS}FEParamGetPtosVenta`
+  );
+  return parsePointsOfSale(xml);
+}
+
 /** Estado de los servidores de ARCA (no pide autenticación) */
 export async function dummy(wsfeUrl: string) {
   const xml = await soapRequest(wsfeUrl, envelope("FEDummy", ""), `${NS}FEDummy`);

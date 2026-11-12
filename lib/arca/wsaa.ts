@@ -1,6 +1,7 @@
 import forge from "node-forge";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { ArcaError, decodeXml, soapFault, soapRequest, xmlTag } from "@/lib/arca/soap";
+import type { WsfeAuth } from "@/lib/arca/wsfe";
 
 export type AccessTicket = { token: string; sign: string; expiresAt: string };
 
@@ -92,9 +93,29 @@ export function buildLoginEnvelope(cms: string): string {
 export function parseLoginResponse(xml: string): AccessTicket {
   const fault = soapFault(xml);
   if (fault) {
-    if (/ya posee un TA valido/i.test(fault)) {
+    const faultXml = xmlTag(xml, "Fault") ?? "";
+    const combined = `${fault} ${faultXml}`.toLowerCase();
+    if (/ya posee un TA valido/i.test(fault) || combined.includes("ya posee un ta valido")) {
       throw new ArcaError(
         "ARCA ya entregó un acceso que sigue vigente y no se guardó. Esperá unos minutos y probá de nuevo",
+        "auth"
+      );
+    }
+    if (combined.includes("cms.cert.untrusted") || combined.includes("cms.bad")) {
+      throw new ArcaError(
+        "ARCA no reconoce el certificado. Revisá que sea del mismo entorno (homologación o producción) que elegiste",
+        "auth"
+      );
+    }
+    if (combined.includes("coe.notauthorized") || combined.includes("notauthorized")) {
+      throw new ArcaError(
+        "El certificado no tiene autorizado el servicio de factura electrónica (wsfe). Asocialo en el portal de ARCA",
+        "auth"
+      );
+    }
+    if (combined.includes("cms.cert.expired") || combined.includes("expired")) {
+      throw new ArcaError(
+        "El certificado de ARCA está vencido. Generá uno nuevo",
         "auth"
       );
     }
@@ -107,6 +128,16 @@ export function parseLoginResponse(xml: string): AccessTicket {
   const expiresAt = xmlTag(ticket, "expirationTime");
   if (!token || !sign || !expiresAt) throw new ArcaError("Respuesta de ARCA inesperada al iniciar sesión", "auth");
   return { token, sign, expiresAt };
+}
+
+/** Vencimiento del certificado digital (null si no se puede leer) */
+export function certificateExpiry(certPem: string): Date | null {
+  try {
+    const cert = forge.pki.certificateFromPem(certPem);
+    return cert?.validity?.notAfter ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /** Ticket de acceso a WSFE: reusa el guardado mientras siga vigente; si no, pide uno y lo guarda */
@@ -122,7 +153,26 @@ export async function getAccessTicket(config: WsaaConfig, wsaaUrl: string, now: 
   }
 
   const cms = signTra(buildTra(now), config.cert_pem, config.key_pem, config.key_passphrase);
-  const ticket = parseLoginResponse(await soapRequest(wsaaUrl, buildLoginEnvelope(cms)));
+  let ticket: AccessTicket;
+  try {
+    ticket = parseLoginResponse(await soapRequest(wsaaUrl, buildLoginEnvelope(cms)));
+  } catch (err) {
+    if (err instanceof ArcaError && /ya posee un TA valido|sigue vigente/i.test(err.message)) {
+      const { data: stored } = await supabaseAdmin
+        .from("arca_settings")
+        .select("wsaa_token, wsaa_sign, wsaa_expires_at")
+        .eq("id", 1)
+        .maybeSingle();
+
+      if (stored?.wsaa_token && stored?.wsaa_sign && stored?.wsaa_expires_at) {
+        const expires = new Date(stored.wsaa_expires_at).getTime();
+        if (expires - now.getTime() > REUSE_MARGIN_MS) {
+          return { token: stored.wsaa_token, sign: stored.wsaa_sign, expiresAt: stored.wsaa_expires_at };
+        }
+      }
+    }
+    throw err;
+  }
 
   const { error } = await supabaseAdmin
     .from("arca_settings")
@@ -131,4 +181,42 @@ export async function getAccessTicket(config: WsaaConfig, wsaaUrl: string, now: 
   if (error) console.error("[arca:wsaa] no se pudo guardar el ticket", error);
 
   return ticket;
+}
+
+/**
+ * Ejecuta una operación con WSFE usando el ticket de acceso.
+ * Si WSFE rechaza la autenticación con código 600, limpia el ticket guardado,
+ * solicita uno nuevo y reintenta la operación una sola vez.
+ */
+export async function withAccessTicket<T>(
+  config: WsaaConfig & { cuit: string | null },
+  wsaaUrl: string,
+  run: (auth: WsfeAuth) => Promise<T>
+): Promise<T> {
+  const cuit = String(config.cuit ?? "").replace(/\D/g, "");
+  let ticket = await getAccessTicket(config, wsaaUrl);
+  let auth: WsfeAuth = { ...ticket, cuit };
+
+  try {
+    return await run(auth);
+  } catch (err) {
+    if (err instanceof ArcaError && err.codes.includes(600)) {
+      await supabaseAdmin
+        .from("arca_settings")
+        .update({ wsaa_token: null, wsaa_sign: null, wsaa_expires_at: null })
+        .eq("id", 1);
+
+      const freshConfig: WsaaConfig & { cuit: string | null } = {
+        ...config,
+        wsaa_token: null,
+        wsaa_sign: null,
+        wsaa_expires_at: null,
+      };
+      ticket = await getAccessTicket(freshConfig, wsaaUrl);
+      auth = { ...ticket, cuit };
+
+      return await run(auth);
+    }
+    throw err;
+  }
 }
