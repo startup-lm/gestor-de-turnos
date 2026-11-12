@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 
 export const GENERIC_ERROR_MESSAGE = "Ocurrió un error al procesar la solicitud. Intentá nuevamente.";
 
@@ -17,5 +18,6 @@ export function errorResponse( message: string, status: number = 500 ) {
  */
 export function dbErrorResponse(error: unknown, context: string, status: number = 500) {
   console.error(`[api:${context}]`, error);
+  Sentry.captureException(error, { tags: { context } });
   return errorResponse(GENERIC_ERROR_MESSAGE, status);
 }
