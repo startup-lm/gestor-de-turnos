@@ -3,6 +3,7 @@ import withPWAInit from "@ducanh2912/next-pwa";
 import bundleAnalyzer from "@next/bundle-analyzer";
 import { withSentryConfig } from "@sentry/nextjs/config";
 import packageJson from "./package.json";
+import { buildCspReportOnly } from "./lib/security/csp";
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
@@ -66,6 +67,13 @@ const nextConfig: NextConfig = {
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
+          },
+          {
+            key: "Content-Security-Policy-Report-Only",
+            value: buildCspReportOnly({
+              supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+              sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+            }),
           },
         ],
       },
