@@ -156,6 +156,89 @@ describe("PUT /api/arca/config", () => {
     expect(res.status).toBe(400);
     expect((await res.json()).error).toBe("La fecha de inicio de actividades tiene que tener formato AAAA-MM-DD");
   });
+
+  it("se guarda cifrado: guarda keyPem y keyPassphrase con enc:v1: cuando hay ARCA_ENCRYPTION_KEY e invalida el ticket WSAA", async () => {
+    const originalKey = process.env.ARCA_ENCRYPTION_KEY;
+    process.env.ARCA_ENCRYPTION_KEY = "test-secret-key-32-bytes-minimum";
+
+    try {
+      const current = {
+        environment: "homo",
+        wsaa_token: "OLD_TOKEN",
+        wsaa_sign: "OLD_SIGN",
+        wsaa_expires_at: "2026-11-03T20:00:00-03:00",
+        key_pem: null,
+      };
+      const selectQuery = chain({ data: current, error: null });
+      const upsertQuery = chain({
+        data: {
+          id: 1,
+          key_pem: "enc:v1:fake",
+          key_passphrase: "enc:v1:fake",
+          wsaa_token: null,
+          wsaa_sign: null,
+          wsaa_expires_at: null,
+        },
+        error: null,
+      });
+
+      let fromCount = 0;
+      vi.mocked(supabaseAdmin.from).mockImplementation((() => {
+        fromCount++;
+        return fromCount === 1 ? selectQuery : upsertQuery;
+      }) as any);
+
+      const res = await PUT(
+        reqJson({
+          keyPem: "MI_CLAVE_PRIVADA_PEM_TEST",
+          keyPassphrase: "mi-passphrase-secreta",
+        })
+      );
+
+      expect(res.status).toBe(200);
+      expect(upsertQuery.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          key_pem: expect.stringMatching(/^enc:v1:/),
+          key_passphrase: expect.stringMatching(/^enc:v1:/),
+          wsaa_token: null,
+          wsaa_sign: null,
+          wsaa_expires_at: null,
+        })
+      );
+    } finally {
+      process.env.ARCA_ENCRYPTION_KEY = originalKey;
+    }
+  });
+
+  it("sin ARCA_ENCRYPTION_KEY se guarda en texto plano", async () => {
+    const originalKey = process.env.ARCA_ENCRYPTION_KEY;
+    delete process.env.ARCA_ENCRYPTION_KEY;
+
+    try {
+      const current = { environment: "homo" };
+      const selectQuery = chain({ data: current, error: null });
+      const upsertQuery = chain({
+        data: { id: 1, key_pem: "CLAVE_TEST_SIN_CIFRAR" },
+        error: null,
+      });
+
+      let fromCount = 0;
+      vi.mocked(supabaseAdmin.from).mockImplementation((() => {
+        fromCount++;
+        return fromCount === 1 ? selectQuery : upsertQuery;
+      }) as any);
+
+      const res = await PUT(reqJson({ keyPem: "CLAVE_TEST_SIN_CIFRAR" }));
+      expect(res.status).toBe(200);
+      expect(upsertQuery.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          key_pem: "CLAVE_TEST_SIN_CIFRAR",
+        })
+      );
+    } finally {
+      process.env.ARCA_ENCRYPTION_KEY = originalKey;
+    }
+  });
 });
 
 describe("GET /api/arca/config", () => {

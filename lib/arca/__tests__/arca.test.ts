@@ -23,6 +23,7 @@ import {
 import { resolveReceiverCondition } from "@/lib/arca/receiverConditions";
 import { resolveEndpoints, urlMatchesEnvironment } from "@/lib/arca/endpoints";
 import { ArcaError } from "@/lib/arca/soap";
+import { encryptSecret } from "@/lib/arca/secretBox";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 
 vi.mock("@/lib/supabase/supabaseAdmin", () => ({ supabaseAdmin: { from: vi.fn() } }));
@@ -306,6 +307,137 @@ describe("WSAA", () => {
     );
     expect(ticket.token).toBe("T");
     expect(https.request).not.toHaveBeenCalled();
+  });
+
+  it("se descifra al firmar: getAccessTicket con key_pem cifrado lo descifra y firma bien", async () => {
+    const originalKey = process.env.ARCA_ENCRYPTION_KEY;
+    const testSecret = "test-secret-32-chars-long-123456";
+    process.env.ARCA_ENCRYPTION_KEY = testSecret;
+
+    try {
+      mockHttpsResponse(
+        200,
+        "<soapenv:Envelope><soapenv:Body><loginCmsResponse><loginCmsReturn>" +
+          "&lt;loginTicketResponse&gt;&lt;header&gt;&lt;expirationTime&gt;2026-11-04T00:00:00-03:00&lt;/expirationTime&gt;&lt;/header&gt;" +
+          "&lt;credentials&gt;&lt;token&gt;TOKEN_DESCF&lt;/token&gt;&lt;sign&gt;SIGN_DESCF&lt;/sign&gt;&lt;/credentials&gt;&lt;/loginTicketResponse&gt;" +
+          "</loginCmsReturn></loginCmsResponse></soapenv:Body></soapenv:Envelope>"
+      );
+
+      const chain: any = {
+        update: vi.fn(() => chain),
+        eq: vi.fn(() => chain),
+      };
+      vi.mocked(supabaseAdmin.from).mockReturnValue(chain);
+
+      const encryptedKey = encryptSecret(keyPem, testSecret);
+      const ticket = await getAccessTicket(
+        { cert_pem: certPem, key_pem: encryptedKey, wsaa_token: null, wsaa_sign: null, wsaa_expires_at: null },
+        "https://wsaa",
+        NOW
+      );
+
+      expect(ticket.token).toBe("TOKEN_DESCF");
+      expect(chain.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          wsaa_token: "TOKEN_DESCF",
+        })
+      );
+    } finally {
+      process.env.ARCA_ENCRYPTION_KEY = originalKey;
+    }
+  });
+
+  it("migración perezosa: getAccessTicket con ARCA_ENCRYPTION_KEY y key_pem en texto plano migra a cifrado en arca_settings", async () => {
+    const originalKey = process.env.ARCA_ENCRYPTION_KEY;
+    const testSecret = "test-secret-32-chars-long-123456";
+    process.env.ARCA_ENCRYPTION_KEY = testSecret;
+
+    try {
+      mockHttpsResponse(
+        200,
+        "<soapenv:Envelope><soapenv:Body><loginCmsResponse><loginCmsReturn>" +
+          "&lt;loginTicketResponse&gt;&lt;header&gt;&lt;expirationTime&gt;2026-11-04T00:00:00-03:00&lt;/expirationTime&gt;&lt;/header&gt;" +
+          "&lt;credentials&gt;&lt;token&gt;TOKEN_MIG&lt;/token&gt;&lt;sign&gt;SIGN_MIG&lt;/sign&gt;&lt;/credentials&gt;&lt;/loginTicketResponse&gt;" +
+          "</loginCmsReturn></loginCmsResponse></soapenv:Body></soapenv:Envelope>"
+      );
+
+      const updateCalls: any[] = [];
+      const chain: any = {
+        update: vi.fn((data) => {
+          updateCalls.push(data);
+          return chain;
+        }),
+        eq: vi.fn(() => chain),
+      };
+      vi.mocked(supabaseAdmin.from).mockReturnValue(chain);
+
+      const config = {
+        cert_pem: certPem,
+        key_pem: keyPem,
+        key_passphrase: "plain-passphrase",
+        wsaa_token: null,
+        wsaa_sign: null,
+        wsaa_expires_at: null,
+      };
+
+      const ticket = await getAccessTicket(config, "https://wsaa", NOW);
+      expect(ticket.token).toBe("TOKEN_MIG");
+
+      const migrationCall = updateCalls.find((call) => call.key_pem);
+      expect(migrationCall).toBeDefined();
+      expect(migrationCall.key_pem).toMatch(/^enc:v1:/);
+      expect(migrationCall.key_passphrase).toMatch(/^enc:v1:/);
+    } finally {
+      process.env.ARCA_ENCRYPTION_KEY = originalKey;
+    }
+  });
+
+  it("migración perezosa: si falla la escritura en la base al migrar, no corta la facturación", async () => {
+    const originalKey = process.env.ARCA_ENCRYPTION_KEY;
+    const testSecret = "test-secret-32-chars-long-123456";
+    process.env.ARCA_ENCRYPTION_KEY = testSecret;
+
+    try {
+      mockHttpsResponse(
+        200,
+        "<soapenv:Envelope><soapenv:Body><loginCmsResponse><loginCmsReturn>" +
+          "&lt;loginTicketResponse&gt;&lt;header&gt;&lt;expirationTime&gt;2026-11-04T00:00:00-03:00&lt;/expirationTime&gt;&lt;/header&gt;" +
+          "&lt;credentials&gt;&lt;token&gt;TOKEN_OK&lt;/token&gt;&lt;sign&gt;SIGN_OK&lt;/sign&gt;&lt;/credentials&gt;&lt;/loginTicketResponse&gt;" +
+          "</loginCmsReturn></loginCmsResponse></soapenv:Body></soapenv:Envelope>"
+      );
+
+      let callCount = 0;
+      const migrationChain: any = {
+        update: vi.fn(() => migrationChain),
+        eq: vi.fn(() => Promise.reject(new Error("DB failure on migration"))),
+      };
+      const ticketChain: any = {
+        update: vi.fn(() => ticketChain),
+        eq: vi.fn(() => Promise.resolve({ error: null })),
+      };
+
+      vi.mocked(supabaseAdmin.from).mockImplementation((() => {
+        callCount++;
+        return callCount === 1 ? migrationChain : ticketChain;
+      }) as any);
+
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const config = {
+        cert_pem: certPem,
+        key_pem: keyPem,
+        wsaa_token: null,
+        wsaa_sign: null,
+        wsaa_expires_at: null,
+      };
+
+      const ticket = await getAccessTicket(config, "https://wsaa", NOW);
+      expect(ticket.token).toBe("TOKEN_OK");
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    } finally {
+      process.env.ARCA_ENCRYPTION_KEY = originalKey;
+    }
   });
 });
 

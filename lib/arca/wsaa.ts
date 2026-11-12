@@ -1,6 +1,7 @@
 import forge from "node-forge";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { ArcaError, decodeXml, soapFault, soapRequest, xmlTag } from "@/lib/arca/soap";
+import { decryptSecret, encryptSecret, isEncrypted } from "@/lib/arca/secretBox";
 import type { WsfeAuth } from "@/lib/arca/wsfe";
 
 export type AccessTicket = { token: string; sign: string; expiresAt: string };
@@ -152,7 +153,40 @@ export async function getAccessTicket(config: WsaaConfig, wsaaUrl: string, now: 
     throw new ArcaError("Falta cargar el certificado y la clave de ARCA", "auth");
   }
 
-  const cms = signTra(buildTra(now), config.cert_pem, config.key_pem, config.key_passphrase);
+  const keyPem = decryptSecret(config.key_pem);
+  const keyPassphrase = config.key_passphrase ? decryptSecret(config.key_passphrase) : config.key_passphrase;
+
+  const cms = signTra(buildTra(now), config.cert_pem, keyPem, keyPassphrase);
+
+  if (process.env.ARCA_ENCRYPTION_KEY) {
+    const keyIsPlain = config.key_pem && !isEncrypted(config.key_pem);
+    const passIsPlain = config.key_passphrase && !isEncrypted(config.key_passphrase);
+
+    if (keyIsPlain || passIsPlain) {
+      const migrationUpdate: { key_pem?: string; key_passphrase?: string } = {};
+      if (keyIsPlain && config.key_pem) {
+        migrationUpdate.key_pem = encryptSecret(config.key_pem);
+      }
+      if (passIsPlain && config.key_passphrase) {
+        migrationUpdate.key_passphrase = encryptSecret(config.key_passphrase);
+      }
+
+      try {
+        const { error: migrationError } = await supabaseAdmin
+          .from("arca_settings")
+          .update(migrationUpdate)
+          .eq("id", 1);
+        if (migrationError) {
+          console.error("[arca:wsaa] no se pudo migrar la clave cifrada", migrationError);
+        } else {
+          if (migrationUpdate.key_pem) config.key_pem = migrationUpdate.key_pem;
+          if (migrationUpdate.key_passphrase) config.key_passphrase = migrationUpdate.key_passphrase;
+        }
+      } catch (migrationErr) {
+        console.error("[arca:wsaa] error al migrar la clave cifrada", migrationErr);
+      }
+    }
+  }
   let ticket: AccessTicket;
   try {
     ticket = parseLoginResponse(await soapRequest(wsaaUrl, buildLoginEnvelope(cms)));

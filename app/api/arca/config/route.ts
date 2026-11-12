@@ -4,6 +4,7 @@ import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { isServerFeatureEnabled } from "@/lib/flags/server";
 import { requireAdmin } from "@/lib/api/auth";
 import { urlMatchesEnvironment } from "@/lib/arca/endpoints";
+import { encryptSecret } from "@/lib/arca/secretBox";
 import type { ArcaEnvironment } from "@/lib/types/Arca";
 
 export const runtime = "nodejs";
@@ -164,8 +165,11 @@ export async function PUT(req: Request) {
   }
 
   if ("certPem" in payload && payload.certPem) update.cert_pem = payload.certPem;
-  if ("keyPem" in payload && payload.keyPem) update.key_pem = payload.keyPem;
-  if ("keyPassphrase" in payload) update.key_passphrase = payload.keyPassphrase || null;
+  if ("keyPem" in payload && payload.keyPem) update.key_pem = encryptSecret(payload.keyPem);
+  if ("keyPassphrase" in payload) {
+    const pass = payload.keyPassphrase || null;
+    update.key_passphrase = pass ? encryptSecret(pass) : null;
+  }
 
   // El ticket de acceso depende del certificado, la clave y el entorno: si cambian, se pide otro
   const ticketKeys = ["environment", "cuit", "cert_pem", "key_pem", "key_passphrase", "wsaa_url"] as const;
