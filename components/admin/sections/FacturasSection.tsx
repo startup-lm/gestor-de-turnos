@@ -309,7 +309,28 @@ export default function FacturasSection() {
     data: status,
     loading: loadingStatus,
   } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);
-  const isHomo = (status?.environment ?? config?.environment) === "homo";
+  const currentEnvironment = status?.environment ?? config?.environment;
+  const isHomo = currentEnvironment === "homo";
+
+  const certExpiryNotice = useMemo(() => {
+    if (!status?.cert_expires_at) return null;
+    const expiry = new Date(status.cert_expires_at);
+    const now = new Date();
+    const diffMs = expiry.getTime() - now.getTime();
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    const day = String(expiry.getDate()).padStart(2, "0");
+    const month = String(expiry.getMonth() + 1).padStart(2, "0");
+    const year = expiry.getFullYear();
+    const dateFormatted = `${day}/${month}/${year}`;
+
+    if (diffMs <= 0) {
+      return `El certificado de ARCA venció el ${dateFormatted}`;
+    }
+    if (diffMs <= thirtyDaysMs) {
+      return `El certificado de ARCA vence el ${dateFormatted}. Renovalo para seguir facturando`;
+    }
+    return null;
+  }, [status?.cert_expires_at]);
 
   // Período de facturación ARCA (diario, semanal, quincenal, mensual, personalizado)
   const [periodPreset, setPeriodPreset] = useState<ArcaPeriod>("monthly");
@@ -406,6 +427,7 @@ export default function FacturasSection() {
         sourceType: filterSource || undefined,
         dateFrom: periodStart || undefined,
         dateTo: periodEnd || undefined,
+        environment: currentEnvironment || undefined,
       });
       setInvoices(data);
     } catch {
@@ -414,7 +436,7 @@ export default function FacturasSection() {
       setLoadingInvoices(false);
       setInitialInvoicesLoaded(true);
     }
-  }, [filterStatus, filterSource, periodStart, periodEnd]);
+  }, [filterStatus, filterSource, periodStart, periodEnd, currentEnvironment]);
 
   const loadPeriodAppointments = useCallback(async () => {
     if (!periodStart || !periodEnd) return;
@@ -576,6 +598,12 @@ export default function FacturasSection() {
           <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-medium">
             <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
             <span>Homologación: los comprobantes son de prueba en ARCA y no tienen validez fiscal.</span>
+          </div>
+        )}
+        {certExpiryNotice && (
+          <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-medium">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
+            <span>{certExpiryNotice}</span>
           </div>
         )}
         {/* Cabecera con botón Volver arriba a la izquierda estilo estándar de /admin */}
@@ -815,6 +843,12 @@ export default function FacturasSection() {
         <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-medium">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
           <span>Homologación: los comprobantes son de prueba en ARCA y no tienen validez fiscal.</span>
+        </div>
+      )}
+      {certExpiryNotice && (
+        <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-medium">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
+          <span>{certExpiryNotice}</span>
         </div>
       )}
       {/* Cabecera Estilo Ventas */}
