@@ -103,6 +103,32 @@ describe("Validación de esquemas y payloads en API", () => {
       expect(data.error).toBe("Email inválido");
     });
 
+    it("POST /api/barbers rechaza con 400 si commission o sale_commission supera 1", async () => {
+      const res1 = await barbersPost(jsonRequest({ name: "Carlos", email: "carlos@test.com", commission: 1.5 }));
+      expect(res1.status).toBe(400);
+      expect((await res1.json()).error).toBe("La comisión no puede superar el 100%");
+
+      const res2 = await barbersPost(jsonRequest({ name: "Carlos", email: "carlos@test.com", commission: 50 }));
+      expect(res2.status).toBe(400);
+      expect((await res2.json()).error).toBe("La comisión no puede superar el 100%");
+
+      const res3 = await barbersPost(jsonRequest({ name: "Carlos", email: "carlos@test.com", sale_commission: 1.05 }));
+      expect(res3.status).toBe(400);
+      expect((await res3.json()).error).toBe("La comisión no puede superar el 100%");
+    });
+
+    it("POST /api/barbers rechaza con 400 si commission o sale_commission es negativa", async () => {
+      const res1 = await barbersPost(jsonRequest({ name: "Carlos", email: "carlos@test.com", commission: -0.1 }));
+      expect(res1.status).toBe(400);
+      expect((await res1.json()).error).toBe("La comisión no puede ser negativa");
+    });
+
+    it("PUT /api/barbers rechaza con 400 si commission supera 1", async () => {
+      const res = await barbersPut(jsonRequest({ id: 5, commission: 2 }));
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toBe("La comisión no puede superar el 100%");
+    });
+
     it("PUT /api/barbers rechaza con 400 si el id no es entero positivo", async () => {
       const res = await barbersPut(jsonRequest({ id: -1, name: "Carlos" }));
       expect(res.status).toBe(400);

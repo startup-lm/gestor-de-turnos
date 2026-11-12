@@ -78,8 +78,8 @@ export const BarberInsertSchema = z.object({
   image: z.string().trim().max(1000).nullable().optional(),
   instagram: z.string().trim().max(120).nullable().optional(),
   role: z.enum(["admin", "barber"]).optional().default("barber"),
-  commission: z.number().min(0, "La comisión no puede ser negativa").max(100, "La comisión no puede superar el 100%").optional(),
-  sale_commission: z.number().min(0, "La comisión no puede ser negativa").max(100, "La comisión no puede superar el 100%").optional(),
+  commission: z.number().min(0, "La comisión no puede ser negativa").max(1, "La comisión no puede superar el 100%").optional(),
+  sale_commission: z.number().min(0, "La comisión no puede ser negativa").max(1, "La comisión no puede superar el 100%").optional(),
   active: z.boolean().optional(),
 });
 
@@ -90,8 +90,8 @@ export const BarberUpdateSchema = z.object({
   image: z.string().trim().max(1000).nullable().optional(),
   instagram: z.string().trim().max(120).nullable().optional(),
   role: z.enum(["admin", "barber"]).optional(),
-  commission: z.number().min(0, "La comisión no puede ser negativa").max(100, "La comisión no puede superar el 100%").optional(),
-  sale_commission: z.number().min(0, "La comisión no puede ser negativa").max(100, "La comisión no puede superar el 100%").optional(),
+  commission: z.number().min(0, "La comisión no puede ser negativa").max(1, "La comisión no puede superar el 100%").optional(),
+  sale_commission: z.number().min(0, "La comisión no puede ser negativa").max(1, "La comisión no puede superar el 100%").optional(),
   active: z.boolean().optional(),
 });
 
