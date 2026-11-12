@@ -88,22 +88,23 @@ function CustomCalendarToolbar({ label, onNavigate }: ToolbarProps<CalendarEvent
   );
 }
 
+const parseHHMM = (s: string) => {
+  const [h, m] = s.split(':').map(Number);
+  return { H: h ?? 0, M: m ?? 0 };
+};
+
+const setTimeOn = (base: Date, hhmm?: string | null) => {
+  if (!hhmm) return null;
+  const { H, M } = parseHHMM(hhmm);
+  const d = new Date(base);
+  d.setHours(H, M, 0, 0);
+  return d;
+};
+
 function CustomCalendarComponent({ selectedBarberId, barbers, role, isMobile, onSlotClick, onEventClick, refreshSignal, }: Readonly<CustomCalendarProps>) {
   const { businessHours, businessSettings } = useBusinessContext();
   const { currentDate, currentRange, onNavigate, onRangeChange } = useCalendarNavigation();
   const { events, allAppointments } = useCalendarData(selectedBarberId, role, currentRange, refreshSignal);
-
-  const parseHHMM = (s: string) => {
-    const [h, m] = s.split(':').map(Number);
-    return { H: h ?? 0, M: m ?? 0 };
-  };
-  const setTimeOn = (base: Date, hhmm?: string | null) => {
-    if (!hhmm) return null;
-    const { H, M } = parseHHMM(hhmm);
-    const d = new Date(base);
-    d.setHours(H, M, 0, 0);
-    return d;
-  };
   const isClosedDay = useCallback(
     (d: Date) => businessHours.closed_days.includes(d.getDay()),
     [businessHours.closed_days]
