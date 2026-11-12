@@ -6,6 +6,10 @@ export type ArcaConfig = {
   point_of_sale: number | null;
   wsaa_url: string | null;
   wsfe_url: string | null;
+  legal_name?: string | null;
+  fiscal_address?: string | null;
+  gross_income?: string | null;
+  activity_start_date?: string | null;
   has_cert: boolean;
   has_key: boolean;
   has_passphrase?: boolean;
@@ -17,6 +21,10 @@ export type ArcaConfigUpdate = {
   pointOfSale?: number | null;
   wsaaUrl?: string | null;
   wsfeUrl?: string | null;
+  legalName?: string | null;
+  fiscalAddress?: string | null;
+  grossIncome?: string | null;
+  activityStartDate?: string | null;
   certPem?: string;
   keyPem?: string;
   keyPassphrase?: string | null;
@@ -29,6 +37,7 @@ export type ArcaStatus = {
   point_of_sale: number | null;
   has_cert: boolean;
   has_key: boolean;
+  cert_expires_at: string | null;
   wsaa_url: string | null;
   wsfe_url: string | null;
 };
@@ -76,11 +85,30 @@ export type ArcaInvoiceRecord = {
   invoice_type: number | null;
   receiver_iva_condition: number | null;
   error_message: string | null;
+  environment: "homo" | "prod" | null;
+  credit_note_of_id: number | null;
+  voucher_date: string | null;
 };
 
-export type ArcaInvoiceStatus = "pending" | "approved" | "rejected" | "error";
+export type ArcaInvoiceStatus = "pending" | "approved" | "rejected" | "error" | "voided";
 
 export type ArcaTestResult = {
   success: boolean;
   steps: { label: string; ok: boolean; detail: string }[];
+};
+
+export type ArcaIssuerData = {
+  legalName: string | null;
+  fiscalAddress: string | null;
+  grossIncome: string | null;
+  activityStartDate: string | null;
+  cuit: string | null;
+  pointOfSale: number | null;
+  taxCondition: string;
+};
+
+export type ArcaReceiptData = {
+  invoice: ArcaInvoiceRecord;
+  issuer: ArcaIssuerData;
+  qrUrl: string;
 };

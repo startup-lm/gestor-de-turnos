@@ -4,6 +4,7 @@ import type {
   ArcaEmitInput,
   ArcaEmitResult,
   ArcaInvoiceRecord,
+  ArcaReceiptData,
   ArcaStatus,
   ArcaTestResult,
 } from "@/lib/types/Arca";
@@ -62,6 +63,19 @@ export async function emitArcaInvoice(payload: ArcaEmitInput): Promise<ArcaEmitR
   return res.json();
 }
 
+export async function verifyArcaInvoice(
+  id: number
+): Promise<{ success: boolean; status?: string; error?: string }> {
+  const res = await fetch(`${BASE}/api/arca/invoices/${id}/verify`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    return { success: false, error: json?.error ?? "No se pudo verificar el comprobante" };
+  }
+  return res.json();
+}
+
 export async function getArcaInvoices(
   options: {
     limit?: number;
@@ -69,18 +83,44 @@ export async function getArcaInvoices(
     status?: string;
     dateFrom?: string;
     dateTo?: string;
+    environment?: string;
   } = {}
 ): Promise<ArcaInvoiceRecord[]> {
-  const { limit = 50, sourceType, status, dateFrom, dateTo } = options;
+  const { limit = 50, sourceType, status, dateFrom, dateTo, environment } = options;
   const params = new URLSearchParams({ limit: String(limit) });
   if (sourceType) params.set("source_type", sourceType);
   if (status) params.set("status", status);
   if (dateFrom) params.set("date_from", dateFrom);
   if (dateTo) params.set("date_to", dateTo);
+  if (environment) params.set("environment", environment);
 
   const res = await fetch(`${BASE}/api/arca/invoices?${params.toString()}`, {
     next: { tags: ["arca-invoices"] },
   });
   if (!res.ok) throw new Error("No se pudo cargar comprobantes ARCA");
+  return res.json();
+}
+
+export async function emitCreditNote(
+  invoiceId: number
+): Promise<ArcaEmitResult> {
+  const res = await fetch(`${BASE}/api/arca/invoices/${invoiceId}/credit-note`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    return { success: false, error: json?.error ?? "No se pudo emitir la nota de crédito" };
+  }
+  return res.json();
+}
+
+export async function getInvoiceReceipt(
+  invoiceId: number
+): Promise<ArcaReceiptData> {
+  const res = await fetch(`${BASE}/api/arca/invoices/${invoiceId}/receipt`);
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json?.error ?? "No se pudo cargar el comprobante");
+  }
   return res.json();
 }

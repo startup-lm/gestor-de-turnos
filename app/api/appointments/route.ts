@@ -14,51 +14,114 @@ import {
   AppointmentDeleteSchema,
 } from "@/lib/schemas";
 import { normalizePhone } from "@/utils/phone";
+import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
+import { addDaysToDay } from "@/lib/dates/argentina";
+import {
+  addMinutesToTime,
+  isPastInArgentina,
+  isWithinBusinessHours,
+  OVERLAP_ERROR_MESSAGE,
+} from "@/lib/appointments/publicBooking";
 
 export async function GET(request: Request) {
-  // Verificar si es barbero o admin para devolver datos reales o enmascarados
+  // Verificar si es barbero o admin para devolver datos reales o filtrados
   const staff = await requireBarberOrAdmin();
   const isAuthorized = staff !== null;
 
   const { searchParams } = new URL(request.url);
-  let query = supabaseAdmin
-    .from("appointments")
-    .select(`*, barbers(name), services(name), arca_invoices(*)`)
-    .is("deleted_at", null);
-  // Solo filtros conocidos: un filtro libre permitiría a un anónimo buscar por teléfono o cliente
-  for (const [key, value] of searchParams.entries()) {
-    if (key === "start_date") {
-      query = query.gte("date", value);
-    } else if (key === "end_date") {
-      query = query.lte("date", value);
-    } else if (key === "date") {
-      query = query.eq("date", value);
-    } else if (key === "barber_id") {
-      // barber_id=0 significa "Cualquier Barbero": no se filtra
-      if (value !== "0") query = query.eq("barber_id", value);
-    } else if (key === "id" || key === "service_id") {
-      query = query.eq(key, value);
+
+  if (!isAuthorized) {
+    const dateParam = searchParams.get("date");
+    const startDateParam = searchParams.get("start_date");
+    const endDateParam = searchParams.get("end_date");
+    const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+    let isValidRange = false;
+    if (dateParam && DATE_REGEX.test(dateParam)) {
+      isValidRange = true;
+    } else if (
+      startDateParam &&
+      endDateParam &&
+      DATE_REGEX.test(startDateParam) &&
+      DATE_REGEX.test(endDateParam) &&
+      startDateParam <= endDateParam &&
+      endDateParam <= addDaysToDay(startDateParam, 62)
+    ) {
+      isValidRange = true;
     }
+
+    if (!isValidRange) {
+      return errorResponse("Indicá un rango de fechas válido", 400);
+    }
+
+    let query = supabaseAdmin
+      .from("appointments")
+      .select("id, barber_id, service_id, date, start_time, end_time, type")
+      .is("deleted_at", null);
+
+    if (dateParam) {
+      query = query.eq("date", dateParam);
+    } else if (startDateParam && endDateParam) {
+      query = query.gte("date", startDateParam).lte("date", endDateParam);
+    }
+
+    const barberId = searchParams.get("barber_id");
+    if (barberId && barberId !== "0") {
+      query = query.eq("barber_id", barberId);
+    }
+
+    const { data, error } = await query
+      .order("date", { ascending: true })
+      .order("start_time", { ascending: true });
+
+    if (error) return dbErrorResponse(error, "appointments.get");
+
+    const formatted = (data ?? []).map((item) => ({
+      id: item.id,
+      barber_id: item.barber_id,
+      service_id: item.service_id,
+      date: item.date,
+      start_time: item.start_time?.slice(0, 5) ?? item.start_time,
+      end_time: item.end_time?.slice(0, 5) ?? item.end_time,
+      type: item.type,
+    }));
+    return NextResponse.json(formatted);
   }
-  const { data, error } = await query
-    .order("date", { ascending: true })
-    .order("start_time", { ascending: true });
+
+  // Staff: mismos filtros que hoy y mismo select con joins, pero traído con fetchAllRows, ordenado por date, start_time e id
+  const { data, error } = await fetchAllRows((from, to) => {
+    let pageQuery = supabaseAdmin
+      .from("appointments")
+      .select(`*, barbers(name), services(name), arca_invoices(*)`)
+      .is("deleted_at", null);
+
+    for (const [key, value] of searchParams.entries()) {
+      if (key === "start_date") {
+        pageQuery = pageQuery.gte("date", value);
+      } else if (key === "end_date") {
+        pageQuery = pageQuery.lte("date", value);
+      } else if (key === "date") {
+        pageQuery = pageQuery.eq("date", value);
+      } else if (key === "barber_id") {
+        if (value !== "0") pageQuery = pageQuery.eq("barber_id", value);
+      } else if (key === "id" || key === "service_id") {
+        pageQuery = pageQuery.eq(key, value);
+      }
+    }
+
+    return pageQuery
+      .order("date", { ascending: true })
+      .order("start_time", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to);
+  });
+
   if (error) return dbErrorResponse(error, "appointments.get");
-  const formatted = data.map(item => ({
+
+  const formatted = (data ?? []).map((item: any) => ({
     ...item,
     start_time: item.start_time?.slice(0, 5) ?? item.start_time,
     end_time: item.end_time?.slice(0, 5) ?? item.end_time,
-    // Enmascarar información sensible para usuarios no autenticados
-    client: isAuthorized ? item.client : "Ocupado",
-    phone: isAuthorized ? item.phone : null,
-    price: isAuthorized ? item.price : null,
-    payment_method: isAuthorized ? item.payment_method : null,
-    created_by: isAuthorized ? item.created_by : null,
-    deleted_by: isAuthorized ? item.deleted_by : null,
-    client_id: isAuthorized ? item.client_id : null,
-    paid: isAuthorized ? item.paid : false,
-    arca_invoice_id: isAuthorized ? item.arca_invoice_id : null,
-    arca_invoices: isAuthorized ? item.arca_invoices : null,
   }));
   return NextResponse.json(formatted);
 }
@@ -91,6 +154,53 @@ export async function POST(request: Request) {
   }
 
   const { client, barber_id, date, start_time, end_time, phone, service_id, created_by, client_id, type } = parsed.data;
+  const appointmentDate = date.split("T")[0];
+
+  let finalType = type ?? "appointment";
+  let finalEndTime = end_time;
+
+  if (!isStaff) {
+    // 1. Forzar type = "appointment"
+    finalType = "appointment";
+
+    // 2. Antes de cualquier consulta, chequeo de pasado con hora argentina
+    if (isPastInArgentina(appointmentDate, start_time)) {
+      return errorResponse("No es posible reservar turnos en fechas u horarios pasados.", 400);
+    }
+
+    // 3. Leer en paralelo con Promise.all
+    const [serviceRes, barberRes, hoursRes] = await Promise.all([
+      supabaseAdmin.from("services").select("id, duration").eq("id", service_id).maybeSingle(),
+      supabaseAdmin.from("barbers").select("id, active").eq("id", barber_id).maybeSingle(),
+      supabaseAdmin.from("business_hours_global").select("open_time, close_time, closed_days").eq("id", 1).maybeSingle(),
+    ]);
+
+    if (serviceRes.error) return dbErrorResponse(serviceRes.error, "appointments.post");
+    if (barberRes.error) return dbErrorResponse(barberRes.error, "appointments.post");
+    if (hoursRes.error) return dbErrorResponse(hoursRes.error, "appointments.post");
+
+    if (!serviceRes.data) {
+      return errorResponse("El servicio elegido no existe", 400);
+    }
+    if (!barberRes.data || barberRes.data.active !== true) {
+      return errorResponse("El profesional elegido no está disponible", 400);
+    }
+
+    // 4. end_time del anónimo = start_time + duration minutos
+    const duration = Number(serviceRes.data.duration ?? 30);
+    const computedEndTime = addMinutesToTime(start_time, duration);
+    if (!computedEndTime) {
+      return errorResponse("El horario elegido no es válido", 400);
+    }
+    finalEndTime = computedEndTime;
+
+    // 5. Validar horario de local si hay fila de horarios
+    if (hoursRes.data) {
+      if (!isWithinBusinessHours(appointmentDate, start_time, hoursRes.data)) {
+        return errorResponse("El local no atiende en ese horario", 400);
+      }
+    }
+  }
 
   // Normalizar teléfono canónico (+549...)
   let canonicalPhone = phone ?? "";
@@ -101,10 +211,10 @@ export async function POST(request: Request) {
     }
   }
 
-  let finalClientId = client_id;
+  let finalClientId = isStaff ? client_id : undefined;
 
   // Asegurar registro de cliente en tabla clients desde el servidor
-  if (!finalClientId && client && canonicalPhone && canonicalPhone !== "0000000000" && type !== "block") {
+  if (!finalClientId && client && canonicalPhone && canonicalPhone !== "0000000000" && finalType !== "block") {
     try {
       const today = new Date().toISOString().split("T")[0];
       const norm = normalizePhone(canonicalPhone);
@@ -133,17 +243,8 @@ export async function POST(request: Request) {
     }
   }
 
-  const appointmentDate = date.split("T")[0];
   const newStart = `${start_time}:00`;
-  const newEnd = `${end_time}:00`;
-
-  // Validar que clientes anónimos no puedan reservar turnos en el pasado
-  if (!isStaff) {
-    const apptDateTime = new Date(`${appointmentDate}T${newStart}`);
-    if (apptDateTime.getTime() < Date.now()) {
-      return errorResponse("No es posible reservar turnos en fechas u horarios pasados.", 400);
-    }
-  }
+  const newEnd = `${finalEndTime}:00`;
 
   // Validar que no se solape con otro turno activo del mismo barbero
   const { data: overlapping, error: overlapError } = await supabaseAdmin
@@ -161,7 +262,7 @@ export async function POST(request: Request) {
   }
 
   if (overlapping && overlapping.length > 0) {
-    return errorResponse("El horario seleccionado coincide o se solapa con otro turno ya agendado.", 400);
+    return errorResponse(OVERLAP_ERROR_MESSAGE, 400);
   }
 
   const insertPayload: Record<string, unknown> = {
@@ -172,19 +273,24 @@ export async function POST(request: Request) {
     end_time: newEnd,
     phone: canonicalPhone,
     service_id,
-    type,
+    type: finalType,
     created_at: new Date().toISOString(),
   };
-  if (created_by) insertPayload.created_by = created_by;
+  if (isStaff && created_by) insertPayload.created_by = created_by;
   if (finalClientId) insertPayload.client_id = finalClientId;
   const { data, error } = await supabaseAdmin
     .from("appointments")
     .insert(insertPayload)
     .select("id");
 
-  if (error) return dbErrorResponse(error, "appointments");
+  if (error) {
+    if ((error as any).code === "23P01") {
+      return errorResponse(OVERLAP_ERROR_MESSAGE, 400);
+    }
+    return dbErrorResponse(error, "appointments");
+  }
   revalidateTag("appointments");
-  revalidateTag(`appointments-${barber_id}-${date.split("T")[0]}`);
+  revalidateTag(`appointments-${barber_id}-${appointmentDate}`);
   return NextResponse.json({ success: true, id: data?.[0]?.id });
 }
 
@@ -323,7 +429,12 @@ export async function PATCH(request: Request) {
     .eq("id", appointmentId)
     .select();
 
-  if (error) return dbErrorResponse(error, "appointments");
+  if (error) {
+    if ((error as any).code === "23P01") {
+      return errorResponse(OVERLAP_ERROR_MESSAGE, 400);
+    }
+    return dbErrorResponse(error, "appointments");
+  }
   revalidateTag("appointments");
   if (data && data.length > 0) {
     const updated = data[0];

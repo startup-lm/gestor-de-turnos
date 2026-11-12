@@ -36,7 +36,6 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     found: true,
-    name: data.name,
     firstName,
   });
 }

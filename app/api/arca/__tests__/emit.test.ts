@@ -23,7 +23,12 @@ vi.mock("@/lib/flags/server", () => ({
 
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }));
 
-vi.mock("@/lib/arca/wsaa", () => ({ getAccessTicket: vi.fn() }));
+vi.mock("@/lib/arca/wsaa", () => ({
+  getAccessTicket: vi.fn(),
+  withAccessTicket: vi.fn((config, _url, run) =>
+    run({ token: "t", sign: "s", expiresAt: "2026-11-04T00:00:00-03:00", cuit: String(config.cuit ?? "").replace(/\D/g, "") })
+  ),
+}));
 
 vi.mock("@/lib/arca/wsfe", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/arca/wsfe")>()),
@@ -98,7 +103,9 @@ const requestCae = vi.mocked(wsfe.requestCae);
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(auth.requireBarberOrAdmin).mockResolvedValue(ADMIN);
-  vi.mocked(wsaa.getAccessTicket).mockResolvedValue({ token: "t", sign: "s", expiresAt: "2026-11-04T00:00:00-03:00" });
+  vi.mocked(wsaa.withAccessTicket).mockImplementation((config, _url, run) =>
+    run({ token: "t", sign: "s", expiresAt: "2026-11-04T00:00:00-03:00", cuit: String(config.cuit ?? "").replace(/\D/g, "") })
+  );
   lastAuthorized.mockResolvedValue(7);
   requestCae.mockResolvedValue(APPROVED);
 });
@@ -118,9 +125,20 @@ describe("ARCA: permisos y origen del comprobante", () => {
   });
 
   it("no factura dos veces el mismo turno", async () => {
-    mockTables({ ...PAID, arca_invoice_id: 3 });
+    const { invoices } = mockTables({ ...PAID, arca_invoice_id: 3 });
+    invoices.maybeSingle.mockResolvedValueOnce({ data: { id: 3, status: "approved" }, error: null });
     const response = await emitAppointment();
     expect(response.status).toBe(409);
+    expect((await response.json()).error).toBe("Este turno ya tiene factura");
+    expect(requestCae).not.toHaveBeenCalled();
+  });
+
+  it("si el turno tiene una factura sin confirmar (error o pending), avisa que la verifique", async () => {
+    const { invoices } = mockTables({ ...PAID, arca_invoice_id: 3 });
+    invoices.maybeSingle.mockResolvedValueOnce({ data: { id: 3, status: "error" }, error: null });
+    const response = await emitAppointment();
+    expect(response.status).toBe(409);
+    expect((await response.json()).error).toBe("Este cobro tiene una factura sin confirmar. Verificala en Facturas");
     expect(requestCae).not.toHaveBeenCalled();
   });
 
@@ -156,7 +174,9 @@ describe("ARCA: emisión real", () => {
       expect.objectContaining({ cuit: "20123456789" }),
       expect.objectContaining({ total: 12000, voucherNumber: 8, voucherType: 11, concept: 2, receiverIvaCondition: 5 })
     );
-    expect(invoices.insert).toHaveBeenCalledWith(expect.objectContaining({ status: "pending", total: 12000, source_id: 7 }));
+    expect(invoices.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "pending", total: 12000, source_id: 7, environment: "homo", voucher_date: expect.any(String) })
+    );
     expect(markQuery.update).toHaveBeenCalledWith({ arca_invoice_id: 50 });
     expect(invoices.update).toHaveBeenCalledWith(expect.objectContaining({ status: "approved", cae: APPROVED.cae }));
   });
@@ -193,19 +213,23 @@ describe("ARCA: emisión real", () => {
     expect(requestCae).toHaveBeenLastCalledWith(expect.any(String), expect.anything(), expect.objectContaining({ voucherNumber: 9 }));
   });
 
-  it("sin respuesta de ARCA al pedir el CAE: queda como 'error' y libera el turno", async () => {
+  it("sin respuesta de ARCA al pedir el CAE: queda como 'error' y no libera el turno", async () => {
     requestCae.mockRejectedValueOnce(new ArcaError("ARCA no respondió", "network"));
     const { invoices, markQuery } = mockTables(PAID);
     const response = await emitAppointment();
 
     expect(response.status).toBe(502);
+    expect((await response.json()).error).toBe(
+      "ARCA no respondió. Entrá a Facturas y tocá \"Verificar en ARCA\" antes de volver a facturar"
+    );
+    expect(invoices.update).toHaveBeenCalledWith(expect.objectContaining({ voucher_number: 8 }));
     expect(invoices.update).toHaveBeenCalledWith(expect.objectContaining({ status: "error" }));
     expect(invoices.delete).not.toHaveBeenCalled();
-    expect(markQuery.update).toHaveBeenCalledWith({ arca_invoice_id: null });
+    expect(markQuery.update).not.toHaveBeenCalledWith({ arca_invoice_id: null });
   });
 
   it("si falla el login antes de pedir el CAE, no deja nada guardado", async () => {
-    vi.mocked(wsaa.getAccessTicket).mockRejectedValueOnce(new ArcaError("ARCA rechazó el certificado", "auth"));
+    vi.mocked(wsaa.withAccessTicket).mockRejectedValueOnce(new ArcaError("ARCA rechazó el certificado", "auth"));
     const { invoices } = mockTables(PAID);
     const response = await emitAppointment();
 

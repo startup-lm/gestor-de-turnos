@@ -33,6 +33,14 @@ interface ArcaConfigViewProps {
   setWsaaUrl: (val: string) => void;
   wsfeUrl: string;
   setWsfeUrl: (val: string) => void;
+  legalName: string;
+  setLegalName: (val: string) => void;
+  fiscalAddress: string;
+  setFiscalAddress: (val: string) => void;
+  grossIncome: string;
+  setGrossIncome: (val: string) => void;
+  activityStartDate: string;
+  setActivityStartDate: (val: string) => void;
   certPem: string;
   setCertPem: (val: string) => void;
   keyPem: string;
@@ -62,6 +70,14 @@ export default function ArcaConfigView({
   setWsaaUrl,
   wsfeUrl,
   setWsfeUrl,
+  legalName,
+  setLegalName,
+  fiscalAddress,
+  setFiscalAddress,
+  grossIncome,
+  setGrossIncome,
+  activityStartDate,
+  setActivityStartDate,
   certPem,
   setCertPem,
   keyPem,
@@ -193,6 +209,68 @@ export default function ArcaConfigView({
               />
               <p className="text-[11px] text-slate-400 mt-1">
                 Punto de venta de ARCA dado de alta como &quot;Factura electrónica - Web services&quot;.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm pt-4 border-t border-[var(--foreground)]/10">
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                Razón social
+              </label>
+              <input
+                value={legalName}
+                onChange={(e) => setLegalName(e.target.value)}
+                className="w-full border rounded-xl px-3 py-2 text-sm bg-transparent border-[var(--foreground)]/15 text-[var(--foreground)] placeholder:text-slate-600 focus:border-[var(--accent)] outline-none"
+                placeholder="Nombre o razón social del emisor"
+              />
+              <p className="text-[11px] text-slate-400 mt-1">
+                Aparece en el encabezado del comprobante legal.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                Domicilio comercial
+              </label>
+              <input
+                value={fiscalAddress}
+                onChange={(e) => setFiscalAddress(e.target.value)}
+                className="w-full border rounded-xl px-3 py-2 text-sm bg-transparent border-[var(--foreground)]/15 text-[var(--foreground)] placeholder:text-slate-600 focus:border-[var(--accent)] outline-none"
+                placeholder="Calle, número y localidad fiscal"
+              />
+              <p className="text-[11px] text-slate-400 mt-1">
+                Dirección fiscal registrada ante ARCA.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                Ingresos brutos
+              </label>
+              <input
+                value={grossIncome}
+                onChange={(e) => setGrossIncome(e.target.value)}
+                className="w-full border rounded-xl px-3 py-2 text-sm bg-transparent border-[var(--foreground)]/15 text-[var(--foreground)] placeholder:text-slate-600 focus:border-[var(--accent)] outline-none"
+                placeholder="Nro. de IIBB o CUIT"
+              />
+              <p className="text-[11px] text-slate-400 mt-1">
+                Número de inscripción en Ingresos Brutos provincial o CUIT.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                Inicio de actividades
+              </label>
+              <input
+                type="date"
+                value={activityStartDate}
+                onChange={(e) => setActivityStartDate(e.target.value)}
+                className="w-full border rounded-xl px-3 py-2 text-sm bg-[var(--background)] border-[var(--foreground)]/15 text-[var(--foreground)] focus:border-[var(--accent)] outline-none"
+              />
+              <p className="text-[11px] text-slate-400 mt-1">
+                Fecha declarada de inicio de actividades comerciales.
               </p>
             </div>
           </div>

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { parseBody } from "@/lib/api/parseBody";
+import { GoogleReviewsCandidateSchema } from "@/lib/schemas";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { requireAdmin } from "@/lib/api/auth";
 import { getGooglePlaceCandidate } from "@/lib/services/googlePlaces";
@@ -45,8 +47,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
-    let query = (body.query || "").trim();
+    const { data: body, error: bodyError } = await parseBody(req, GoogleReviewsCandidateSchema);
+    if (bodyError) return bodyError;
+
+    let query = body.query?.trim() || "";
 
     // Si no enviaron query explícita, consultar los datos configurados en el local
     if (!query) {

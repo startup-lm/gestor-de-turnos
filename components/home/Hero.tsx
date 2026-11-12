@@ -63,7 +63,7 @@ export default function Hero({ reviewsData }: Readonly<HeroProps>) {
       />
       
       {/* High-fidelity color mesh overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-[#050811]/70 to-[#050811] z-0 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-[var(--hero-overlay)]/70 to-[var(--hero-overlay)] z-0 pointer-events-none" />
 
       {/* Dynamic business status indicator & schedule */}
       {openStatus && (
@@ -106,7 +106,7 @@ export default function Hero({ reviewsData }: Readonly<HeroProps>) {
         <div className="space-y-3">
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-none">
             {firstPart}{firstPart ? " " : ""}
-            <span className="bg-gradient-to-r from-[var(--accent)] via-[#fcebb6] to-[var(--accent)] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[var(--accent)] via-[var(--accent-light)] to-[var(--accent)] bg-clip-text text-transparent">
               {lastWord}
             </span>
           </h1>

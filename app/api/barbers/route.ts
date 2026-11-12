@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { successResponse, errorResponse, dbErrorResponse } from "@/lib/api/response";
+import { parseBody } from "@/lib/api/parseBody";
+import { BarberInsertSchema, BarberUpdateSchema, BarberDeleteSchema } from "@/lib/schemas";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { requireAdmin, requireBarberOrAdmin } from "@/lib/api/auth";
 import { checkBarberLimit } from "@/lib/flags/server";
@@ -46,17 +48,19 @@ export async function POST(request: Request) {
   const limitError = await checkBarberLimit();
   if (limitError) return limitError;
 
-  const { email, name, image, instagram, role, commission, sale_commission, active } = await request.json();
+  const { data: body, error: bodyError } = await parseBody(request, BarberInsertSchema);
+  if (bodyError) return bodyError;
+
   const insertPayload: Record<string, unknown> = {
-    email,
-    name,
-    image,
-    instagram,
-    role: role || "barber",
+    email: body.email,
+    name: body.name,
+    image: body.image ?? null,
+    instagram: body.instagram ?? null,
+    role: body.role || "barber",
   };
-  if (commission !== undefined) insertPayload.commission = commission;
-  if (sale_commission !== undefined) insertPayload.sale_commission = sale_commission;
-  if (active !== undefined) insertPayload.active = active;
+  if (body.commission !== undefined) insertPayload.commission = body.commission;
+  if (body.sale_commission !== undefined) insertPayload.sale_commission = body.sale_commission;
+  if (body.active !== undefined) insertPayload.active = body.active;
 
   const { data, error } = await supabaseAdmin
     .from("barbers")
@@ -73,7 +77,10 @@ export async function PUT(request: Request) {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
 
-  const { id, ...values } = await request.json();
+  const { data: body, error: bodyError } = await parseBody(request, BarberUpdateSchema);
+  if (bodyError) return bodyError;
+
+  const { id, ...values } = body;
   const { data, error } = await supabaseAdmin
     .from("barbers")
     .update(values)
@@ -90,14 +97,16 @@ export async function DELETE(request: Request) {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
 
-  const { id }: { id: number } = await request.json();
+  const { data: body, error: bodyError } = await parseBody(request, BarberDeleteSchema);
+  if (bodyError) return bodyError;
+
   const { data, error } = await supabaseAdmin
     .from("barbers")
     .delete()
-    .eq("id", id)
+    .eq("id", body.id)
     .select();
   if (error) return dbErrorResponse(error, "barbers");
-  if (!data || data.length === 0) return errorResponse("No existe ese número de turno", 404);
+  if (!data || data.length === 0) return errorResponse("Profesional no encontrado", 404);
   revalidateTag("barbers");
   return successResponse();
 }

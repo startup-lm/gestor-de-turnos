@@ -29,7 +29,7 @@ function ToastNotification({ item, onClose }: Readonly<{ item: ToastItem; onClos
   return (
     <div
       role="alert"
-      className={`pointer-events-auto flex items-start gap-3 p-4 rounded-2xl bg-[#0B132B]/95 backdrop-blur-md border shadow-2xl transition-all duration-300 animate-in fade-in slide-in-from-bottom-3 ${borderStyles[item.type]}`}
+      className={`pointer-events-auto flex items-start gap-3 p-4 rounded-2xl bg-[var(--surface-toast)]/95 backdrop-blur-md border shadow-2xl transition-all duration-300 animate-in fade-in slide-in-from-bottom-3 ${borderStyles[item.type]}`}
     >
       <div className="mt-0.5">{icons[item.type]}</div>
       <p className="flex-1 text-sm font-medium text-slate-200 leading-snug whitespace-pre-line">

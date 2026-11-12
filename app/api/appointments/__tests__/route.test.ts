@@ -41,15 +41,35 @@ describe("API /api/appointments", () => {
       },
     ];
 
-    it("debe enmascarar datos sensibles para usuarios no autenticados (guest)", async () => {
+    it("anónimo sin rango → 400", async () => {
       vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(null);
+      const response = await GET(new Request("http://localhost:3000/api/appointments"));
+      const json = await response.json();
+      expect(response.status).toBe(400);
+      expect(json.error).toMatch(/indicá un rango de fechas válido/i);
+    });
+
+    it("anónimo con rango → solo los 7 campos de la lista (sin client, phone, price, joins)", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(null);
+
+      const rawGuestAppointments = [
+        {
+          id: 1,
+          barber_id: 1,
+          service_id: 2,
+          date: "2026-11-20",
+          start_time: "15:00:00",
+          end_time: "15:30:00",
+          type: "appointment",
+        },
+      ];
 
       const queryMock = {
         select: vi.fn().mockReturnThis(),
         is: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        then: vi.fn((resolve) => resolve({ data: rawAppointments, error: null })),
+        then: vi.fn((resolve) => resolve({ data: rawGuestAppointments, error: null })),
       };
 
       vi.mocked(supabaseAdmin.from).mockReturnValueOnce(queryMock as any);
@@ -58,11 +78,24 @@ describe("API /api/appointments", () => {
       const json = await response.json();
 
       expect(response.status).toBe(200);
-      expect(json[0].client).toBe("Ocupado");
-      expect(json[0].phone).toBeNull();
-      expect(json[0].price).toBeNull();
-      expect(json[0].payment_method).toBeNull();
-      expect(json[0].start_time).toBe("15:00");
+      expect(queryMock.select).toHaveBeenCalledWith("id, barber_id, service_id, date, start_time, end_time, type");
+      expect(json[0]).toEqual({
+        id: 1,
+        barber_id: 1,
+        service_id: 2,
+        date: "2026-11-20",
+        start_time: "15:00",
+        end_time: "15:30",
+        type: "appointment",
+      });
+      expect(json[0].client).toBeUndefined();
+      expect(json[0].phone).toBeUndefined();
+      expect(json[0].price).toBeUndefined();
+      expect(json[0].barbers).toBeUndefined();
+      expect(json[0].services).toBeUndefined();
+      expect(Object.keys(json[0]).sort()).toEqual(
+        ["barber_id", "date", "end_time", "id", "service_id", "start_time", "type"].sort()
+      );
     });
 
     it("debe mostrar datos reales para personal autenticado (barbero o admin)", async () => {
@@ -76,7 +109,7 @@ describe("API /api/appointments", () => {
         is: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        then: vi.fn((resolve) => resolve({ data: rawAppointments, error: null })),
+        range: vi.fn().mockResolvedValue({ data: rawAppointments, error: null }),
       };
 
       vi.mocked(supabaseAdmin.from).mockReturnValueOnce(queryMock as any);
@@ -191,6 +224,26 @@ describe("API /api/appointments", () => {
 
       await patch({ appointmentId: 1, updates: { client: "Ana", deleted_at: null, arca_invoice_id: 99 } });
       expect(update).toHaveBeenCalledWith({ client: "Ana" });
+    });
+
+    it("devuelve 400 si la base responde 23P01 (solapamiento concurrente)", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
+      const update = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          select: vi.fn().mockResolvedValue({ data: null, error: { code: "23P01", message: "APPOINTMENT_OVERLAP" } }),
+        }),
+      });
+      vi.mocked(supabaseAdmin.from).mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: { id: 1, barber_id: 1, arca_invoice_id: null }, error: null }),
+        update,
+      } as any);
+
+      const response = await patch({ appointmentId: 1, updates: { client: "Ana" } });
+      expect(response.status).toBe(400);
+      expect((await response.json()).error).toMatch(/coincide o se solapa/i);
     });
   });
 
@@ -323,6 +376,236 @@ describe("API /api/appointments", () => {
       expect(response.status).toBe(400);
       expect(json.error).toMatch(/coincide o se solapa/i);
     });
+
+    function mockAnonymousPostDb(options: {
+      service?: { id: number; duration: number } | null;
+      barber?: { id: number; active: boolean } | null;
+      hours?: { open_time: string; close_time: string; closed_days: number[] | null } | null;
+      client?: { id: number } | null;
+      overlapping?: any[];
+      insertResult?: { data?: any; error?: any };
+    } = {}) {
+      const insertMock = vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue(options.insertResult ?? { data: [{ id: 1 }], error: null }),
+      });
+
+      vi.mocked(supabaseAdmin.from).mockImplementation((table: string) => {
+        if (table === "services") {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: options.service !== undefined ? options.service : { id: 1, duration: 30 },
+              error: null,
+            }),
+          } as any;
+        }
+        if (table === "barbers") {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: options.barber !== undefined ? options.barber : { id: 1, active: true },
+              error: null,
+            }),
+          } as any;
+        }
+        if (table === "business_hours_global") {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: options.hours !== undefined ? options.hours : { open_time: "09:00", close_time: "20:00", closed_days: [] },
+              error: null,
+            }),
+          } as any;
+        }
+        if (table === "clients") {
+          return {
+            select: vi.fn().mockReturnThis(),
+            or: vi.fn().mockReturnThis(),
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: options.client !== undefined ? options.client : { id: 88 },
+              error: null,
+            }),
+            update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({}) }),
+            insert: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { id: 88 } }) }) }),
+          } as any;
+        }
+        if (table === "appointments") {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
+            lt: vi.fn().mockReturnThis(),
+            gt: vi.fn().mockReturnThis(),
+            limit: vi.fn().mockResolvedValue({
+              data: options.overlapping ?? [],
+              error: null,
+            }),
+            insert: insertMock,
+          } as any;
+        }
+        return {} as any;
+      });
+
+      return { insertMock };
+    }
+
+    it("POST anónimo con type: 'block', created_by y client_id descarta esos campos y fuerza appointment", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(null);
+      const { insertMock } = mockAnonymousPostDb();
+
+      const response = await POST(
+        new Request("http://localhost:3000/api/appointments", {
+          method: "POST",
+          body: JSON.stringify({
+            client: "Pedro",
+            barber_id: 1,
+            date: "2030-01-01",
+            start_time: "10:00",
+            end_time: "10:30",
+            phone: "1123456789",
+            service_id: 1,
+            type: "block",
+            created_by: "hacker",
+            client_id: 9999,
+          }),
+        })
+      );
+
+      expect(response.status).toBe(200);
+      expect(insertMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "appointment",
+          client_id: 88,
+        })
+      );
+      const payload = insertMock.mock.calls[0][0];
+      expect(payload.created_by).toBeUndefined();
+      expect(payload.client_id).not.toBe(9999);
+    });
+
+    it("POST anónimo con end_time falso calcula inicio + duración del servicio", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(null);
+      const { insertMock } = mockAnonymousPostDb({ service: { id: 1, duration: 45 } });
+
+      const response = await POST(
+        new Request("http://localhost:3000/api/appointments", {
+          method: "POST",
+          body: JSON.stringify({
+            client: "Pedro",
+            barber_id: 1,
+            date: "2030-01-01",
+            start_time: "10:00",
+            end_time: "18:00",
+            phone: "1123456789",
+            service_id: 1,
+          }),
+        })
+      );
+
+      expect(response.status).toBe(200);
+      expect(insertMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          start_time: "10:00:00",
+          end_time: "10:45:00",
+        })
+      );
+    });
+
+    it("POST anónimo con barbero inactivo → 400", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(null);
+      mockAnonymousPostDb({ barber: { id: 1, active: false } });
+
+      const response = await POST(
+        new Request("http://localhost:3000/api/appointments", {
+          method: "POST",
+          body: JSON.stringify({
+            client: "Pedro",
+            barber_id: 1,
+            date: "2030-01-01",
+            start_time: "10:00",
+            end_time: "10:30",
+            phone: "1123456789",
+            service_id: 1,
+          }),
+        })
+      );
+
+      expect(response.status).toBe(400);
+      expect((await response.json()).error).toBe("El profesional elegido no está disponible");
+    });
+
+    it("POST anónimo fuera de horario → 400", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(null);
+      mockAnonymousPostDb({ hours: { open_time: "09:00", close_time: "18:00", closed_days: [] } });
+
+      const response = await POST(
+        new Request("http://localhost:3000/api/appointments", {
+          method: "POST",
+          body: JSON.stringify({
+            client: "Pedro",
+            barber_id: 1,
+            date: "2030-01-01",
+            start_time: "18:00",
+            end_time: "18:30",
+            phone: "1123456789",
+            service_id: 1,
+          }),
+        })
+      );
+
+      expect(response.status).toBe(400);
+      expect((await response.json()).error).toBe("El local no atiende en ese horario");
+    });
+
+    it("POST anónimo en día cerrado → 400", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(null);
+      // 2030-01-06 es domingo (getUTCDay() = 0)
+      mockAnonymousPostDb({ hours: { open_time: "09:00", close_time: "20:00", closed_days: [0] } });
+
+      const response = await POST(
+        new Request("http://localhost:3000/api/appointments", {
+          method: "POST",
+          body: JSON.stringify({
+            client: "Pedro",
+            barber_id: 1,
+            date: "2030-01-06",
+            start_time: "10:00",
+            end_time: "10:30",
+            phone: "1123456789",
+            service_id: 1,
+          }),
+        })
+      );
+
+      expect(response.status).toBe(400);
+      expect((await response.json()).error).toBe("El local no atiende en ese horario");
+    });
+
+    it("POST cuyo insert devuelve { code: '23P01' } → 400 con mensaje de solapamiento", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(null);
+      mockAnonymousPostDb({ insertResult: { data: null, error: { code: "23P01", message: "APPOINTMENT_OVERLAP" } } });
+
+      const response = await POST(
+        new Request("http://localhost:3000/api/appointments", {
+          method: "POST",
+          body: JSON.stringify({
+            client: "Pedro",
+            barber_id: 1,
+            date: "2030-01-01",
+            start_time: "10:00",
+            end_time: "10:30",
+            phone: "1123456789",
+            service_id: 1,
+          }),
+        })
+      );
+
+      expect(response.status).toBe(400);
+      expect((await response.json()).error).toMatch(/coincide o se solapa/i);
+    });
   });
 });
 
@@ -344,7 +627,7 @@ describe("API /api/appointments - filtros y datos fiscales", () => {
       lte: vi.fn().mockReturnThis(),
       then: vi.fn((resolve) =>
         resolve({
-          data: [{ id: 1, client: "Ana", phone: "+5491100000000", client_id: 7, arca_invoice_id: 3, arca_invoices: { cae: "123" } }],
+          data: [{ id: 1, barber_id: 2, service_id: 1, date: "2026-11-20", start_time: "10:00:00", end_time: "10:30:00", type: "appointment" }],
           error: null,
         })
       ),
@@ -352,13 +635,18 @@ describe("API /api/appointments - filtros y datos fiscales", () => {
     vi.mocked(supabaseAdmin.from).mockReturnValueOnce(queryMock as any);
 
     const response = await GET(
-      new Request("http://localhost:3000/api/appointments?phone=%2B5491100000000&client=Ana&barber_id=2")
+      new Request("http://localhost:3000/api/appointments?date=2026-11-20&phone=%2B5491100000000&client=Ana&barber_id=2")
     );
     const json = await response.json();
 
+    expect(queryMock.select).toHaveBeenCalledWith("id, barber_id, service_id, date, start_time, end_time, type");
     expect(queryMock.eq).not.toHaveBeenCalledWith("phone", expect.anything());
     expect(queryMock.eq).not.toHaveBeenCalledWith("client", expect.anything());
+    expect(queryMock.eq).toHaveBeenCalledWith("date", "2026-11-20");
     expect(queryMock.eq).toHaveBeenCalledWith("barber_id", "2");
-    expect(json[0]).toMatchObject({ client: "Ocupado", phone: null, client_id: null, arca_invoice_id: null, arca_invoices: null });
+    expect(json[0].client).toBeUndefined();
+    expect(json[0].phone).toBeUndefined();
+    expect(json[0].arca_invoice_id).toBeUndefined();
+    expect(json[0].arca_invoices).toBeUndefined();
   });
 });

@@ -57,7 +57,7 @@ export default function HomeCarousel({
   if (count === 0) return null;
 
   return (
-    <section className="py-8 px-4 sm:px-8 bg-[#0a0f1d]/75 backdrop-blur-xl border border-slate-800/80 rounded-3xl shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-[var(--accent)]/30 flex flex-col justify-between h-full">
+    <section className="py-8 px-4 sm:px-8 bg-[var(--surface-deep)]/75 backdrop-blur-xl border border-slate-800/80 rounded-3xl shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-[var(--accent)]/30 flex flex-col justify-between h-full">
       <h2 className="text-2xl font-bold mb-6 text-center text-white tracking-wide">
         {title}
       </h2>

@@ -1,4 +1,4 @@
-import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
 
 export interface NormalizedPhone {
   e164: string;      // Canonical international format, e.g. "+5491123456789"
@@ -15,7 +15,7 @@ export interface NormalizedPhone {
  * - Formato canónico para DB y WhatsApp: "+549" + 10 dígitos -> "+549XXXXXXXXXX".
  * - También soporta números internacionales (ej. Estados Unidos, España, etc.) usando libphonenumber-js.
  */
-export function normalizePhone(input?: string | null, defaultCountry = "AR"): NormalizedPhone {
+export function normalizePhone(input?: string | null, defaultCountry: CountryCode = "AR"): NormalizedPhone {
   if (!input) {
     return { e164: "", national: "", formatted: "", isValid: false, country: defaultCountry };
   }
@@ -89,7 +89,7 @@ export function normalizePhone(input?: string | null, defaultCountry = "AR"): No
 
   // Fallback con libphonenumber-js para números de otros países o formatos estándar
   try {
-    const parsed = parsePhoneNumberFromString(raw, defaultCountry as any);
+    const parsed = parsePhoneNumberFromString(raw, defaultCountry);
     if (parsed && parsed.isValid()) {
       if (parsed.country === "AR") {
         let nat: string = String(parsed.nationalNumber);

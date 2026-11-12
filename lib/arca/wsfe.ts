@@ -5,6 +5,8 @@ import type { ArcaDocType, ArcaSourceType } from "@/lib/types/Arca";
 
 /** Factura C: la que emiten monotributistas, sin IVA discriminado */
 export const FACTURA_C = 11;
+/** Nota de crédito C */
+export const NOTA_CREDITO_C = 13;
 /** "El número o fecha del comprobante no se corresponde con el próximo a autorizar" */
 export const ERR_WRONG_NUMBER = 10016;
 
@@ -22,6 +24,13 @@ export type CaeRequest = {
   receiverIvaCondition: number;
   total: number;
   date: string; // YYYYMMDD
+  associated?: {
+    type: number;
+    pointOfSale: number;
+    number: number;
+    cuit: string;
+    date: string;
+  };
 };
 
 export type ArcaMessage = { code: number; message: string };
@@ -77,6 +86,16 @@ export function buildCaeRequest(auth: WsfeAuth, req: CaeRequest): string {
         `<ar:FchServHasta>${req.date}</ar:FchServHasta>` +
         `<ar:FchVtoPago>${req.date}</ar:FchVtoPago>`;
 
+  const associated = req.associated
+    ? "<ar:CbtesAsoc><ar:CbteAsoc>" +
+      `<ar:Tipo>${req.associated.type}</ar:Tipo>` +
+      `<ar:PtoVta>${req.associated.pointOfSale}</ar:PtoVta>` +
+      `<ar:Nro>${req.associated.number}</ar:Nro>` +
+      `<ar:Cuit>${req.associated.cuit.replace(/\D/g, "")}</ar:Cuit>` +
+      `<ar:CbteFch>${req.associated.date.replace(/-/g, "")}</ar:CbteFch>` +
+      "</ar:CbteAsoc></ar:CbtesAsoc>"
+    : "";
+
   return envelope(
     "FECAESolicitar",
     authXml(auth) +
@@ -103,6 +122,7 @@ export function buildCaeRequest(auth: WsfeAuth, req: CaeRequest): string {
       "<ar:MonId>PES</ar:MonId>" +
       "<ar:MonCotiz>1</ar:MonCotiz>" +
       `<ar:CondicionIVAReceptorId>${req.receiverIvaCondition}</ar:CondicionIVAReceptorId>` +
+      associated +
       "</ar:FECAEDetRequest></ar:FeDetReq>" +
       "</ar:FeCAEReq>"
   );
@@ -171,6 +191,122 @@ export async function lastAuthorized(wsfeUrl: string, auth: WsfeAuth, pointOfSal
 export async function requestCae(wsfeUrl: string, auth: WsfeAuth, req: CaeRequest): Promise<CaeResult> {
   const xml = await soapRequest(wsfeUrl, buildCaeRequest(auth, req), `${NS}FECAESolicitar`);
   return parseCaeResponse(xml, req.voucherNumber);
+}
+
+export type VoucherLookup =
+  | { found: false }
+  | {
+      found: true;
+      approved: boolean;
+      cae: string | null;
+      caeDueDate: string | null; // YYYY-MM-DD
+      total: number;
+      docType: number;
+      docNumber: string;
+      voucherNumber: number;
+    };
+
+export function buildConsultVoucher(
+  auth: WsfeAuth,
+  pointOfSale: number,
+  voucherType: number,
+  voucherNumber: number
+): string {
+  return envelope(
+    "FECompConsultar",
+    authXml(auth) +
+      `<ar:FeCompConsReq><ar:CbteTipo>${voucherType}</ar:CbteTipo><ar:CbteNro>${voucherNumber}</ar:CbteNro><ar:PtoVta>${pointOfSale}</ar:PtoVta></ar:FeCompConsReq>`
+  );
+}
+
+export function parseConsultVoucher(xml: string): VoucherLookup {
+  assertNoFault(xml);
+  const result = xmlTag(xml, "FECompConsultarResult") ?? "";
+  const errors = serviceErrors(result);
+  if (errors.some((e) => e.code === 602)) {
+    return { found: false };
+  }
+  if (errors.length > 0) {
+    throw new ArcaError(formatArcaMessages(errors), "service", errors.map((e) => e.code));
+  }
+
+  const resultGet = xmlTag(result, "ResultGet") ?? "";
+  const resultCode = xmlTag(resultGet, "Resultado");
+  const approved = resultCode === "A";
+  const cae = xmlTag(resultGet, "CodAutorizacion") || null;
+  const due = xmlTag(resultGet, "FchVto");
+  const caeDueDate =
+    due && /^\d{8}$/.test(due) ? `${due.slice(0, 4)}-${due.slice(4, 6)}-${due.slice(6, 8)}` : null;
+  const total = Number(xmlTag(resultGet, "ImpTotal") ?? 0);
+  const docType = Number(xmlTag(resultGet, "DocTipo") ?? 0);
+  const docNumber = xmlTag(resultGet, "DocNro") ?? "";
+  const voucherNumber = Number(xmlTag(resultGet, "CbteDesde") ?? xmlTag(resultGet, "CbteNro") ?? 0);
+
+  return {
+    found: true,
+    approved,
+    cae,
+    caeDueDate,
+    total,
+    docType,
+    docNumber,
+    voucherNumber,
+  };
+}
+
+export async function consultVoucher(
+  wsfeUrl: string,
+  auth: WsfeAuth,
+  pointOfSale: number,
+  voucherNumber: number,
+  voucherType = FACTURA_C
+): Promise<VoucherLookup> {
+  const xml = await soapRequest(
+    wsfeUrl,
+    buildConsultVoucher(auth, pointOfSale, voucherType, voucherNumber),
+    `${NS}FECompConsultar`
+  );
+  return parseConsultVoucher(xml);
+}
+
+export type PointOfSaleInfo = { number: number; emissionType: string; blocked: boolean; deregistered: boolean };
+
+export function parsePointsOfSale(xml: string): PointOfSaleInfo[] | null {
+  assertNoFault(xml);
+  const result = xmlTag(xml, "FEParamGetPtosVentaResult") ?? "";
+  const errors = serviceErrors(result);
+  if (errors.some((e) => e.code === 602)) {
+    return null;
+  }
+  if (errors.length > 0) {
+    throw new ArcaError(formatArcaMessages(errors), "service", errors.map((e) => e.code));
+  }
+
+  const resultGet = xmlTag(result, "ResultGet");
+  if (!resultGet) return [];
+  const ptos = xmlTags(resultGet, "PtoVenta");
+  return ptos.map((p) => {
+    const number = Number(xmlTag(p, "Nro") ?? 0);
+    const emissionType = decodeXml(xmlTag(p, "EmisionTipo") ?? "");
+    const blocked = xmlTag(p, "Bloqueado") === "S";
+    const fchBaja = xmlTag(p, "FchBaja");
+    const deregistered = !!fchBaja && fchBaja.trim() !== "" && fchBaja.trim().toUpperCase() !== "NULL";
+    return {
+      number,
+      emissionType,
+      blocked,
+      deregistered,
+    };
+  });
+}
+
+export async function pointsOfSale(wsfeUrl: string, auth: WsfeAuth): Promise<PointOfSaleInfo[] | null> {
+  const xml = await soapRequest(
+    wsfeUrl,
+    envelope("FEParamGetPtosVenta", authXml(auth)),
+    `${NS}FEParamGetPtosVenta`
+  );
+  return parsePointsOfSale(xml);
 }
 
 /** Estado de los servidores de ARCA (no pide autenticación) */

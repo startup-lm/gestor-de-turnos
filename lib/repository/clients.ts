@@ -36,7 +36,7 @@ export async function upsertClient(name: string, phone: string): Promise<Client 
  * Consulta segura para clientes invitados en la reserva pública.
  * Solo busca por coincidencia exacta de teléfono normalizado.
  */
-export async function lookupClientByPhone(phone: string): Promise<{ found: boolean; name?: string; firstName?: string }> {
+export async function lookupClientByPhone(phone: string): Promise<{ found: boolean; firstName?: string }> {
   if (!phone || phone.length < 8) return { found: false };
   try {
     const params = new URLSearchParams({ phone });

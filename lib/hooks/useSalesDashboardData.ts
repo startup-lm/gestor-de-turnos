@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { getBarberSalesFromDates } from "@/lib/repository/sales";
 import { ViewMode, DataPoint } from "./useDashboardData";
 import { parseISO } from "date-fns";
@@ -19,6 +19,9 @@ export function useSalesDashboardData(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [sales, setSales] = useState<any[]>([]);
 
+  const rangeRef = useRef({ startDate, endDate });
+  rangeRef.current = { startDate, endDate };
+
   const startIso = startDate.toISOString().slice(0, 10);
   const endIso = endDate.toISOString().slice(0, 10);
 
@@ -30,7 +33,7 @@ export function useSalesDashboardData(
 
     let mounted = true;
     (async () => {
-      const allSales = await getBarberSalesFromDates(barberId, startDate, endDate);
+      const allSales = await getBarberSalesFromDates(barberId, rangeRef.current.startDate, rangeRef.current.endDate);
       if (!mounted) return;
       setSales(allSales || []);
     })();

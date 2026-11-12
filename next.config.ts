@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
-import withPWAInit from "@ducanh2912/next-pwa";
+import withSerwistInit from "@serwist/next";
 import bundleAnalyzer from "@next/bundle-analyzer";
 import { withSentryConfig } from "@sentry/nextjs/config";
 import packageJson from "./package.json";
+import { buildCspReportOnly } from "./lib/security/csp";
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
@@ -42,23 +43,57 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "react-icons", "date-fns"],
   },
-  eslint: { ignoreDuringBuilds: true },
-  typescript: { ignoreBuildErrors: true },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+          {
+            key: "Content-Security-Policy-Report-Only",
+            value: buildCspReportOnly({
+              supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+              sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+            }),
+          },
+        ],
+      },
+    ];
+  },
   webpack(config, { dev }) {
     if (!dev) config.devtool = false;
     return config;
   },
 };
 
-const withPWA = withPWAInit({
-  dest: "public",
+const withSerwist = withSerwistInit({
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
   disable: process.env.NODE_ENV === "development",
   register: true,
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
+  cacheOnNavigation: true,
 });
 
-const analyzedConfig = withBundleAnalyzer(withPWA(nextConfig));
+const analyzedConfig = withBundleAnalyzer(withSerwist(nextConfig));
 
 export default withSentryConfig(analyzedConfig, {
   org: "lm2",

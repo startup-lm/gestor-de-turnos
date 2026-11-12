@@ -5,13 +5,23 @@ import { isServerFeatureEnabled } from "@/lib/flags/server";
 import { requireAdmin } from "@/lib/api/auth";
 import { ArcaError } from "@/lib/arca/soap";
 import { resolveEndpoints } from "@/lib/arca/endpoints";
-import { getAccessTicket } from "@/lib/arca/wsaa";
-import { dummy, lastAuthorized } from "@/lib/arca/wsfe";
+import { certificateExpiry, getAccessTicket, withAccessTicket } from "@/lib/arca/wsaa";
+import { dummy, lastAuthorized, pointsOfSale } from "@/lib/arca/wsfe";
 import type { ArcaTestResult } from "@/lib/types/Arca";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const detail = (err: unknown) => (err instanceof ArcaError ? err.message : "Error inesperado");
 
-/** Probar conexión: servidores de ARCA, login con el certificado y último comprobante del punto de venta */
+function formatArDate(d: Date): string {
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+/** Probar conexión: servidores de ARCA, login con el certificado, vencimiento, punto de venta y último comprobante */
 export async function POST() {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
@@ -39,13 +49,30 @@ export async function POST() {
     return NextResponse.json({ success: false, steps } satisfies ArcaTestResult);
   }
 
-  let ticket;
   try {
-    ticket = await getAccessTicket(config, endpoints.wsaa);
+    await getAccessTicket(config, endpoints.wsaa);
     steps.push({ label: "Certificado y clave", ok: true, detail: "ARCA aceptó el certificado" });
   } catch (err) {
     steps.push({ label: "Certificado y clave", ok: false, detail: detail(err) });
     return NextResponse.json({ success: false, steps } satisfies ArcaTestResult);
+  }
+
+  // Vencimiento del certificado (no corta la prueba)
+  const expiry = config.cert_pem ? certificateExpiry(config.cert_pem) : null;
+  if (!expiry) {
+    steps.push({ label: "Vencimiento del certificado", ok: false, detail: "No se pudo leer la fecha de vencimiento" });
+  } else {
+    const dateFormatted = formatArDate(expiry);
+    const diffMs = expiry.getTime() - Date.now();
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+
+    if (diffMs <= 0) {
+      steps.push({ label: "Vencimiento del certificado", ok: false, detail: `Venció el ${dateFormatted}` });
+    } else if (diffMs <= thirtyDaysMs) {
+      steps.push({ label: "Vencimiento del certificado", ok: false, detail: `Vence el ${dateFormatted}: renovalo pronto` });
+    } else {
+      steps.push({ label: "Vencimiento del certificado", ok: true, detail: `Vence el ${dateFormatted}` });
+    }
   }
 
   if (!config.cuit || !config.point_of_sale) {
@@ -53,14 +80,62 @@ export async function POST() {
     return NextResponse.json({ success: false, steps } satisfies ArcaTestResult);
   }
 
+  const ptoVta = Number(config.point_of_sale);
   try {
-    const auth = { ...ticket, cuit: String(config.cuit).replace(/\D/g, "") };
-    const last = await lastAuthorized(endpoints.wsfe, auth, Number(config.point_of_sale));
-    steps.push({ label: "Punto de venta", ok: true, detail: `Último comprobante C autorizado: ${last}` });
+    await withAccessTicket(config, endpoints.wsaa, async (auth) => {
+      const posList = await pointsOfSale(endpoints.wsfe, auth);
+      if (posList === null) {
+        steps.push({
+          label: "Punto de venta habilitado",
+          ok: true,
+          detail: "ARCA no informa puntos de venta (normal en homologación)",
+        });
+      } else {
+        const found = posList.find((p) => p.number === ptoVta);
+        if (!found) {
+          steps.push({
+            label: "Punto de venta habilitado",
+            ok: false,
+            detail: `El punto de venta ${ptoVta} no está habilitado para factura electrónica por web service. Crealo en ARCA como 'RECE para aplicativo y web services'`,
+          });
+          return;
+        }
+        if (found.blocked) {
+          steps.push({
+            label: "Punto de venta habilitado",
+            ok: false,
+            detail: "El punto de venta está bloqueado",
+          });
+          return;
+        }
+        if (found.deregistered) {
+          steps.push({
+            label: "Punto de venta habilitado",
+            ok: false,
+            detail: "El punto de venta está dado de baja",
+          });
+          return;
+        }
+        steps.push({
+          label: "Punto de venta habilitado",
+          ok: true,
+          detail: found.emissionType,
+        });
+      }
+
+      const last = await lastAuthorized(endpoints.wsfe, auth, ptoVta);
+      steps.push({ label: "Punto de venta", ok: true, detail: `Último comprobante C autorizado: ${last}` });
+    });
   } catch (err) {
-    steps.push({ label: "Punto de venta", ok: false, detail: detail(err) });
+    const hasPtoHabilitado = steps.some((s) => s.label === "Punto de venta habilitado");
+    if (!hasPtoHabilitado) {
+      steps.push({ label: "Punto de venta habilitado", ok: false, detail: detail(err) });
+    } else {
+      steps.push({ label: "Punto de venta", ok: false, detail: detail(err) });
+    }
     return NextResponse.json({ success: false, steps } satisfies ArcaTestResult);
   }
 
-  return NextResponse.json({ success: true, steps } satisfies ArcaTestResult);
+  const success = steps.every((s) => s.ok);
+  return NextResponse.json({ success, steps } satisfies ArcaTestResult);
 }

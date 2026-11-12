@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArcaSkeleton } from "@/components/loading/Skeleton";
-import SendButton from "@/components/buttons/SendButton";
 import { toast } from "@/lib/store/useToastStore";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import {
   emitArcaInvoice,
+  emitCreditNote,
   getArcaConfig,
   getArcaInvoices,
   getArcaStatus,
@@ -14,253 +14,23 @@ import {
 import type {
   ArcaConfig,
   ArcaDocType,
-  ArcaEnvironment,
   ArcaInvoiceRecord,
   ArcaStatus,
 } from "@/lib/types/Arca";
-import ArcaDocFields from "@/components/arca/ArcaDocFields";
+import InvoiceReceipt from "@/components/arca/InvoiceReceipt";
 import { CONSUMIDOR_FINAL } from "@/lib/arca/receiverConditions";
 import { Appointment } from "@/lib/types/Appointment";
-import {
-  Receipt,
-  ChevronDown,
-  ChevronUp,
-  Download,
-  Filter,
-  Calendar,
-  AlertTriangle,
-  Zap,
-  Clock,
-  Loader2,
-  Plus,
-  ArrowLeft,
-} from "lucide-react";
-
-// ─── Constantes ────────────────────────────────────────────────────────────
-
-const ENV_LABELS: Record<ArcaEnvironment, string> = {
-  homo: "Homologación",
-  prod: "Producción",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  approved: "Aprobado",
-  rejected: "Rechazado",
-  pending: "En proceso",
-  error: "Sin respuesta",
-};
-
-const SOURCE_LABELS: Record<string, string> = {
-  appointment: "Turno",
-  sale: "Venta",
-  manual: "Manual",
-};
-
-const DOC_TYPE_LABELS: Record<number, string> = {
-  80: "CUIT",
-  86: "CUIL",
-  96: "DNI",
-  99: "Cons. Final",
-};
-
-type ArcaPeriod = "daily" | "weekly" | "biweekly" | "monthly" | "custom";
-
-function formatDateISO(d: Date): string {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-// ─── Helpers ───────────────────────────────────────────────────────────────
-
-function exportToCsv(invoices: ArcaInvoiceRecord[]) {
-  const headers = [
-    "Fecha",
-    "Estado",
-    "Total",
-    "Cliente",
-    "CAE",
-    "Vto. CAE",
-    "Nro.",
-    "PV",
-    "Origen",
-    "Doc. Tipo",
-    "Doc. Nro.",
-  ];
-  const rows = invoices.map((inv) => [
-    inv.created_at ? new Date(inv.created_at).toLocaleDateString("es-AR") : "-",
-    inv.status,
-    inv.total.toFixed(2),
-    inv.customer_name ?? "Cons. Final",
-    inv.cae ?? "-",
-    inv.cae_due_date ?? "-",
-    inv.voucher_number ?? "-",
-    inv.point_of_sale ?? "-",
-    inv.source_type ? SOURCE_LABELS[inv.source_type] ?? inv.source_type : "Manual",
-    inv.doc_type ? DOC_TYPE_LABELS[inv.doc_type] ?? String(inv.doc_type) : "-",
-    inv.doc_number ?? "-",
-  ]);
-
-  const csv = [headers, ...rows]
-    .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-
-  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `comprobantes_arca_${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-// ─── Sub-componentes ───────────────────────────────────────────────────────
-
-function MetricCard({
-  label,
-  value,
-  sub,
-  icon: Icon,
-  color = "accent",
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color?: "accent" | "green" | "yellow" | "red";
-}) {
-  const colorMap = {
-    accent: "text-[var(--accent)] bg-[var(--accent)]/10 border-[var(--accent)]/20",
-    green: "text-green-400 bg-green-500/10 border-green-500/20",
-    yellow: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
-    red: "text-red-400 bg-red-500/10 border-red-500/20",
-  };
-  return (
-    <div className={`rounded-xl border p-4 flex items-center gap-3 ${colorMap[color]}`}>
-      <div className="p-2 rounded-lg bg-current/10">
-        <Icon className="w-5 h-5" />
-      </div>
-      <div>
-        <p className="text-xs font-medium opacity-70 tracking-wider">{label}</p>
-        <p className="text-xl font-bold">{value}</p>
-        {sub && <p className="text-[10px] opacity-60 mt-0.5">{sub}</p>}
-      </div>
-    </div>
-  );
-}
-
-function InvoiceRow({ inv }: { inv: ArcaInvoiceRecord }) {
-  const [expanded, setExpanded] = useState(false);
-
-  const statusColor =
-    inv.status === "approved"
-      ? "bg-green-500/10 text-green-300 border-green-500/20"
-      : inv.status === "pending" || inv.status === "error"
-      ? "bg-yellow-500/10 text-yellow-300 border-yellow-500/20"
-      : "bg-red-500/10 text-red-300 border-red-500/20";
-
-  const statusLabel = STATUS_LABELS[inv.status] ?? inv.status;
-
-  return (
-    <>
-      <tr
-        className="border-b border-gray-800 hover:bg-white/2 cursor-pointer transition-colors"
-        onClick={() => setExpanded((v) => !v)}
-      >
-        <td className="py-2.5 pr-3 whitespace-nowrap text-xs">
-          {inv.created_at ? new Date(inv.created_at).toLocaleDateString("es-AR") : "-"}
-        </td>
-        <td className="py-2.5 pr-3">
-          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${statusColor}`}>
-            {statusLabel}
-          </span>
-        </td>
-        <td className="py-2.5 pr-3 font-semibold text-[var(--accent)] whitespace-nowrap text-sm">
-          ${Number(inv.total).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-        </td>
-        <td className="py-2.5 pr-3 text-xs text-[var(--foreground)]/70 max-w-[120px] truncate">
-          {inv.customer_name ?? "Cons. Final"}
-        </td>
-        <td className="py-2.5 pr-3 text-xs font-mono">
-          {inv.cae ? (
-            <span className="text-green-400">{inv.cae}</span>
-          ) : (
-            <span className="text-[var(--foreground)]/30">—</span>
-          )}
-        </td>
-        <td className="py-2.5 pr-3 text-xs text-[var(--foreground)]/60">
-          {inv.voucher_number != null ? (
-            <span>#{String(inv.voucher_number).padStart(8, "0")}</span>
-          ) : (
-            "—"
-          )}
-        </td>
-        <td className="py-2.5 pr-3 text-xs">
-          {inv.source_type ? (
-            <span className="px-1.5 py-0.5 rounded bg-[var(--foreground)]/8 text-[var(--foreground)]/70">
-              {SOURCE_LABELS[inv.source_type] ?? inv.source_type}
-            </span>
-          ) : (
-            <span className="text-[var(--foreground)]/30">—</span>
-          )}
-        </td>
-        <td className="py-2.5 text-[var(--foreground)]/40 text-xs">
-          {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        </td>
-      </tr>
-
-      {expanded && (
-        <tr className="border-b border-gray-800 bg-[var(--foreground)]/2">
-          <td colSpan={8} className="px-4 py-3">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div>
-                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Punto de venta</p>
-                <p className="font-medium">{inv.point_of_sale ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Tipo comprobante</p>
-                <p className="font-medium">{inv.invoice_type ?? inv.voucher_type ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Tipo documento</p>
-                <p className="font-medium">
-                  {inv.doc_type ? `${DOC_TYPE_LABELS[inv.doc_type] ?? inv.doc_type}` : "—"}
-                </p>
-              </div>
-              <div>
-                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Nro. documento</p>
-                <p className="font-medium">{inv.doc_number ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">Vto. CAE</p>
-                <p className="font-medium">{inv.cae_due_date ?? "—"}</p>
-              </div>
-              {inv.source_id && (
-                <div>
-                  <p className="text-[var(--foreground)]/40 tracking-wider text-[10px] mb-0.5">ID origen</p>
-                  <p className="font-medium">#{inv.source_id}</p>
-                </div>
-              )}
-            </div>
-            {inv.error_message && (
-              <p className="mt-3 text-xs text-red-300 break-words">
-                {inv.status === "error"
-                  ? "ARCA no respondió: puede haberlo autorizado igual. Revisalo en el portal de ARCA antes de volver a facturar."
-                  : `Motivo: ${inv.error_message}`}
-              </p>
-            )}
-          </td>
-        </tr>
-      )}
-    </>
-  );
-}
-
-// ─── Componente Principal de Sección ───────────────────────────────────────
+import { type ArcaPeriod } from "./facturas/constants";
+import { formatDateISO } from "./facturas/utils";
+import { VoidInvoiceView } from "./facturas/VoidInvoiceView";
+import { EmitInvoiceView } from "./facturas/EmitInvoiceView";
+import { InvoiceListView } from "./facturas/InvoiceListView";
 
 export default function FacturasSection() {
-  const [viewMode, setViewMode] = useState<"list" | "emit">("list");
+  const [viewMode, setViewMode] = useState<"list" | "emit" | "receipt" | "void">("list");
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
+  const [voidingInvoice, setVoidingInvoice] = useState<ArcaInvoiceRecord | null>(null);
+  const [voidingLoading, setVoidingLoading] = useState(false);
 
   const {
     data: config,
@@ -270,7 +40,28 @@ export default function FacturasSection() {
     data: status,
     loading: loadingStatus,
   } = useFetchOnce<ArcaStatus>("arcaStatus", getArcaStatus);
-  const isHomo = (status?.environment ?? config?.environment) === "homo";
+  const currentEnvironment = status?.environment ?? config?.environment;
+  const isHomo = currentEnvironment === "homo";
+
+  const certExpiryNotice = useMemo(() => {
+    if (!status?.cert_expires_at) return null;
+    const expiry = new Date(status.cert_expires_at);
+    const now = new Date();
+    const diffMs = expiry.getTime() - now.getTime();
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    const day = String(expiry.getDate()).padStart(2, "0");
+    const month = String(expiry.getMonth() + 1).padStart(2, "0");
+    const year = expiry.getFullYear();
+    const dateFormatted = `${day}/${month}/${year}`;
+
+    if (diffMs <= 0) {
+      return `El certificado de ARCA venció el ${dateFormatted}`;
+    }
+    if (diffMs <= thirtyDaysMs) {
+      return `El certificado de ARCA vence el ${dateFormatted}. Renovalo para seguir facturando`;
+    }
+    return null;
+  }, [status?.cert_expires_at]);
 
   // Período de facturación ARCA (diario, semanal, quincenal, mensual, personalizado)
   const [periodPreset, setPeriodPreset] = useState<ArcaPeriod>("monthly");
@@ -367,6 +158,7 @@ export default function FacturasSection() {
         sourceType: filterSource || undefined,
         dateFrom: periodStart || undefined,
         dateTo: periodEnd || undefined,
+        environment: currentEnvironment || undefined,
       });
       setInvoices(data);
     } catch {
@@ -375,7 +167,7 @@ export default function FacturasSection() {
       setLoadingInvoices(false);
       setInitialInvoicesLoaded(true);
     }
-  }, [filterStatus, filterSource, periodStart, periodEnd]);
+  }, [filterStatus, filterSource, periodStart, periodEnd, currentEnvironment]);
 
   const loadPeriodAppointments = useCallback(async () => {
     if (!periodStart || !periodEnd) return;
@@ -408,10 +200,40 @@ export default function FacturasSection() {
     return unbilledAppointments.reduce((acc, a) => acc + (a.price || 0), 0);
   }, [unbilledAppointments]);
 
-  // Facturado comprobantes en el período
-  const periodInvoicesTotal = useMemo(() => {
-    return invoices.reduce((acc, inv) => acc + Number(inv.total), 0);
+  // Facturado comprobantes en el período: solo facturas tipo 11 aprobadas
+  const approvedType11Invoices = useMemo(() => {
+    return invoices.filter(
+      (inv) => inv.status === "approved" && (inv.voucher_type === 11 || inv.invoice_type === 11)
+    );
   }, [invoices]);
+
+  const periodInvoicesTotal = useMemo(() => {
+    return approvedType11Invoices.reduce((acc, inv) => acc + Number(inv.total), 0);
+  }, [approvedType11Invoices]);
+
+  const handleConfirmVoid = async () => {
+    if (!voidingInvoice) return;
+    setVoidingLoading(true);
+    try {
+      const res = await emitCreditNote(voidingInvoice.id);
+      if (!res.success) {
+        toast.error(res.error || "No se pudo emitir la nota de crédito");
+      } else {
+        toast.success(
+          res.cae
+            ? `Nota de crédito emitida con éxito. CAE: ${res.cae}`
+            : "Nota de crédito emitida con éxito"
+        );
+        await Promise.all([loadInvoices(), loadPeriodAppointments()]);
+        setViewMode("list");
+        setVoidingInvoice(null);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al anular factura");
+    } finally {
+      setVoidingLoading(false);
+    }
+  };
 
   // Facturación en lote de turnos del período
   const handleBatchInvoice = async () => {
@@ -509,7 +331,6 @@ export default function FacturasSection() {
   };
 
   const isInitialLoading = loadingConfig || loadingStatus || !initialInvoicesLoaded;
-  const hasActiveFilters = !!(filterStatus || filterSource);
 
   if (isInitialLoading) {
     return (
@@ -529,510 +350,96 @@ export default function FacturasSection() {
     );
   }
 
+  // ── MODO 3: VER COMPROBANTE ───────────────────────────────────────────────
+  if (viewMode === "receipt" && selectedInvoiceId) {
+    return (
+      <InvoiceReceipt
+        invoiceId={selectedInvoiceId}
+        onBack={() => { setSelectedInvoiceId(null); setViewMode("list"); }}
+      />
+    );
+  }
+
+  // ── MODO 4: ANULAR CON NOTA DE CRÉDITO (CONFIRMACIÓN EN PANTALLA) ─────────
+  if (viewMode === "void" && voidingInvoice) {
+    return (
+      <VoidInvoiceView
+        voidingInvoice={voidingInvoice}
+        voidingLoading={voidingLoading}
+        onBack={() => { setVoidingInvoice(null); setViewMode("list"); }}
+        onConfirmVoid={handleConfirmVoid}
+      />
+    );
+  }
+
   // ── MODO 2: EMITIR FACTURA (PANEL DE ACCIÓN) ──────────────────────────────
   if (viewMode === "emit") {
     return (
-      <div className="space-y-6 animate-in fade-in duration-300 w-full">
-        {isHomo && (
-          <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-medium">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
-            <span>Homologación: los comprobantes son de prueba en ARCA y no tienen validez fiscal.</span>
-          </div>
-        )}
-        {/* Cabecera con botón Volver arriba a la izquierda estilo estándar de /admin */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/60 pb-5">
-          <div className="space-y-1.5">
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
-            >
-              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              <span>Volver a comprobantes</span>
-            </button>
-            <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-              Emitir comprobante
-            </h2>
-            <p className="text-xs text-slate-400">
-              Facturación en lote de turnos completados o emisión manual individual
-            </p>
-          </div>
-        </div>
-
-        {/* Alerta si ARCA no está listo */}
-        {status && !status.ready && (
-          <div className="flex items-center gap-2 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs animate-in fade-in">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
-            <span>
-              Faltan datos de configuración en ARCA. Podés emitir en modo Demo o completar tus credenciales fiscales desde el menú lateral en <strong>Configuración ARCA</strong>.
-            </span>
-          </div>
-        )}
-
-        {/* ── Selector de Período para Turnos ──────────────────────── */}
-        <div className="bg-[var(--foreground)]/5 p-4 rounded-2xl border border-[var(--foreground)]/10 space-y-3">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-              <Calendar className="w-4 h-4 text-[var(--accent)]" />
-              <span>Período de turnos a facturar:</span>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-1.5">
-              {(["daily", "weekly", "biweekly", "monthly", "custom"] as ArcaPeriod[]).map((p) => {
-                const labels: Record<ArcaPeriod, string> = {
-                  daily: "Diario",
-                  weekly: "Semanal",
-                  biweekly: "Quincenal",
-                  monthly: "Mensual",
-                  custom: "Personalizado",
-                };
-                const isActive = periodPreset === p;
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPeriodPreset(p)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                      isActive
-                        ? "!bg-[var(--accent)] !text-slate-950 font-bold shadow-sm"
-                        : "!text-slate-400 hover:!text-white hover:!bg-white/5"
-                    }`}
-                  >
-                    {labels[p]}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {periodPreset === "custom" && (
-            <div className="pt-3 border-t border-[var(--foreground)]/10 flex flex-wrap items-center gap-3 animate-in fade-in duration-200">
-              <div className="flex items-center gap-2">
-                <label htmlFor="arca-emit-start" className="text-xs text-slate-400 font-medium">Desde:</label>
-                <input
-                  id="arca-emit-start"
-                  type="date"
-                  value={customStart}
-                  onChange={(e) => setCustomStart(e.target.value)}
-                  className="p-1.5 rounded-lg border border-[var(--foreground)]/15 bg-[var(--background)] text-xs text-[var(--foreground)] focus:border-[var(--accent)] outline-none"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label htmlFor="arca-emit-end" className="text-xs text-slate-400 font-medium">Hasta:</label>
-                <input
-                  id="arca-emit-end"
-                  type="date"
-                  value={customEnd}
-                  onChange={(e) => setCustomEnd(e.target.value)}
-                  className="p-1.5 rounded-lg border border-[var(--foreground)]/15 bg-[var(--background)] text-xs text-[var(--foreground)] focus:border-[var(--accent)] outline-none"
-                />
-              </div>
-
-              <span className="text-xs text-slate-400">
-                Duración: <strong className={daysCount > 31 ? "text-rose-400" : "text-emerald-400"}>{daysCount} días</strong>
-              </span>
-            </div>
-          )}
-
-          {!isPeriodValid && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs">
-              <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-400" />
-              <span>
-                Por normativa de ARCA, el período a facturar no puede superar 31 días corridos. Por favor ajustá las fechas.
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* ── Opción 1: Lote de Facturación de Turnos ───────────────── */}
-        <section className="bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 rounded-2xl p-5 sm:p-6 shadow-lg">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 text-white font-bold text-base mb-1">
-                <Zap className="w-4 h-4 text-[var(--accent)]" />
-                <span>Facturación en lote de turnos</span>
-              </div>
-              <p className="text-xs text-slate-400">
-                {unbilledAppointments.length > 0 ? (
-                  <>
-                    Hay <strong className="text-amber-400 font-bold">{unbilledAppointments.length} turnos</strong> pendientes de facturación en el período seleccionado por un total de{" "}
-                    <strong className="text-emerald-400 font-bold">
-                      ${unbilledTotal.toLocaleString("es-AR", { minimumFractionDigits: 0 })}
-                    </strong>.
-                  </>
-                ) : (
-                  "Todos los turnos de este período ya fueron facturados o no presentan saldo pendiente."
-                )}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setConfirmBatch(true)}
-              disabled={!status?.ready || batchBilling || unbilledAppointments.length === 0 || !isPeriodValid}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 font-bold text-xs transition-all cursor-pointer shadow-md shadow-[var(--accent)]/15 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap active:scale-95 self-start sm:self-auto min-h-[44px] sm:min-h-0"
-            >
-              {batchBilling ? (
-                <Loader2 className="w-4 h-4 animate-spin text-inherit" />
-              ) : (
-                <Zap className="w-4 h-4" />
-              )}
-              <span>Facturar turnos pendientes</span>
-            </button>
-          </div>
-
-          {confirmBatch && (
-            <div className="mt-4 pt-4 border-t border-[var(--foreground)]/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-in fade-in duration-200">
-              <p className="text-xs text-slate-200">
-                Vas a emitir {unbilledAppointments.length} comprobantes por ${unbilledTotal.toLocaleString("es-AR", { minimumFractionDigits: 0 })}. ¿Confirmás?
-              </p>
-              <div className="flex items-center gap-2 self-end sm:self-auto">
-                <button
-                  type="button"
-                  disabled={batchBilling}
-                  onClick={() => setConfirmBatch(false)}
-                  className="px-3.5 py-1.5 rounded-xl border border-[var(--foreground)]/20 text-xs text-slate-300 hover:bg-white/5 font-medium transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  disabled={batchBilling}
-                  onClick={handleBatchInvoice}
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 font-bold text-xs transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0"
-                >
-                  {batchBilling && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <span>Sí, emitir</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* ── Opción 2: Emisión Manual Individual ───────────────────── */}
-        <section className="bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 rounded-2xl p-5 sm:p-6 shadow-lg space-y-4">
-          <div className="flex items-center gap-2 text-[var(--foreground)] font-bold text-base border-b border-[var(--foreground)]/10 pb-3">
-            <Receipt className="w-4 h-4 text-[var(--accent)]" />
-            <span>Emitir comprobante individual manual</span>
-          </div>
-
-          <form onSubmit={handleEmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Monto total <span className="text-[var(--accent)]">*</span>
-              </label>
-              <input
-                type="number"
-                value={emitTotal}
-                onChange={(e) => setEmitTotal(e.target.value)}
-                className="w-full border rounded-xl px-3 py-2 text-sm bg-transparent border-[var(--foreground)]/15 focus:border-[var(--accent)] outline-none"
-                placeholder="0.00"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Cliente (opcional)
-              </label>
-              <input
-                value={emitCustomerName}
-                onChange={(e) => setEmitCustomerName(e.target.value)}
-                className="w-full border rounded-xl px-3 py-2 text-sm bg-transparent border-[var(--foreground)]/15 focus:border-[var(--accent)] outline-none"
-                placeholder="Consumidor final"
-              />
-            </div>
-
-            <ArcaDocFields
-              idPrefix="factura-emit"
-              docType={emitDocType}
-              onDocTypeChange={setEmitDocType}
-              docNumber={emitDocNumber}
-              onDocNumberChange={setEmitDocNumber}
-              receiverCondition={emitReceiverCondition}
-              onReceiverConditionChange={setEmitReceiverCondition}
-              numberClassName="md:col-span-3"
-            />
-
-            <div className="md:col-span-3 flex justify-end pt-4 border-t border-white/5">
-              <SendButton
-                name="Emitir comprobante"
-                type="submit"
-                disabled={!status?.ready || emitting}
-                loading={emitting}
-                className="w-full sm:w-auto min-w-[200px]"
-              />
-            </div>
-          </form>
-        </section>
-      </div>
+      <EmitInvoiceView
+        isHomo={isHomo}
+        certExpiryNotice={certExpiryNotice}
+        status={status}
+        periodPreset={periodPreset}
+        setPeriodPreset={setPeriodPreset}
+        customStart={customStart}
+        setCustomStart={setCustomStart}
+        customEnd={customEnd}
+        setCustomEnd={setCustomEnd}
+        daysCount={daysCount}
+        isPeriodValid={isPeriodValid}
+        unbilledAppointments={unbilledAppointments}
+        unbilledTotal={unbilledTotal}
+        batchBilling={batchBilling}
+        confirmBatch={confirmBatch}
+        setConfirmBatch={setConfirmBatch}
+        onBatchInvoice={handleBatchInvoice}
+        emitTotal={emitTotal}
+        setEmitTotal={setEmitTotal}
+        emitCustomerName={emitCustomerName}
+        setEmitCustomerName={setEmitCustomerName}
+        emitDocType={emitDocType}
+        setEmitDocType={setEmitDocType}
+        emitDocNumber={emitDocNumber}
+        setEmitDocNumber={setEmitDocNumber}
+        emitReceiverCondition={emitReceiverCondition}
+        setEmitReceiverCondition={setEmitReceiverCondition}
+        emitting={emitting}
+        onEmit={handleEmit}
+        onBack={() => setViewMode("list")}
+      />
     );
   }
 
   // ── MODO 1: LISTADO DE COMPROBANTES (VISTA PRINCIPAL POR DEFECTO) ────────
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 w-full">
-      {isHomo && (
-        <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-medium">
-          <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
-          <span>Homologación: los comprobantes son de prueba en ARCA y no tienen validez fiscal.</span>
-        </div>
-      )}
-      {/* Cabecera Estilo Ventas */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-              Comprobantes
-            </h2>
-            {status?.environment && (
-              <span
-                className={`text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md border ${
-                  status.environment === "prod"
-                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                    : status.environment === "homo"
-                    ? "bg-sky-500/10 text-sky-400 border-sky-500/20"
-                    : "bg-amber-500/10 text-amber-300 border-amber-500/20"
-                }`}
-              >
-                {ENV_LABELS[status.environment]}
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Historial y registro de facturación electrónica ARCA con CAE
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setViewMode("emit")}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl !bg-[var(--accent)] hover:!bg-[var(--accent-hover)] !text-slate-950 font-bold text-sm shadow-md shadow-[var(--accent)]/15 transition-all hover:scale-105 active:scale-95 cursor-pointer self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span>Emitir factura</span>
-        </button>
-      </div>
-
-      {/* ── Selector de Período ARCA ───────────────────────────────── */}
-      <div className="bg-[var(--foreground)]/5 p-4 rounded-2xl border border-[var(--foreground)]/10 space-y-3">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-            <Calendar className="w-4 h-4 text-[var(--accent)]" />
-            <span>Período a inspeccionar:</span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            {(["daily", "weekly", "biweekly", "monthly", "custom"] as ArcaPeriod[]).map((p) => {
-              const labels: Record<ArcaPeriod, string> = {
-                daily: "Diario",
-                weekly: "Semanal",
-                biweekly: "Quincenal",
-                monthly: "Mensual",
-                custom: "Personalizado",
-              };
-              const isActive = periodPreset === p;
-              return (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setPeriodPreset(p)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                    isActive
-                      ? "!bg-[var(--accent)] !text-slate-950 font-bold shadow-sm"
-                      : "!text-slate-400 hover:!text-white hover:!bg-white/5"
-                  }`}
-                >
-                  {labels[p]}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {periodPreset === "custom" && (
-          <div className="pt-3 border-t border-[var(--foreground)]/10 flex flex-wrap items-center gap-3 animate-in fade-in duration-200">
-            <div className="flex items-center gap-2">
-              <label htmlFor="arca-list-start" className="text-xs text-slate-400 font-medium">Desde:</label>
-              <input
-                id="arca-list-start"
-                type="date"
-                value={customStart}
-                onChange={(e) => setCustomStart(e.target.value)}
-                className="p-1.5 rounded-lg border border-[var(--foreground)]/15 bg-[var(--background)] text-xs text-[var(--foreground)] focus:border-[var(--accent)] outline-none"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label htmlFor="arca-list-end" className="text-xs text-slate-400 font-medium">Hasta:</label>
-              <input
-                id="arca-list-end"
-                type="date"
-                value={customEnd}
-                onChange={(e) => setCustomEnd(e.target.value)}
-                className="p-1.5 rounded-lg border border-[var(--foreground)]/15 bg-[var(--background)] text-xs text-[var(--foreground)] focus:border-[var(--accent)] outline-none"
-              />
-            </div>
-
-            <span className="text-xs text-slate-400">
-              Duración: <strong className={daysCount > 31 ? "text-rose-400" : "text-emerald-400"}>{daysCount} días</strong>
-            </span>
-          </div>
-        )}
-
-        {!isPeriodValid && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-400" />
-            <span>
-              Por normativa de ARCA, el período no puede superar 31 días corridos. Por favor reducí el rango de fechas.
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* ── Métricas del Período (2 Tarjetas Claras de Negocio) ──────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <MetricCard
-          label="Facturado en el período"
-          value={`$${periodInvoicesTotal.toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}
-          sub={`${invoices.length} comprobante${invoices.length !== 1 ? "s" : ""}`}
-          icon={Receipt}
-          color="accent"
-        />
-        <MetricCard
-          label="Pendiente de facturar"
-          value={`$${unbilledTotal.toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}
-          sub={`${unbilledAppointments.length} turno${unbilledAppointments.length !== 1 ? "s" : ""} sin factura`}
-          icon={Clock}
-          color={unbilledAppointments.length > 0 ? "yellow" : "green"}
-        />
-      </div>
-
-      {/* ── Tabla de Comprobantes Emitidos ──────────────────────────── */}
-      <section className="bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 rounded-2xl p-5 shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div>
-            <h3 className="text-base font-bold text-[var(--foreground)]">Historial de facturas</h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Comprobantes registrados en ARCA para el período seleccionado
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {invoices.length > 0 && (
-              <button
-                type="button"
-                onClick={() => exportToCsv(invoices)}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg !border !border-[var(--foreground)]/20 hover:!border-[var(--accent)]/50 !bg-white/5 !text-slate-200 hover:!text-[var(--accent)] transition-colors cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Exportar CSV
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setFiltersOpen((v) => !v)}
-              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg !border transition-colors cursor-pointer ${
-                hasActiveFilters
-                  ? "!border-[var(--accent)]/50 !text-[var(--accent)] !bg-[var(--accent)]/10 font-bold"
-                  : "!border-[var(--foreground)]/20 !text-slate-200 !bg-white/5 hover:!border-[var(--accent)]/50 hover:!text-[var(--accent)]"
-              }`}
-            >
-              <Filter className="w-3.5 h-3.5" />
-              Filtros{hasActiveFilters ? " (activos)" : ""}
-            </button>
-          </div>
-        </div>
-
-        {/* Panel de filtros colapsable */}
-        {filtersOpen && (
-          <div className="grid grid-cols-2 md:grid-cols-2 gap-3 mb-4 p-3 bg-[var(--foreground)]/3 rounded-xl border border-[var(--foreground)]/10 text-sm animate-in fade-in">
-            <div>
-              <label className="block text-xs text-[var(--foreground)]/50 mb-1">Estado</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full border rounded-lg px-2 py-1.5 text-xs bg-transparent border-[var(--foreground)]/15"
-              >
-                <option value="">Todos</option>
-                <option value="approved">Aprobado</option>
-                <option value="rejected">Rechazado</option>
-                <option value="error">Sin respuesta</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-[var(--foreground)]/50 mb-1">Origen</label>
-              <select
-                value={filterSource}
-                onChange={(e) => setFilterSource(e.target.value)}
-                className="w-full border rounded-lg px-2 py-1.5 text-xs bg-transparent border-[var(--foreground)]/15"
-              >
-                <option value="">Todos</option>
-                <option value="appointment">Turnos</option>
-                <option value="sale">Ventas</option>
-                <option value="manual">Manual</option>
-              </select>
-            </div>
-            {hasActiveFilters && (
-              <div className="col-span-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFilterStatus("");
-                    setFilterSource("");
-                  }}
-                  className="text-xs !bg-transparent !text-slate-400 hover:!text-red-400 transition-colors cursor-pointer underline underline-offset-2"
-                >
-                  Limpiar filtros
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {loadingInvoices && (
-          <div className="space-y-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-12 rounded-xl bg-white/5 animate-pulse" />
-            ))}
-          </div>
-        )}
-
-        {!loadingInvoices && invoices.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-6">
-            {hasActiveFilters
-              ? "No hay comprobantes con los filtros seleccionados."
-              : "No hay comprobantes registrados en este período."}
-          </p>
-        )}
-
-        {invoices.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-xs md:text-sm">
-              <thead>
-                <tr className="border-b border-gray-700 text-left text-[var(--foreground)]/50 text-[11px] tracking-wider">
-                  <th className="py-2 pr-3">Fecha</th>
-                  <th className="py-2 pr-3">Estado</th>
-                  <th className="py-2 pr-3">Total</th>
-                  <th className="py-2 pr-3">Cliente</th>
-                  <th className="py-2 pr-3">CAE</th>
-                  <th className="py-2 pr-3">Nro.</th>
-                  <th className="py-2 pr-3">Origen</th>
-                  <th className="py-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((inv) => (
-                  <InvoiceRow key={inv.id} inv={inv} />
-                ))}
-              </tbody>
-            </table>
-            <p className="text-xs text-[var(--foreground)]/30 mt-3 text-right">
-              {invoices.length} comprobante{invoices.length !== 1 ? "s" : ""}
-              {hasActiveFilters ? " (filtrados)" : ""}
-            </p>
-          </div>
-        )}
-      </section>
-    </div>
+    <InvoiceListView
+      isHomo={isHomo}
+      certExpiryNotice={certExpiryNotice}
+      status={status}
+      onEmitClick={() => setViewMode("emit")}
+      periodPreset={periodPreset}
+      setPeriodPreset={setPeriodPreset}
+      customStart={customStart}
+      setCustomStart={setCustomStart}
+      customEnd={customEnd}
+      setCustomEnd={setCustomEnd}
+      daysCount={daysCount}
+      isPeriodValid={isPeriodValid}
+      periodInvoicesTotal={periodInvoicesTotal}
+      approvedType11InvoicesCount={approvedType11Invoices.length}
+      unbilledTotal={unbilledTotal}
+      unbilledAppointmentsCount={unbilledAppointments.length}
+      invoices={invoices}
+      loadingInvoices={loadingInvoices}
+      filterStatus={filterStatus}
+      setFilterStatus={setFilterStatus}
+      filterSource={filterSource}
+      setFilterSource={setFilterSource}
+      filtersOpen={filtersOpen}
+      setFiltersOpen={setFiltersOpen}
+      onVerified={loadInvoices}
+      onViewReceipt={(id) => { setSelectedInvoiceId(id); setViewMode("receipt"); }}
+      onVoid={(item) => { setVoidingInvoice(item); setViewMode("void"); }}
+    />
   );
 }

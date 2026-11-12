@@ -1,6 +1,9 @@
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { successResponse, errorResponse, dbErrorResponse } from "@/lib/api/response";
+import { parseBody } from "@/lib/api/parseBody";
+import { AuthCreateUserSchema, AuthDeleteUserSchema } from "@/lib/schemas";
 import { requireAdmin } from "@/lib/api/auth";
+import { findAuthUserByEmail } from "@/lib/auth/findAuthUser";
 import { checkBarberLimit } from "@/lib/flags/server";
 
 export async function GET(request: Request) {
@@ -11,10 +14,7 @@ export async function GET(request: Request) {
   const email = searchParams.get("email");
   if (!email) return errorResponse("Falta el email");
 
-  const { data, error } = await supabaseAdmin.auth.admin.listUsers();
-  if (error || !data?.users?.length) return errorResponse("Usuario no encontrado");
-
-  const user = data.users.find((u) => u.email === email);
+  const user = await findAuthUserByEmail(email);
   if (!user) return errorResponse("Usuario no encontrado");
 
   return successResponse();
@@ -28,11 +28,10 @@ export async function POST(request: Request) {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
 
-  const body: { email?: string; password?: string } = await request.json();
-  const email = body.email?.trim().toLowerCase();
-  const password = body.password;
-  if (!email || !password) return errorResponse("Faltan el email o la contraseña", 400);
-  if (password.length < 6) return errorResponse("La contraseña debe tener al menos 6 caracteres", 400);
+  const { data: body, error: bodyError } = await parseBody(request, AuthCreateUserSchema);
+  if (bodyError) return bodyError;
+
+  const { email, password } = body;
 
   // Si el profesional todavía no existe, la cuenta nueva cuenta para el límite del plan
   const { data: existingBarber, error: barberError } = await supabaseAdmin
@@ -62,14 +61,11 @@ export async function DELETE(request: Request) {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("No autorizado", 401);
 
-  const body: { email?: string } = await request.json();
-  const email = body.email;
-  if (!email) return errorResponse("Falta el email");
+  const { data: body, error: bodyError } = await parseBody(request, AuthDeleteUserSchema);
+  if (bodyError) return bodyError;
 
-  const { data, error } = await supabaseAdmin.auth.admin.listUsers();
-  if (error || !data?.users?.length) return errorResponse("Usuario no encontrado");
-
-  const user = data.users.find((u) => u.email === email);
+  const { email } = body;
+  const user = await findAuthUserByEmail(email);
   if (!user) return errorResponse("Usuario no encontrado");
 
   const userId = user.id;

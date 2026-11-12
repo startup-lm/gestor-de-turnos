@@ -3,6 +3,12 @@ import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { isServerFeatureEnabled } from "@/lib/flags/server";
 import { requireAdmin } from "@/lib/api/auth";
+import { urlMatchesEnvironment } from "@/lib/arca/endpoints";
+import { encryptSecret } from "@/lib/arca/secretBox";
+import type { ArcaEnvironment } from "@/lib/types/Arca";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const ENVIRONMENTS = ["homo", "prod"];
 
@@ -12,6 +18,10 @@ const DEFAULT_CONFIG = {
   point_of_sale: null,
   wsaa_url: null,
   wsfe_url: null,
+  legal_name: null,
+  fiscal_address: null,
+  gross_income: null,
+  activity_start_date: null,
   has_cert: false,
   has_key: false,
   has_passphrase: false,
@@ -64,6 +74,17 @@ export async function PUT(req: Request) {
   const payload = await req.json().catch(() => null);
   if (!payload || typeof payload !== "object") return errorResponse("Datos inválidos", 400);
 
+  // Leemos la configuración guardada para comparar entorno y claves de ticket
+  const { data: current, error: currentError } = await supabaseAdmin
+    .from("arca_settings")
+    .select("environment, cuit, cert_pem, key_pem, key_passphrase, wsaa_url, wsfe_url")
+    .eq("id", 1)
+    .maybeSingle();
+  if (currentError) return dbErrorResponse(currentError, "arca/config");
+
+  const stored = (current ?? {}) as Record<string, unknown>;
+  const storedEnv = ((stored.environment as ArcaEnvironment) || "homo") as ArcaEnvironment;
+
   const update: Record<string, unknown> = {
     id: 1,
     updated_at: new Date().toISOString(),
@@ -73,6 +94,10 @@ export async function PUT(req: Request) {
     if (!ENVIRONMENTS.includes(payload.environment)) return errorResponse("Entorno de ARCA inválido", 400);
     update.environment = payload.environment;
   }
+
+  const targetEnv: ArcaEnvironment = (update.environment as ArcaEnvironment) ?? storedEnv;
+  const envChanged = "environment" in payload && payload.environment !== storedEnv;
+
   if ("cuit" in payload) {
     const cuit = payload.cuit ? String(payload.cuit).replace(/\D/g, "") : null;
     if (cuit && cuit.length !== 11) return errorResponse("El CUIT tiene que tener 11 números", 400);
@@ -85,22 +110,69 @@ export async function PUT(req: Request) {
     }
     update.point_of_sale = pos;
   }
-  if ("wsaaUrl" in payload) update.wsaa_url = payload.wsaaUrl;
-  if ("wsfeUrl" in payload) update.wsfe_url = payload.wsfeUrl;
+
+  if ("legalName" in payload || "legal_name" in payload) {
+    const val = payload.legalName ?? payload.legal_name;
+    update.legal_name = typeof val === "string" ? val.trim() || null : null;
+  }
+  if ("fiscalAddress" in payload || "fiscal_address" in payload) {
+    const val = payload.fiscalAddress ?? payload.fiscal_address;
+    update.fiscal_address = typeof val === "string" ? val.trim() || null : null;
+  }
+  if ("grossIncome" in payload || "gross_income" in payload) {
+    const val = payload.grossIncome ?? payload.gross_income;
+    update.gross_income = typeof val === "string" ? val.trim() || null : null;
+  }
+  if ("activityStartDate" in payload || "activity_start_date" in payload) {
+    const val = payload.activityStartDate ?? payload.activity_start_date;
+    const str = val ? String(val).trim() : "";
+    if (str && !/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      return errorResponse("La fecha de inicio de actividades tiene que tener formato AAAA-MM-DD", 400);
+    }
+    update.activity_start_date = str || null;
+  }
+
+  const hasWsaa = "wsaaUrl" in payload || "wsaa_url" in payload;
+  if (hasWsaa) {
+    const rawVal = ("wsaaUrl" in payload ? payload.wsaaUrl : payload.wsaa_url) as string | null | undefined;
+    const raw = typeof rawVal === "string" ? rawVal.trim() : "";
+    if (!raw) {
+      update.wsaa_url = null;
+    } else {
+      if (!urlMatchesEnvironment(raw, targetEnv)) {
+        return errorResponse("La dirección de ARCA no corresponde al entorno elegido", 400);
+      }
+      update.wsaa_url = raw;
+    }
+  } else if (envChanged) {
+    update.wsaa_url = null;
+  }
+
+  const hasWsfe = "wsfeUrl" in payload || "wsfe_url" in payload;
+  if (hasWsfe) {
+    const rawVal = ("wsfeUrl" in payload ? payload.wsfeUrl : payload.wsfe_url) as string | null | undefined;
+    const raw = typeof rawVal === "string" ? rawVal.trim() : "";
+    if (!raw) {
+      update.wsfe_url = null;
+    } else {
+      if (!urlMatchesEnvironment(raw, targetEnv)) {
+        return errorResponse("La dirección de ARCA no corresponde al entorno elegido", 400);
+      }
+      update.wsfe_url = raw;
+    }
+  } else if (envChanged) {
+    update.wsfe_url = null;
+  }
+
   if ("certPem" in payload && payload.certPem) update.cert_pem = payload.certPem;
-  if ("keyPem" in payload && payload.keyPem) update.key_pem = payload.keyPem;
-  if ("keyPassphrase" in payload) update.key_passphrase = payload.keyPassphrase || null;
+  if ("keyPem" in payload && payload.keyPem) update.key_pem = encryptSecret(payload.keyPem);
+  if ("keyPassphrase" in payload) {
+    const pass = payload.keyPassphrase || null;
+    update.key_passphrase = pass ? encryptSecret(pass) : null;
+  }
 
   // El ticket de acceso depende del certificado, la clave y el entorno: si cambian, se pide otro
-  const { data: current, error: currentError } = await supabaseAdmin
-    .from("arca_settings")
-    .select("environment, cuit, cert_pem, key_pem, key_passphrase, wsaa_url")
-    .eq("id", 1)
-    .maybeSingle();
-  if (currentError) return dbErrorResponse(currentError, "arca/config");
-
   const ticketKeys = ["environment", "cuit", "cert_pem", "key_pem", "key_passphrase", "wsaa_url"] as const;
-  const stored = (current ?? {}) as Record<string, unknown>;
   if (ticketKeys.some((k) => k in update && (update[k] ?? null) !== (stored[k] ?? null))) {
     update.wsaa_token = null;
     update.wsaa_sign = null;

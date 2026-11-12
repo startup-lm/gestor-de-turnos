@@ -55,6 +55,14 @@
   --google-red: #EA4335;
   --google-yellow: #FBBC05;
   --google-green: #34A853;
+
+  --surface-deep: #0a0f1d;
+  --surface-toast: #0B132B;
+  --hero-overlay: #050811;
+  --accent-light: #fcebb6;
+  --whatsapp-hover: #20ba5a;
+  --whatsapp-hover-alt: #20bd5a;
+  --checkerboard-dark: #1e293b;
 }
 
 @media (prefers-color-scheme: dark) {

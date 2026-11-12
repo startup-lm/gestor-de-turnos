@@ -7,7 +7,7 @@ import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { canModify, isAdminStaff } from "@/lib/api/ownership";
 import { ArcaError } from "@/lib/arca/soap";
 import { resolveEndpoints } from "@/lib/arca/endpoints";
-import { getAccessTicket } from "@/lib/arca/wsaa";
+import { withAccessTicket } from "@/lib/arca/wsaa";
 import {
   ERR_WRONG_NUMBER,
   FACTURA_C,
@@ -18,10 +18,12 @@ import {
   requestCae,
   type CaeRequest,
   type CaeResult,
-  type WsfeAuth,
 } from "@/lib/arca/wsfe";
 import { resolveReceiverCondition } from "@/lib/arca/receiverConditions";
 import type { ArcaDocType, ArcaSourceType } from "@/lib/types/Arca";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const SOURCE_TABLE = { appointment: "appointments", sale: "sales" } as const;
 const DOC_TYPES: ArcaDocType[] = [80, 86, 96, 99];
@@ -87,6 +89,15 @@ export async function POST(req: Request) {
         : "Solo podés facturar tus propias ventas", 403);
     }
     if (source.arca_invoice_id) {
+      const { data: existingInv } = await supabaseAdmin
+        .from("arca_invoices")
+        .select("status")
+        .eq("id", source.arca_invoice_id)
+        .maybeSingle();
+
+      if (existingInv?.status === "error" || existingInv?.status === "pending") {
+        return errorResponse("Este cobro tiene una factura sin confirmar. Verificala en Facturas", 409);
+      }
       return errorResponse(sourceType === "appointment" ? "Este turno ya tiene factura" : "Esta venta ya tiene factura", 409);
     }
     if (sourceType === "appointment" && !("paid" in source && source.paid)) {
@@ -109,6 +120,8 @@ export async function POST(req: Request) {
   }
 
   const pointOfSale = Number(config.point_of_sale);
+  const dateStr = arcaDate();
+  const voucherDate = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
 
   // 1. Comprobante pendiente: reserva el turno o la venta antes de hablar con ARCA,
   //    así dos pedidos simultáneos no sacan dos facturas reales del mismo cobro
@@ -116,10 +129,12 @@ export async function POST(req: Request) {
     .from("arca_invoices")
     .insert({
       status: "pending",
+      environment: config.environment === "prod" ? "prod" : "homo",
       total,
       customer_name: payload?.customerName ?? null,
       voucher_type: FACTURA_C,
       invoice_type: FACTURA_C,
+      voucher_date: voucherDate,
       point_of_sale: pointOfSale,
       source_type: sourceType,
       source_id: sourceId,
@@ -165,8 +180,6 @@ export async function POST(req: Request) {
   let sent = false;
   let result: CaeResult;
   try {
-    const ticket = await getAccessTicket(config, endpoints.wsaa);
-    const auth: WsfeAuth = { ...ticket, cuit: String(config.cuit).replace(/\D/g, "") };
     const base: Omit<CaeRequest, "voucherNumber"> = {
       pointOfSale,
       voucherType: FACTURA_C,
@@ -175,20 +188,24 @@ export async function POST(req: Request) {
       docNumber,
       receiverIvaCondition,
       total,
-      date: arcaDate(),
+      date: dateStr,
     };
 
-    const attempt = async () => {
-      const last = await lastAuthorized(endpoints.wsfe, auth, pointOfSale);
-      sent = true;
-      return requestCae(endpoints.wsfe, auth, { ...base, voucherNumber: last + 1 });
-    };
+    result = await withAccessTicket(config, endpoints.wsaa, async (auth) => {
+      const attempt = async () => {
+        const last = await lastAuthorized(endpoints.wsfe, auth, pointOfSale);
+        sent = true;
+        await supabaseAdmin.from("arca_invoices").update({ voucher_number: last + 1 }).eq("id", invoiceId);
+        return requestCae(endpoints.wsfe, auth, { ...base, voucherNumber: last + 1 });
+      };
 
-    result = await attempt();
-    // Otro comprobante tomó el mismo número al mismo tiempo: se pide el número de nuevo una vez
-    if (!result.approved && result.errors.some((e) => e.code === ERR_WRONG_NUMBER)) {
-      result = await attempt();
-    }
+      let res = await attempt();
+      // Otro comprobante tomó el mismo número al mismo tiempo: se pide el número de nuevo una vez
+      if (!res.approved && res.errors.some((e) => e.code === ERR_WRONG_NUMBER)) {
+        res = await attempt();
+      }
+      return res;
+    });
   } catch (err) {
     const message = err instanceof ArcaError ? err.message : "No se pudo facturar con ARCA";
     if (!sent) {
@@ -207,13 +224,12 @@ export async function POST(req: Request) {
     }
     // Se mandó el pedido y no hubo respuesta: ARCA pudo haberlo autorizado igual
     console.error("[api:arca/emit] sin respuesta de ARCA", err);
-    await release();
     await supabaseAdmin
       .from("arca_invoices")
       .update({ status: "error", error_message: message })
       .eq("id", invoiceId);
     revalidateTag("arca-invoices");
-    return errorResponse("ARCA no respondió. Revisá en Facturas antes de reintentar", 502);
+    return errorResponse("ARCA no respondió. Entrá a Facturas y tocá \"Verificar en ARCA\" antes de volver a facturar", 502);
   }
 
   const raw = { errors: result.errors, observations: result.observations };

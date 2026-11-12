@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { getBarbersAppointmentsFromDates } from "@/lib/repository/appointments";
 import { summarizePastUnpaid } from "@/lib/appointments/pastUnpaid";
 import { formatLocalDate } from "@/lib/dates/argentina";
@@ -27,6 +27,9 @@ export function useDashboardData(
 ) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
 
+  const rangeRef = useRef({ startDate, endDate });
+  rangeRef.current = { startDate, endDate };
+
   const startIso = startDate.toISOString().slice(0, 10);
   const endIso = endDate.toISOString().slice(0, 10);
 
@@ -38,7 +41,7 @@ export function useDashboardData(
 
     let mounted = true;
     (async () => {
-      const allAppt = await getBarbersAppointmentsFromDates(barberId, startDate, endDate);
+      const allAppt = await getBarbersAppointmentsFromDates(barberId, rangeRef.current.startDate, rangeRef.current.endDate);
       if (!mounted) return;
       const valid = allAppt.filter((appt) => appt.phone !== "0000000000");
       setAppointments(valid);

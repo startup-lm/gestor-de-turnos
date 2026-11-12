@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { errorResponse, successResponse, dbErrorResponse } from "@/lib/api/response";
+import { parseBody } from "@/lib/api/parseBody";
+import { StorageDeleteSchema } from "@/lib/schemas";
 import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { removeStorageObject, uploadStorageObject } from "@/lib/storage/server";
 import {
@@ -37,10 +39,10 @@ export async function DELETE(request: Request) {
   const staff = await requireBarberOrAdmin();
   if (!staff) return errorResponse("No autorizado", 401);
 
-  const { bucket, path } = await request.json();
-  if (!bucket || !path) {
-    return errorResponse("Faltan bucket o path en el body", 400);
-  }
+  const { data: body, error: bodyError } = await parseBody(request, StorageDeleteSchema);
+  if (bodyError) return bodyError;
+
+  const { bucket, path } = body;
   if (!isAllowedBucket(bucket) || !isSafeObjectPath(path)) return errorResponse("Parámetros inválidos", 400);
   if (!canWriteBucket(bucket, staff.barber.role)) return errorResponse("No autorizado", 403);
 
