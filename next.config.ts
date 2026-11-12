@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import withPWAInit from "@ducanh2912/next-pwa";
+import withSerwistInit from "@serwist/next";
 import bundleAnalyzer from "@next/bundle-analyzer";
 import { withSentryConfig } from "@sentry/nextjs/config";
 import packageJson from "./package.json";
@@ -85,15 +85,15 @@ const nextConfig: NextConfig = {
   },
 };
 
-const withPWA = withPWAInit({
-  dest: "public",
+const withSerwist = withSerwistInit({
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
   disable: process.env.NODE_ENV === "development",
   register: true,
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
+  cacheOnNavigation: true,
 });
 
-const analyzedConfig = withBundleAnalyzer(withPWA(nextConfig));
+const analyzedConfig = withBundleAnalyzer(withSerwist(nextConfig));
 
 export default withSentryConfig(analyzedConfig, {
   org: "lm2",

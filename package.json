@@ -15,8 +15,8 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@ducanh2912/next-pwa": "^10.2.9",
     "@sentry/nextjs": "^11.8.0",
+    "@serwist/next": "^9.5.13",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.4",
     "date-fns": "^4.1.0",
@@ -35,6 +35,7 @@
     "react-icons": "^5.5.0",
     "react-phone-number-input": "^3.4.16",
     "recharts": "^2.15.2",
+    "serwist": "^9.5.13",
     "swr": "^2.4.1",
     "zod": "^4.4.3",
     "zustand": "^5.0.13"
