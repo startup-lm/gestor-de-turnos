@@ -175,7 +175,7 @@ describe("ARCA: emisión real", () => {
       expect.objectContaining({ total: 12000, voucherNumber: 8, voucherType: 11, concept: 2, receiverIvaCondition: 5 })
     );
     expect(invoices.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "pending", total: 12000, source_id: 7, environment: "homo" })
+      expect.objectContaining({ status: "pending", total: 12000, source_id: 7, environment: "homo", voucher_date: expect.any(String) })
     );
     expect(markQuery.update).toHaveBeenCalledWith({ arca_invoice_id: 50 });
     expect(invoices.update).toHaveBeenCalledWith(expect.objectContaining({ status: "approved", cae: APPROVED.cae }));

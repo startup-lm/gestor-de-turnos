@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as auth from "@/lib/api/auth";
 import * as flags from "@/lib/flags/server";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
-import { PUT } from "@/app/api/arca/config/route";
+import { GET, PUT } from "@/app/api/arca/config/route";
 
 vi.mock("@/lib/api/auth", () => ({
   requireAdmin: vi.fn(),
@@ -104,5 +104,91 @@ describe("PUT /api/arca/config", () => {
         wsfe_url: "https://wswhomo.afip.gov.ar/wsfev1/service.asmx",
       })
     );
+  });
+
+  it("acepta y guarda datos fiscales del emisor", async () => {
+    const current = { environment: "homo" };
+    const selectQuery = chain({ data: current, error: null });
+    const upsertQuery = chain({
+      data: {
+        id: 1,
+        environment: "homo",
+        legal_name: "Turnik Barbería S.A.",
+        fiscal_address: "Av. Corrientes 1234, CABA",
+        gross_income: "30-12345678-9",
+        activity_start_date: "2024-05-01",
+      },
+      error: null,
+    });
+
+    let fromCount = 0;
+    vi.mocked(supabaseAdmin.from).mockImplementation((() => {
+      fromCount++;
+      return fromCount === 1 ? selectQuery : upsertQuery;
+    }) as any);
+
+    const res = await PUT(
+      reqJson({
+        legalName: "  Turnik Barbería S.A.  ",
+        fiscalAddress: "Av. Corrientes 1234, CABA",
+        grossIncome: "30-12345678-9",
+        activityStartDate: "2024-05-01",
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(upsertQuery.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        legal_name: "Turnik Barbería S.A.",
+        fiscal_address: "Av. Corrientes 1234, CABA",
+        gross_income: "30-12345678-9",
+        activity_start_date: "2024-05-01",
+      })
+    );
+  });
+
+  it("valida que la fecha de inicio de actividades tenga formato AAAA-MM-DD", async () => {
+    const current = { environment: "homo" };
+    const selectQuery = chain({ data: current, error: null });
+    vi.mocked(supabaseAdmin.from).mockReturnValue(selectQuery as any);
+
+    const res = await PUT(reqJson({ activityStartDate: "01/05/2024" }));
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("La fecha de inicio de actividades tiene que tener formato AAAA-MM-DD");
+  });
+});
+
+describe("GET /api/arca/config", () => {
+  it("devuelve los datos fiscales del emisor", async () => {
+    const row = {
+      id: 1,
+      environment: "prod",
+      cuit: "20123456789",
+      point_of_sale: 2,
+      legal_name: "Barbería Central",
+      fiscal_address: "San Martín 456",
+      gross_income: "20123456789",
+      activity_start_date: "2023-01-15",
+      cert_pem: "CERT",
+      key_pem: "KEY",
+      key_passphrase: null,
+    };
+    const selectQuery = chain({ data: row, error: null });
+    vi.mocked(supabaseAdmin.from).mockReturnValue(selectQuery as any);
+
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data).toMatchObject({
+      legal_name: "Barbería Central",
+      fiscal_address: "San Martín 456",
+      gross_income: "20123456789",
+      activity_start_date: "2023-01-15",
+      has_cert: true,
+      has_key: true,
+    });
+    // Certificado y clave crudos nunca salen al cliente
+    expect(data.cert_pem).toBeUndefined();
+    expect(data.key_pem).toBeUndefined();
   });
 });

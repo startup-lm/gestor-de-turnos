@@ -5,6 +5,8 @@ import type { ArcaDocType, ArcaSourceType } from "@/lib/types/Arca";
 
 /** Factura C: la que emiten monotributistas, sin IVA discriminado */
 export const FACTURA_C = 11;
+/** Nota de crédito C */
+export const NOTA_CREDITO_C = 13;
 /** "El número o fecha del comprobante no se corresponde con el próximo a autorizar" */
 export const ERR_WRONG_NUMBER = 10016;
 
@@ -22,6 +24,13 @@ export type CaeRequest = {
   receiverIvaCondition: number;
   total: number;
   date: string; // YYYYMMDD
+  associated?: {
+    type: number;
+    pointOfSale: number;
+    number: number;
+    cuit: string;
+    date: string;
+  };
 };
 
 export type ArcaMessage = { code: number; message: string };
@@ -77,6 +86,16 @@ export function buildCaeRequest(auth: WsfeAuth, req: CaeRequest): string {
         `<ar:FchServHasta>${req.date}</ar:FchServHasta>` +
         `<ar:FchVtoPago>${req.date}</ar:FchVtoPago>`;
 
+  const associated = req.associated
+    ? "<ar:CbtesAsoc><ar:CbteAsoc>" +
+      `<ar:Tipo>${req.associated.type}</ar:Tipo>` +
+      `<ar:PtoVta>${req.associated.pointOfSale}</ar:PtoVta>` +
+      `<ar:Nro>${req.associated.number}</ar:Nro>` +
+      `<ar:Cuit>${req.associated.cuit.replace(/\D/g, "")}</ar:Cuit>` +
+      `<ar:CbteFch>${req.associated.date.replace(/-/g, "")}</ar:CbteFch>` +
+      "</ar:CbteAsoc></ar:CbtesAsoc>"
+    : "";
+
   return envelope(
     "FECAESolicitar",
     authXml(auth) +
@@ -103,6 +122,7 @@ export function buildCaeRequest(auth: WsfeAuth, req: CaeRequest): string {
       "<ar:MonId>PES</ar:MonId>" +
       "<ar:MonCotiz>1</ar:MonCotiz>" +
       `<ar:CondicionIVAReceptorId>${req.receiverIvaCondition}</ar:CondicionIVAReceptorId>` +
+      associated +
       "</ar:FECAEDetRequest></ar:FeDetReq>" +
       "</ar:FeCAEReq>"
   );

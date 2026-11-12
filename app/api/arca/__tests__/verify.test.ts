@@ -206,6 +206,47 @@ describe("POST /api/arca/invoices/[id]/verify", () => {
     expect(appointmentsQuery.update).not.toHaveBeenCalled();
   });
 
+  it("si verify aprueba una nota de crédito tipo 13, anula la original y libera el cobro", async () => {
+    const creditNote = {
+      ...BASE_INVOICE,
+      id: 20,
+      voucher_type: 13,
+      invoice_type: 13,
+      credit_note_of_id: 10,
+      source_type: "appointment",
+      source_id: 7,
+      voucher_number: 2,
+    };
+    const { invoiceQuery, appointmentsQuery } = setupMocks({ invoice: creditNote });
+    vi.mocked(wsfe.consultVoucher).mockResolvedValueOnce({
+      found: true,
+      approved: true,
+      cae: "76123456789012",
+      caeDueDate: "2026-11-13",
+      total: 12000,
+      docType: 99,
+      docNumber: "0",
+      voucherNumber: 2,
+    });
+
+    const res = await callVerify(20);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      success: true,
+      status: "approved",
+      cae: "76123456789012",
+    });
+
+    // 1. Aprueba la nota de crédito
+    expect(invoiceQuery.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "approved", cae: "76123456789012" })
+    );
+    // 2. Anula la original (id 10)
+    expect(invoiceQuery.update).toHaveBeenCalledWith({ status: "voided" });
+    // 3. Libera el turno (arca_invoice_id: null)
+    expect(appointmentsQuery.update).toHaveBeenCalledWith({ arca_invoice_id: null });
+  });
+
   it("no encontrado en ARCA: marca como rechazada y libera el turno", async () => {
     const { invoiceQuery, appointmentsQuery } = setupMocks();
     vi.mocked(wsfe.consultVoucher).mockResolvedValueOnce({ found: false });

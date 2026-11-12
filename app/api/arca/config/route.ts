@@ -17,6 +17,10 @@ const DEFAULT_CONFIG = {
   point_of_sale: null,
   wsaa_url: null,
   wsfe_url: null,
+  legal_name: null,
+  fiscal_address: null,
+  gross_income: null,
+  activity_start_date: null,
   has_cert: false,
   has_key: false,
   has_passphrase: false,
@@ -104,6 +108,27 @@ export async function PUT(req: Request) {
       return errorResponse("El punto de venta tiene que ser un número entre 1 y 99999", 400);
     }
     update.point_of_sale = pos;
+  }
+
+  if ("legalName" in payload || "legal_name" in payload) {
+    const val = payload.legalName ?? payload.legal_name;
+    update.legal_name = typeof val === "string" ? val.trim() || null : null;
+  }
+  if ("fiscalAddress" in payload || "fiscal_address" in payload) {
+    const val = payload.fiscalAddress ?? payload.fiscal_address;
+    update.fiscal_address = typeof val === "string" ? val.trim() || null : null;
+  }
+  if ("grossIncome" in payload || "gross_income" in payload) {
+    const val = payload.grossIncome ?? payload.gross_income;
+    update.gross_income = typeof val === "string" ? val.trim() || null : null;
+  }
+  if ("activityStartDate" in payload || "activity_start_date" in payload) {
+    const val = payload.activityStartDate ?? payload.activity_start_date;
+    const str = val ? String(val).trim() : "";
+    if (str && !/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      return errorResponse("La fecha de inicio de actividades tiene que tener formato AAAA-MM-DD", 400);
+    }
+    update.activity_start_date = str || null;
   }
 
   const hasWsaa = "wsaaUrl" in payload || "wsaa_url" in payload;

@@ -8,6 +8,7 @@ import { toast } from "@/lib/store/useToastStore";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import {
   emitArcaInvoice,
+  emitCreditNote,
   getArcaConfig,
   getArcaInvoices,
   getArcaStatus,
@@ -21,6 +22,7 @@ import type {
   ArcaStatus,
 } from "@/lib/types/Arca";
 import ArcaDocFields from "@/components/arca/ArcaDocFields";
+import InvoiceReceipt from "@/components/arca/InvoiceReceipt";
 import { CONSUMIDOR_FINAL } from "@/lib/arca/receiverConditions";
 import { Appointment } from "@/lib/types/Appointment";
 import {
@@ -37,6 +39,8 @@ import {
   Plus,
   ArrowLeft,
   RefreshCw,
+  FileText,
+  RotateCcw,
 } from "lucide-react";
 
 // ─── Constantes ────────────────────────────────────────────────────────────
@@ -51,6 +55,7 @@ const STATUS_LABELS: Record<string, string> = {
   rejected: "Rechazado",
   pending: "En proceso",
   error: "Sin respuesta",
+  voided: "Anulada",
 };
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -153,7 +158,17 @@ function MetricCard({
   );
 }
 
-function InvoiceRow({ inv, onVerified }: { inv: ArcaInvoiceRecord; onVerified: () => void }) {
+function InvoiceRow({
+  inv,
+  onVerified,
+  onViewReceipt,
+  onVoid,
+}: {
+  inv: ArcaInvoiceRecord;
+  onVerified: () => void;
+  onViewReceipt: (id: number) => void;
+  onVoid: (inv: ArcaInvoiceRecord) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
@@ -183,11 +198,14 @@ function InvoiceRow({ inv, onVerified }: { inv: ArcaInvoiceRecord; onVerified: (
   const statusColor =
     inv.status === "approved"
       ? "bg-green-500/10 text-green-300 border-green-500/20"
+      : inv.status === "voided"
+      ? "bg-slate-500/15 text-slate-400 border-slate-500/30"
       : inv.status === "pending" || inv.status === "error"
       ? "bg-yellow-500/10 text-yellow-300 border-yellow-500/20"
       : "bg-red-500/10 text-red-300 border-red-500/20";
 
   const statusLabel = STATUS_LABELS[inv.status] ?? inv.status;
+  const isType11 = (inv.voucher_type ?? inv.invoice_type) === 11;
 
   return (
     <>
@@ -270,6 +288,35 @@ function InvoiceRow({ inv, onVerified }: { inv: ArcaInvoiceRecord; onVerified: (
                 </div>
               )}
             </div>
+            {(inv.status === "approved" || inv.status === "voided") && inv.cae && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 pt-3 border-t border-[var(--foreground)]/10">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewReceipt(inv.id);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--foreground)]/20 hover:border-[var(--accent)]/50 bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-200 hover:text-[var(--accent)] transition-all cursor-pointer min-h-[44px] sm:min-h-0"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Ver comprobante</span>
+                </button>
+
+                {inv.status === "approved" && isType11 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onVoid(inv);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-xs font-semibold text-rose-300 hover:text-rose-200 transition-all cursor-pointer min-h-[44px] sm:min-h-0"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Anular con nota de crédito</span>
+                  </button>
+                )}
+              </div>
+            )}
             {(inv.status === "error" || inv.status === "pending") && (
               <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                 <p className="text-xs text-yellow-300">
@@ -299,7 +346,10 @@ function InvoiceRow({ inv, onVerified }: { inv: ArcaInvoiceRecord; onVerified: (
 // ─── Componente Principal de Sección ───────────────────────────────────────
 
 export default function FacturasSection() {
-  const [viewMode, setViewMode] = useState<"list" | "emit">("list");
+  const [viewMode, setViewMode] = useState<"list" | "emit" | "receipt" | "void">("list");
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
+  const [voidingInvoice, setVoidingInvoice] = useState<ArcaInvoiceRecord | null>(null);
+  const [voidingLoading, setVoidingLoading] = useState(false);
 
   const {
     data: config,
@@ -469,10 +519,40 @@ export default function FacturasSection() {
     return unbilledAppointments.reduce((acc, a) => acc + (a.price || 0), 0);
   }, [unbilledAppointments]);
 
-  // Facturado comprobantes en el período
-  const periodInvoicesTotal = useMemo(() => {
-    return invoices.reduce((acc, inv) => acc + Number(inv.total), 0);
+  // Facturado comprobantes en el período: solo facturas tipo 11 aprobadas
+  const approvedType11Invoices = useMemo(() => {
+    return invoices.filter(
+      (inv) => inv.status === "approved" && (inv.voucher_type === 11 || inv.invoice_type === 11)
+    );
   }, [invoices]);
+
+  const periodInvoicesTotal = useMemo(() => {
+    return approvedType11Invoices.reduce((acc, inv) => acc + Number(inv.total), 0);
+  }, [approvedType11Invoices]);
+
+  const handleConfirmVoid = async () => {
+    if (!voidingInvoice) return;
+    setVoidingLoading(true);
+    try {
+      const res = await emitCreditNote(voidingInvoice.id);
+      if (!res.success) {
+        toast.error(res.error || "No se pudo emitir la nota de crédito");
+      } else {
+        toast.success(
+          res.cae
+            ? `Nota de crédito emitida con éxito. CAE: ${res.cae}`
+            : "Nota de crédito emitida con éxito"
+        );
+        await Promise.all([loadInvoices(), loadPeriodAppointments()]);
+        setViewMode("list");
+        setVoidingInvoice(null);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al anular factura");
+    } finally {
+      setVoidingLoading(false);
+    }
+  };
 
   // Facturación en lote de turnos del período
   const handleBatchInvoice = async () => {
@@ -586,6 +666,130 @@ export default function FacturasSection() {
           </div>
         </div>
         <ArcaSkeleton />
+      </div>
+    );
+  }
+
+  // ── MODO 3: VER COMPROBANTE ───────────────────────────────────────────────
+  if (viewMode === "receipt" && selectedInvoiceId) {
+    return (
+      <InvoiceReceipt
+        invoiceId={selectedInvoiceId}
+        onBack={() => {
+          setSelectedInvoiceId(null);
+          setViewMode("list");
+        }}
+      />
+    );
+  }
+
+  // ── MODO 4: ANULAR CON NOTA DE CRÉDITO (CONFIRMACIÓN EN PANTALLA) ─────────
+  if (viewMode === "void" && voidingInvoice) {
+    const isAppointment = voidingInvoice.source_type === "appointment";
+    const isSale = voidingInvoice.source_type === "sale";
+    const originLabel = isAppointment ? "el turno" : isSale ? "la venta" : null;
+
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300 w-full max-w-2xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/60 pb-5">
+          <div className="space-y-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setVoidingInvoice(null);
+                setViewMode("list");
+              }}
+              className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider text-[var(--accent)] hover:text-white transition-colors cursor-pointer group mb-1"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              <span>Volver a comprobantes</span>
+            </button>
+            <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
+              Anular factura con nota de crédito
+            </h2>
+            <p className="text-xs text-slate-400">
+              Confirmación de emisión oficial de Nota de crédito C ante ARCA
+            </p>
+          </div>
+        </div>
+
+        {/* Resumen del comprobante a anular */}
+        <section className="bg-[var(--foreground)]/5 border border-[var(--foreground)]/10 rounded-2xl p-5 sm:p-6 shadow-lg space-y-4">
+          <div className="flex items-center justify-between border-b border-[var(--foreground)]/10 pb-3">
+            <div>
+              <p className="text-xs text-slate-400">Factura a anular</p>
+              <h3 className="text-base font-bold text-white">
+                Factura C #{String(voidingInvoice.voucher_number ?? 0).padStart(8, "0")}
+              </h3>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-slate-400">Monto total</p>
+              <p className="text-lg font-mono font-bold text-rose-400">
+                ${Number(voidingInvoice.total).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div>
+              <p className="text-slate-400 mb-0.5">Punto de venta</p>
+              <p className="font-medium text-slate-200">{voidingInvoice.point_of_sale ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-slate-400 mb-0.5">CAE original</p>
+              <p className="font-medium text-slate-200 font-mono">{voidingInvoice.cae ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-slate-400 mb-0.5">Cliente</p>
+              <p className="font-medium text-slate-200">{voidingInvoice.customer_name || "Consumidor final"}</p>
+            </div>
+            <div>
+              <p className="text-slate-400 mb-0.5">Fecha de emisión</p>
+              <p className="font-medium text-slate-200">
+                {voidingInvoice.voucher_date
+                  ? voidingInvoice.voucher_date
+                  : voidingInvoice.created_at
+                  ? new Date(voidingInvoice.created_at).toLocaleDateString("es-AR")
+                  : "—"}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs space-y-1.5">
+            <p className="font-bold flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+              <span>Efecto fiscal y en el sistema</span>
+            </p>
+            <p className="text-[11px] leading-relaxed opacity-90">
+              Se emitirá una Nota de crédito C oficial por el total de ${Number(voidingInvoice.total).toLocaleString("es-AR", { minimumFractionDigits: 2 })} vinculada a esta factura.
+              La factura original pasará a estado <strong>Anulada</strong>
+              {originLabel ? ` y ${originLabel} quedará liberado para volver a facturarse cuando lo desees.` : "."}
+            </p>
+          </div>
+
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-4 border-t border-[var(--foreground)]/10">
+            <button
+              type="button"
+              disabled={voidingLoading}
+              onClick={() => {
+                setVoidingInvoice(null);
+                setViewMode("list");
+              }}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-[var(--foreground)]/20 text-xs text-slate-300 hover:bg-white/5 font-semibold transition-all cursor-pointer disabled:opacity-40 min-h-[44px]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              disabled={voidingLoading}
+              onClick={handleConfirmVoid}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl !bg-rose-500 hover:!bg-rose-600 !text-white font-bold text-xs shadow-md shadow-rose-500/20 transition-all cursor-pointer disabled:opacity-40 min-h-[44px]"
+            >
+              {voidingLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+              <span>Emitir nota de crédito</span>
+            </button>
+          </div>
+        </section>
       </div>
     );
   }
@@ -967,7 +1171,7 @@ export default function FacturasSection() {
         <MetricCard
           label="Facturado en el período"
           value={`$${periodInvoicesTotal.toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}
-          sub={`${invoices.length} comprobante${invoices.length !== 1 ? "s" : ""}`}
+          sub={`${approvedType11Invoices.length} factura${approvedType11Invoices.length !== 1 ? "s" : ""}`}
           icon={Receipt}
           color="accent"
         />
@@ -1095,7 +1299,19 @@ export default function FacturasSection() {
               </thead>
               <tbody>
                 {invoices.map((inv) => (
-                  <InvoiceRow key={inv.id} inv={inv} onVerified={loadInvoices} />
+                  <InvoiceRow
+                    key={inv.id}
+                    inv={inv}
+                    onVerified={loadInvoices}
+                    onViewReceipt={(id) => {
+                      setSelectedInvoiceId(id);
+                      setViewMode("receipt");
+                    }}
+                    onVoid={(item) => {
+                      setVoidingInvoice(item);
+                      setViewMode("void");
+                    }}
+                  />
                 ))}
               </tbody>
             </table>

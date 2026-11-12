@@ -25,6 +25,10 @@ export default function ArcaConfigSection() {
   const [pointOfSale, setPointOfSale] = useState("");
   const [wsaaUrl, setWsaaUrl] = useState("");
   const [wsfeUrl, setWsfeUrl] = useState("");
+  const [legalName, setLegalName] = useState("");
+  const [fiscalAddress, setFiscalAddress] = useState("");
+  const [grossIncome, setGrossIncome] = useState("");
+  const [activityStartDate, setActivityStartDate] = useState("");
   const [certPem, setCertPem] = useState("");
   const [keyPem, setKeyPem] = useState("");
   const [keyPassphrase, setKeyPassphrase] = useState("");
@@ -39,6 +43,10 @@ export default function ArcaConfigSection() {
     setPointOfSale(config.point_of_sale ? String(config.point_of_sale) : "");
     setWsaaUrl(config.wsaa_url ?? "");
     setWsfeUrl(config.wsfe_url ?? "");
+    setLegalName(config.legal_name ?? "");
+    setFiscalAddress(config.fiscal_address ?? "");
+    setGrossIncome(config.gross_income ?? "");
+    setActivityStartDate(config.activity_start_date ?? "");
   }, [config]);
 
   const hasConfigChanges = useMemo(() => {
@@ -48,6 +56,10 @@ export default function ArcaConfigSection() {
     const initialPos = config.point_of_sale ? String(config.point_of_sale) : "";
     const initialWsaa = config.wsaa_url ?? "";
     const initialWsfe = config.wsfe_url ?? "";
+    const initialLegal = config.legal_name ?? "";
+    const initialAddress = config.fiscal_address ?? "";
+    const initialGross = config.gross_income ?? "";
+    const initialStart = config.activity_start_date ?? "";
 
     return (
       environment !== initialEnv ||
@@ -55,11 +67,29 @@ export default function ArcaConfigSection() {
       pointOfSale.trim() !== initialPos ||
       wsaaUrl.trim() !== initialWsaa ||
       wsfeUrl.trim() !== initialWsfe ||
+      legalName.trim() !== initialLegal ||
+      fiscalAddress.trim() !== initialAddress ||
+      grossIncome.trim() !== initialGross ||
+      activityStartDate.trim() !== initialStart ||
       certPem.trim() !== "" ||
       keyPem.trim() !== "" ||
       keyPassphrase.trim() !== ""
     );
-  }, [config, environment, cuit, pointOfSale, wsaaUrl, wsfeUrl, certPem, keyPem, keyPassphrase]);
+  }, [
+    config,
+    environment,
+    cuit,
+    pointOfSale,
+    wsaaUrl,
+    wsfeUrl,
+    legalName,
+    fiscalAddress,
+    grossIncome,
+    activityStartDate,
+    certPem,
+    keyPem,
+    keyPassphrase,
+  ]);
 
   const readyLabel = useMemo(() => {
     if (!status) return "";
@@ -76,6 +106,10 @@ export default function ArcaConfigSection() {
         pointOfSale: pointOfSale ? Number(pointOfSale) : null,
         wsaaUrl: wsaaUrl.trim() || null,
         wsfeUrl: wsfeUrl.trim() || null,
+        legalName: legalName.trim() || null,
+        fiscalAddress: fiscalAddress.trim() || null,
+        grossIncome: grossIncome.trim() || null,
+        activityStartDate: activityStartDate.trim() || null,
       };
       if (certPem.trim()) payload.certPem = certPem.trim();
       if (keyPem.trim()) payload.keyPem = keyPem.trim();
@@ -126,6 +160,14 @@ export default function ArcaConfigSection() {
       setWsaaUrl={setWsaaUrl}
       wsfeUrl={wsfeUrl}
       setWsfeUrl={setWsfeUrl}
+      legalName={legalName}
+      setLegalName={setLegalName}
+      fiscalAddress={fiscalAddress}
+      setFiscalAddress={setFiscalAddress}
+      grossIncome={grossIncome}
+      setGrossIncome={setGrossIncome}
+      activityStartDate={activityStartDate}
+      setActivityStartDate={setActivityStartDate}
       certPem={certPem}
       setCertPem={setCertPem}
       keyPem={keyPem}

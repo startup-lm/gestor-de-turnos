@@ -344,6 +344,39 @@ describe("WSFE", () => {
     expect(xml).toContain("<ar:CondicionIVAReceptorId>6</ar:CondicionIVAReceptorId>");
   });
 
+  it("Nota de crédito C: incluye CbtesAsoc después de CondicionIVAReceptorId con el orden exacto", () => {
+    const xml = buildCaeRequest(auth, {
+      ...base,
+      voucherType: 13,
+      voucherNumber: 2,
+      associated: {
+        type: 11,
+        pointOfSale: 3,
+        number: 8,
+        cuit: "20-12345678-9",
+        date: "2026-11-03",
+      },
+    });
+
+    expect(xml).toContain("<ar:CbteTipo>13</ar:CbteTipo>");
+    expect(xml).toContain("<ar:CbteDesde>2</ar:CbteDesde><ar:CbteHasta>2</ar:CbteHasta>");
+
+    // Orden exacto de etiquetas según WSDL de ARCA:
+    // ... CondicionIVAReceptorId -> CbtesAsoc -> FECAEDetRequest cierre
+    const expectedCbtes =
+      "<ar:CondicionIVAReceptorId>5</ar:CondicionIVAReceptorId>" +
+      "<ar:CbtesAsoc><ar:CbteAsoc>" +
+      "<ar:Tipo>11</ar:Tipo>" +
+      "<ar:PtoVta>3</ar:PtoVta>" +
+      "<ar:Nro>8</ar:Nro>" +
+      "<ar:Cuit>20123456789</ar:Cuit>" +
+      "<ar:CbteFch>20261103</ar:CbteFch>" +
+      "</ar:CbteAsoc></ar:CbtesAsoc>" +
+      "</ar:FECAEDetRequest>";
+
+    expect(xml).toContain(expectedCbtes);
+  });
+
   it("turnos y manuales son servicios; ventas, productos", () => {
     expect(conceptFor("appointment")).toBe(2);
     expect(conceptFor("manual")).toBe(2);

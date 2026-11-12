@@ -4,6 +4,7 @@ import type {
   ArcaEmitInput,
   ArcaEmitResult,
   ArcaInvoiceRecord,
+  ArcaReceiptData,
   ArcaStatus,
   ArcaTestResult,
 } from "@/lib/types/Arca";
@@ -97,5 +98,29 @@ export async function getArcaInvoices(
     next: { tags: ["arca-invoices"] },
   });
   if (!res.ok) throw new Error("No se pudo cargar comprobantes ARCA");
+  return res.json();
+}
+
+export async function emitCreditNote(
+  invoiceId: number
+): Promise<ArcaEmitResult> {
+  const res = await fetch(`${BASE}/api/arca/invoices/${invoiceId}/credit-note`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    return { success: false, error: json?.error ?? "No se pudo emitir la nota de crédito" };
+  }
+  return res.json();
+}
+
+export async function getInvoiceReceipt(
+  invoiceId: number
+): Promise<ArcaReceiptData> {
+  const res = await fetch(`${BASE}/api/arca/invoices/${invoiceId}/receipt`);
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json?.error ?? "No se pudo cargar el comprobante");
+  }
   return res.json();
 }

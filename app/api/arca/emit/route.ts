@@ -120,6 +120,8 @@ export async function POST(req: Request) {
   }
 
   const pointOfSale = Number(config.point_of_sale);
+  const dateStr = arcaDate();
+  const voucherDate = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
 
   // 1. Comprobante pendiente: reserva el turno o la venta antes de hablar con ARCA,
   //    así dos pedidos simultáneos no sacan dos facturas reales del mismo cobro
@@ -132,6 +134,7 @@ export async function POST(req: Request) {
       customer_name: payload?.customerName ?? null,
       voucher_type: FACTURA_C,
       invoice_type: FACTURA_C,
+      voucher_date: voucherDate,
       point_of_sale: pointOfSale,
       source_type: sourceType,
       source_id: sourceId,
@@ -185,7 +188,7 @@ export async function POST(req: Request) {
       docNumber,
       receiverIvaCondition,
       total,
-      date: arcaDate(),
+      date: dateStr,
     };
 
     result = await withAccessTicket(config, endpoints.wsaa, async (auth) => {

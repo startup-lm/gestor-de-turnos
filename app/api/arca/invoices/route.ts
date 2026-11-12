@@ -22,7 +22,7 @@ export async function GET(req: Request) {
   let query = supabaseAdmin
     .from("arca_invoices")
     .select(
-      "id, created_at, status, total, customer_name, cae, cae_due_date, voucher_number, voucher_type, point_of_sale, source_type, source_id, doc_type, doc_number, invoice_type, receiver_iva_condition, error_message, environment"
+      "id, created_at, status, total, customer_name, cae, cae_due_date, voucher_number, voucher_type, point_of_sale, source_type, source_id, doc_type, doc_number, invoice_type, receiver_iva_condition, error_message, environment, credit_note_of_id, voucher_date"
     )
     .order("created_at", { ascending: false })
     .limit(limit);

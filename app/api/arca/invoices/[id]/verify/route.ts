@@ -126,6 +126,24 @@ export async function POST(
       })
       .eq("id", inv.id);
 
+    const isCreditNote = (inv.voucher_type ?? inv.invoice_type) === 13;
+    if (isCreditNote && inv.credit_note_of_id) {
+      await supabaseAdmin
+        .from("arca_invoices")
+        .update({ status: "voided" })
+        .eq("id", inv.credit_note_of_id);
+
+      if (inv.source_type && SOURCE_TABLE[inv.source_type] && inv.source_id) {
+        await supabaseAdmin
+          .from(SOURCE_TABLE[inv.source_type])
+          .update({ arca_invoice_id: null })
+          .eq("id", inv.source_id)
+          .eq("arca_invoice_id", inv.credit_note_of_id);
+
+        revalidateTag(SOURCE_TABLE[inv.source_type]);
+      }
+    }
+
     revalidateTag("arca-invoices");
     return NextResponse.json({ success: true, status: "approved", cae: lookup.cae });
   }

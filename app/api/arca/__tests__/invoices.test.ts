@@ -51,6 +51,12 @@ describe("GET /api/arca/invoices", () => {
     expect(q.select).toHaveBeenCalledWith(
       expect.stringContaining("environment")
     );
+    expect(q.select).toHaveBeenCalledWith(
+      expect.stringContaining("credit_note_of_id")
+    );
+    expect(q.select).toHaveBeenCalledWith(
+      expect.stringContaining("voucher_date")
+    );
   });
 
   it("filtra por environment cuando se pasa el parámetro", async () => {
