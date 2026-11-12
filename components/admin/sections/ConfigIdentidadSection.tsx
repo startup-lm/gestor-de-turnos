@@ -288,7 +288,7 @@ export default function ConfigIdentidadSection() {
               {/* Preview del Logo */}
               <div
                 onClick={() => logoInputRef.current?.click()}
-                className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-[var(--accent)]/40 bg-[linear-gradient(45deg,#1e293b_25%,transparent_25%),linear-gradient(-45deg,#1e293b_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#1e293b_75%),linear-gradient(-45deg,transparent_75%,#1e293b_75%)] bg-[size:10px_10px] bg-[#0f172a] shadow-lg flex-shrink-0 relative group cursor-pointer"
+                className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-[var(--accent)]/40 bg-[linear-gradient(45deg,var(--checkerboard-dark)_25%,transparent_25%),linear-gradient(-45deg,var(--checkerboard-dark)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,var(--checkerboard-dark)_75%),linear-gradient(-45deg,transparent_75%,var(--checkerboard-dark)_75%)] bg-[size:10px_10px] bg-[var(--background)] shadow-lg flex-shrink-0 relative group cursor-pointer"
                 title="Hacé click para cambiar el logotipo"
               >
                 <Image

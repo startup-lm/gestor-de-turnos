@@ -178,7 +178,7 @@ export default function MiPerfilSection({ barber }: Readonly<{ barber: Barber }>
           <div className="p-8 rounded-3xl border border-[var(--foreground)]/10 bg-gradient-to-b from-[var(--foreground)]/6 to-[var(--foreground)]/2 backdrop-blur-xl shadow-xl flex flex-col items-center text-center relative overflow-hidden">
             <div className="relative group mb-5">
               <label className="cursor-pointer block relative">
-                <div className="w-36 h-36 rounded-full p-[3px] bg-gradient-to-tr from-[var(--accent)] to-[#fcebb6] shadow-xl shadow-[var(--accent)]/10 transition-transform duration-300 group-hover:scale-105">
+                <div className="w-36 h-36 rounded-full p-[3px] bg-gradient-to-tr from-[var(--accent)] to-[var(--accent-light)] shadow-xl shadow-[var(--accent)]/10 transition-transform duration-300 group-hover:scale-105">
                   <div className="w-full h-full rounded-full overflow-hidden bg-slate-950 relative">
                     <Image
                       src={currentImageUrl}

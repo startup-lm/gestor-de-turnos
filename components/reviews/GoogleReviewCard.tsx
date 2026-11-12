@@ -25,7 +25,7 @@ export default function GoogleReviewCard({ review, className = "" }: Readonly<Pr
 
   return (
     <article
-      className={`h-full flex flex-col justify-between p-5 sm:p-6 rounded-2xl bg-[#0a0f1d]/75 backdrop-blur-xl border border-slate-800/80 shadow-xl transition-all duration-300 hover:border-[var(--accent)]/40 hover:shadow-2xl hover:shadow-[var(--accent)]/5 hover:-translate-y-0.5 relative group ${className}`}
+      className={`h-full flex flex-col justify-between p-5 sm:p-6 rounded-2xl bg-[var(--surface-deep)]/75 backdrop-blur-xl border border-slate-800/80 shadow-xl transition-all duration-300 hover:border-[var(--accent)]/40 hover:shadow-2xl hover:shadow-[var(--accent)]/5 hover:-translate-y-0.5 relative group ${className}`}
     >
       {/* Comillas sutiles de fondo decorativas */}
       <div className="absolute top-4 right-4 text-slate-800/40 pointer-events-none group-hover:text-[var(--accent)]/10 transition-colors">

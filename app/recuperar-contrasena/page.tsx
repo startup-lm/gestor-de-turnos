@@ -66,10 +66,10 @@ export default function ResetPasswordPage() {
 
       <h1 className="text-3xl font-bold mb-5 relative z-10">Cambiar contraseña</h1>
 
-      <div className="relative z-10 w-full max-w-md bg-[#0a0f1d]/85 backdrop-blur-xl border border-slate-800/80 rounded-3xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6)] p-8 sm:p-10">
+      <div className="relative z-10 w-full max-w-md bg-[var(--surface-deep)]/85 backdrop-blur-xl border border-slate-800/80 rounded-3xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6)] p-8 sm:p-10">
         {passwordChanged ? (
           <div className="flex flex-col items-center text-center space-y-6">
-            <div className="w-16 h-16 bg-gradient-to-tr from-[var(--accent)] to-[#fcebb6] p-[2px] rounded-full shadow-[0_0_20px_rgba(223,186,115,0.3)] flex items-center justify-center animate-[scaleIn_0.3s_ease-out]">
+            <div className="w-16 h-16 bg-gradient-to-tr from-[var(--accent)] to-[var(--accent-light)] p-[2px] rounded-full shadow-[0_0_20px_rgba(223,186,115,0.3)] flex items-center justify-center animate-[scaleIn_0.3s_ease-out]">
               <div className="w-full h-full bg-slate-950 rounded-full flex items-center justify-center">
                 <Check className="w-8 h-8 text-[var(--accent)]" />
               </div>
@@ -82,7 +82,7 @@ export default function ResetPasswordPage() {
             </div>
             <Link
               href="/"
-              className="inline-flex items-center justify-center w-full py-3 px-4 rounded-xl font-semibold text-slate-950 bg-gradient-to-r from-[var(--accent)] to-[#fcebb6] hover:opacity-90 active:scale-[0.98] transition-all duration-200 shadow-lg shadow-[var(--accent)]/20"
+              className="inline-flex items-center justify-center w-full py-3 px-4 rounded-xl font-semibold text-slate-950 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-light)] hover:opacity-90 active:scale-[0.98] transition-all duration-200 shadow-lg shadow-[var(--accent)]/20"
             >
               Volver al Inicio
             </Link>
@@ -91,7 +91,7 @@ export default function ResetPasswordPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Decorative Security Banner / Icon */}
             <div className="flex flex-col items-center justify-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-tr from-[var(--accent)] to-[#fcebb6] p-[2px] rounded-full shadow-lg shadow-[var(--accent)]/10 flex items-center justify-center">
+              <div className="w-16 h-16 bg-gradient-to-tr from-[var(--accent)] to-[var(--accent-light)] p-[2px] rounded-full shadow-lg shadow-[var(--accent)]/10 flex items-center justify-center">
                 <div className="w-full h-full bg-slate-950 rounded-full flex items-center justify-center">
                   <KeyRound className="w-7 h-7 text-[var(--accent)] animate-pulse" />
                 </div>

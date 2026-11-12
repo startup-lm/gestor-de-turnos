@@ -186,7 +186,7 @@ export default function BookingSplitPanel({
           <button
             type="button"
             onClick={handleWhatsapp}
-            className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba5a] text-slate-950 font-extrabold py-3.5 px-4 rounded-xl shadow-lg shadow-[#25D366]/20 transition-all active:scale-95 text-sm"
+            className="w-full flex items-center justify-center gap-2 bg-[var(--button-whatsapp)] hover:bg-[var(--whatsapp-hover)] text-slate-950 font-extrabold py-3.5 px-4 rounded-xl shadow-lg shadow-[var(--button-whatsapp)]/20 transition-all active:scale-95 text-sm"
           >
             <FaWhatsapp className="w-5 h-5 text-slate-950" />
             <span>Confirmar turno</span>
