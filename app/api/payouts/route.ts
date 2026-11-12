@@ -81,9 +81,17 @@ export async function POST(request: Request) {
     advancesTotal: available.reduce((sum, a) => sum + Number(a.amount), 0),
   });
 
-  const { data: payout, error } = await supabaseAdmin
-    .from("commission_payouts")
-    .insert({
+  let shiftId: number | null = null;
+  if (result.totalToPay > 0) {
+    const { shiftId: currentShift, error: shiftError } = await currentShiftId(admin.email || "admin");
+    if (shiftError) {
+      return dbErrorResponse(shiftError, "payouts.shift");
+    }
+    shiftId = currentShift;
+  }
+
+  const { data: payout, error } = await supabaseAdmin.rpc("register_commission_payout", {
+    p_payout: {
       barber_id: barberId,
       period_start: periodStart,
       period_end: periodEnd,
@@ -98,77 +106,30 @@ export async function POST(request: Request) {
       reference_code: body?.reference_code?.trim() || null,
       receipt_notes: body?.receipt_notes?.trim() || null,
       paid_by: admin.email || "admin",
-    })
-    .select("*")
-    .single();
+    },
+    p_appointment_ids: payoutData.cuts.ids,
+    p_sale_ids: payoutData.sales.ids,
+    p_advance_ids: available.map((a) => a.id),
+    p_movement:
+      result.totalToPay > 0
+        ? {
+            amount: result.totalToPay,
+            payment_method: paymentMethod,
+            description: `Liquidación de comisiones período ${periodStart} al ${periodEnd}`,
+            shift_id: shiftId,
+            created_by: admin.email || "admin",
+          }
+        : null,
+  });
 
-  if (error || !payout) return dbErrorResponse(error, "payouts");
-
-  /** Si falla un paso posterior, se deshace todo para no dejar la caja a medias. */
-  const rollback = async () => {
-    await supabaseAdmin.from("appointments").update({ payout_id: null }).eq("payout_id", payout.id);
-    await supabaseAdmin.from("sales").update({ payout_id: null }).eq("payout_id", payout.id);
-    await supabaseAdmin.from("cash_movements").update({ payout_id: null }).eq("payout_id", payout.id).eq("type", "advance");
-    await supabaseAdmin.from("cash_movements").delete().eq("payout_id", payout.id).eq("type", "commission_payout");
-    await supabaseAdmin.from("commission_payouts").delete().eq("id", payout.id);
-  };
-
-  // Turnos y ventas quedan atados a esta liquidación: no se vuelven a pagar ni se pueden editar.
-  // Marca condicional: si otra liquidación los tomó en paralelo, se detecta y se deshace
-  for (const [table, items] of [["appointments", payoutData.cuts], ["sales", payoutData.sales]] as const) {
-    if (items.ids.length === 0) continue;
-    const { data: linked, error: linkError } = await supabaseAdmin
-      .from(table)
-      .update({ payout_id: payout.id })
-      .in("id", items.ids)
-      .is("payout_id", null)
-      .select("id");
-
-    if (linkError || (linked ?? []).length !== items.ids.length) {
-      await rollback();
-      return errorResponse("No se pudo registrar la liquidación", 500);
+  if (error) {
+    if ((error as { code?: string }).code === "P0409") {
+      return errorResponse("Algún turno, venta o adelanto ya fue liquidado. Actualizá y probá de nuevo", 409);
     }
+    return dbErrorResponse(error, "payouts");
   }
-
-  if (available.length > 0) {
-    // Marca condicional: si otro pedido ya descontó alguno en paralelo, se detecta y se deshace
-    const { data: marked, error: markError } = await supabaseAdmin
-      .from("cash_movements")
-      .update({ payout_id: payout.id })
-      .in("id", available.map((a) => a.id))
-      .is("payout_id", null)
-      .select("id");
-
-    if (markError || (marked ?? []).length !== available.length) {
-      await rollback();
-      return errorResponse("No se pudo registrar la liquidación", 500);
-    }
-  }
-
-  if (result.totalToPay > 0) {
-    // El pago sale de la caja del período en curso
-    const { shiftId, error: shiftError } = await currentShiftId(admin.email || "admin");
-    if (shiftError) {
-      await rollback();
-      return dbErrorResponse(shiftError, "payouts.shift");
-    }
-    const { error: movementError } = await supabaseAdmin.from("cash_movements").insert({
-      barber_id: barberId,
-      type: "commission_payout",
-      category: "comision",
-      amount: result.totalToPay,
-      payment_method: paymentMethod,
-      description: `Liquidación de comisiones período ${periodStart} al ${periodEnd}`,
-      reference_code: `REC-${payout.id}`,
-      payout_id: payout.id,
-      shift_id: shiftId,
-      created_by: admin.email || "admin",
-    });
-
-    if (movementError) {
-      await rollback();
-      return errorResponse("No se pudo registrar la liquidación", 500);
-    }
+  if (!payout) {
+    return dbErrorResponse(error, "payouts");
   }
 
   revalidateTag("payouts");
