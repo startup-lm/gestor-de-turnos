@@ -132,6 +132,7 @@ Antes de finalizar una tarea, crear un Pull Request o mergear a `main` o a `rele
      - En la cabecera del formulario se incluye un botón de navegación con `<ArrowLeft className="w-4 h-4" />` y texto "Volver" para cancelar o regresar al listado.
      - Al completar exitosamente la acción, se regresa automáticamente a la vista de lista y se refrescan los datos.
    - Esto evita problemas de contexto de apilamiento (`z-index`), desbordes en dispositivos móviles y bloqueos de scroll.
+2. **Única excepción:** las confirmaciones cortas de acciones destructivas o de sesión (por ejemplo cerrar sesión) pueden usar `components/ui/ConfirmModal.tsx`. No se usa para formularios ni flujos de creación o edición.
 
 ---
 
