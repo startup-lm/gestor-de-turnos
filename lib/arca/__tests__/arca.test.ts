@@ -1,7 +1,15 @@
 import { describe, it, expect, vi, beforeAll } from "vitest";
 import forge from "node-forge";
 import { buildTra, getAccessTicket, parseLoginResponse, signTra } from "@/lib/arca/wsaa";
-import { buildCaeRequest, conceptFor, parseCaeResponse, parseLastAuthorized, type CaeRequest } from "@/lib/arca/wsfe";
+import {
+  buildCaeRequest,
+  buildConsultVoucher,
+  conceptFor,
+  parseCaeResponse,
+  parseConsultVoucher,
+  parseLastAuthorized,
+  type CaeRequest,
+} from "@/lib/arca/wsfe";
 import { resolveReceiverCondition } from "@/lib/arca/receiverConditions";
 import { resolveEndpoints } from "@/lib/arca/endpoints";
 import { ArcaError } from "@/lib/arca/soap";
@@ -144,6 +152,51 @@ describe("WSFE", () => {
     expect(() =>
       parseLastAuthorized("<FECompUltimoAutorizadoResult><Errors><Err><Code>600</Code><Msg>No autorizado</Msg></Err></Errors></FECompUltimoAutorizadoResult>")
     ).toThrow("No autorizado (600)");
+  });
+
+  it("buildConsultVoucher arma el XML con auth, punto de venta y comprobante", () => {
+    const xml = buildConsultVoucher(auth, 3, 11, 42);
+    expect(xml).toContain("<ar:CbteTipo>11</ar:CbteTipo>");
+    expect(xml).toContain("<ar:CbteNro>42</ar:CbteNro>");
+    expect(xml).toContain("<ar:PtoVta>3</ar:PtoVta>");
+    expect(xml).toContain("<ar:Token>T&amp;1</ar:Token>");
+  });
+
+  it("parseConsultVoucher lee un comprobante aprobado", () => {
+    const xml =
+      "<FECompConsultarResult><ResultGet>" +
+      "<Resultado>A</Resultado><CodAutorizacion>76123456789012</CodAutorizacion><FchVto>20261113</FchVto>" +
+      "<ImpTotal>12000.00</ImpTotal><DocTipo>80</DocTipo><DocNro>20123456789</DocNro><CbteDesde>42</CbteDesde>" +
+      "</ResultGet></FECompConsultarResult>";
+    expect(parseConsultVoucher(xml)).toEqual({
+      found: true,
+      approved: true,
+      cae: "76123456789012",
+      caeDueDate: "2026-11-13",
+      total: 12000,
+      docType: 80,
+      docNumber: "20123456789",
+      voucherNumber: 42,
+    });
+  });
+
+  it("parseConsultVoucher devuelve found: false si el código es 602 (no existen datos)", () => {
+    const xml =
+      "<FECompConsultarResult><Errors><Err><Code>602</Code><Msg>No existen datos para los parametros ingresados</Msg></Err></Errors></FECompConsultarResult>";
+    expect(parseConsultVoucher(xml)).toEqual({ found: false });
+  });
+
+  it("parseConsultVoucher lanza ArcaError si ARCA devuelve otro error de servicio", () => {
+    const xml =
+      "<FECompConsultarResult><Errors><Err><Code>600</Code><Msg>Validacion de token fallo</Msg></Err></Errors></FECompConsultarResult>";
+    expect(() => parseConsultVoucher(xml)).toThrow(ArcaError);
+    expect(() => parseConsultVoucher(xml)).toThrow("Validacion de token fallo (600)");
+  });
+
+  it("parseConsultVoucher lanza error si la respuesta es un SOAP fault", () => {
+    const xml =
+      "<soapenv:Fault><faultcode>soapenv:Client</faultcode><faultstring>Mensaje malformado</faultstring></soapenv:Fault>";
+    expect(() => parseConsultVoucher(xml)).toThrow(/rechazó el pedido/);
   });
 });
 

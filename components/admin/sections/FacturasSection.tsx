@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArcaSkeleton } from "@/components/loading/Skeleton";
 import SendButton from "@/components/buttons/SendButton";
+import { ActionButton } from "@/components/buttons/ActionButton";
 import { toast } from "@/lib/store/useToastStore";
 import { useFetchOnce } from "@/lib/hooks/useFetchOnce";
 import {
@@ -10,6 +11,7 @@ import {
   getArcaConfig,
   getArcaInvoices,
   getArcaStatus,
+  verifyArcaInvoice,
 } from "@/lib/repository/arca";
 import type {
   ArcaConfig,
@@ -34,6 +36,7 @@ import {
   Loader2,
   Plus,
   ArrowLeft,
+  RefreshCw,
 } from "lucide-react";
 
 // ─── Constantes ────────────────────────────────────────────────────────────
@@ -150,8 +153,32 @@ function MetricCard({
   );
 }
 
-function InvoiceRow({ inv }: { inv: ArcaInvoiceRecord }) {
+function InvoiceRow({ inv, onVerified }: { inv: ArcaInvoiceRecord; onVerified: () => void }) {
   const [expanded, setExpanded] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+
+  const handleVerify = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (verifying) return;
+    setVerifying(true);
+    try {
+      const res = await verifyArcaInvoice(inv.id);
+      if (res.success) {
+        if (res.status === "approved") {
+          toast.success("Factura confirmada en ARCA");
+        } else {
+          toast.info("La factura no se emitió. El cobro quedó libre para facturar");
+        }
+      } else {
+        toast.error(res.error || "No se pudo verificar el comprobante con ARCA");
+      }
+      onVerified();
+    } catch {
+      toast.error("No se pudo verificar el comprobante con ARCA");
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const statusColor =
     inv.status === "approved"
@@ -243,11 +270,23 @@ function InvoiceRow({ inv }: { inv: ArcaInvoiceRecord }) {
                 </div>
               )}
             </div>
-            {inv.error_message && (
+            {(inv.status === "error" || inv.status === "pending") && (
+              <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                <p className="text-xs text-yellow-300">
+                  ARCA no respondió y puede haberla autorizado igual. Verificala antes de volver a facturar.
+                </p>
+                <ActionButton
+                  name="Verificar en ARCA"
+                  Icon={RefreshCw}
+                  loading={verifying}
+                  onClick={handleVerify}
+                  className="min-h-[44px] shrink-0 text-xs"
+                />
+              </div>
+            )}
+            {inv.status === "rejected" && inv.error_message && (
               <p className="mt-3 text-xs text-red-300 break-words">
-                {inv.status === "error"
-                  ? "ARCA no respondió: puede haberlo autorizado igual. Revisalo en el portal de ARCA antes de volver a facturar."
-                  : `Motivo: ${inv.error_message}`}
+                Motivo: {inv.error_message}
               </p>
             )}
           </td>
@@ -1022,7 +1061,7 @@ export default function FacturasSection() {
               </thead>
               <tbody>
                 {invoices.map((inv) => (
-                  <InvoiceRow key={inv.id} inv={inv} />
+                  <InvoiceRow key={inv.id} inv={inv} onVerified={loadInvoices} />
                 ))}
               </tbody>
             </table>

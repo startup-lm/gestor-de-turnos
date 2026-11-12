@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { requireAdmin } from "@/lib/api/auth";
+import { createdAtBound } from "@/lib/dates/argentina";
 
 export async function GET(req: Request) {
   const admin = await requireAdmin();
@@ -17,15 +18,15 @@ export async function GET(req: Request) {
   let query = supabaseAdmin
     .from("arca_invoices")
     .select(
-      "id, created_at, status, total, customer_name, cae, cae_due_date, voucher_number, voucher_type, point_of_sale, source_type, source_id, doc_type, doc_number, invoice_type"
+      "id, created_at, status, total, customer_name, cae, cae_due_date, voucher_number, voucher_type, point_of_sale, source_type, source_id, doc_type, doc_number, invoice_type, receiver_iva_condition, error_message"
     )
     .order("created_at", { ascending: false })
     .limit(limit);
 
   if (sourceType) query = query.eq("source_type", sourceType);
   if (status) query = query.eq("status", status);
-  if (dateFrom) query = query.gte("created_at", dateFrom);
-  if (dateTo) query = query.lte("created_at", dateTo);
+  if (dateFrom) query = query.gte("created_at", createdAtBound(dateFrom, "start"));
+  if (dateTo) query = query.lte("created_at", createdAtBound(dateTo, "end"));
 
   const { data, error } = await query;
 

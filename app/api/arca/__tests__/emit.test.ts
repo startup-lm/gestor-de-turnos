@@ -118,9 +118,20 @@ describe("ARCA: permisos y origen del comprobante", () => {
   });
 
   it("no factura dos veces el mismo turno", async () => {
-    mockTables({ ...PAID, arca_invoice_id: 3 });
+    const { invoices } = mockTables({ ...PAID, arca_invoice_id: 3 });
+    invoices.maybeSingle.mockResolvedValueOnce({ data: { id: 3, status: "approved" }, error: null });
     const response = await emitAppointment();
     expect(response.status).toBe(409);
+    expect((await response.json()).error).toBe("Este turno ya tiene factura");
+    expect(requestCae).not.toHaveBeenCalled();
+  });
+
+  it("si el turno tiene una factura sin confirmar (error o pending), avisa que la verifique", async () => {
+    const { invoices } = mockTables({ ...PAID, arca_invoice_id: 3 });
+    invoices.maybeSingle.mockResolvedValueOnce({ data: { id: 3, status: "error" }, error: null });
+    const response = await emitAppointment();
+    expect(response.status).toBe(409);
+    expect((await response.json()).error).toBe("Este cobro tiene una factura sin confirmar. Verificala en Facturas");
     expect(requestCae).not.toHaveBeenCalled();
   });
 
@@ -193,15 +204,19 @@ describe("ARCA: emisión real", () => {
     expect(requestCae).toHaveBeenLastCalledWith(expect.any(String), expect.anything(), expect.objectContaining({ voucherNumber: 9 }));
   });
 
-  it("sin respuesta de ARCA al pedir el CAE: queda como 'error' y libera el turno", async () => {
+  it("sin respuesta de ARCA al pedir el CAE: queda como 'error' y no libera el turno", async () => {
     requestCae.mockRejectedValueOnce(new ArcaError("ARCA no respondió", "network"));
     const { invoices, markQuery } = mockTables(PAID);
     const response = await emitAppointment();
 
     expect(response.status).toBe(502);
+    expect((await response.json()).error).toBe(
+      "ARCA no respondió. Entrá a Facturas y tocá \"Verificar en ARCA\" antes de volver a facturar"
+    );
+    expect(invoices.update).toHaveBeenCalledWith(expect.objectContaining({ voucher_number: 8 }));
     expect(invoices.update).toHaveBeenCalledWith(expect.objectContaining({ status: "error" }));
     expect(invoices.delete).not.toHaveBeenCalled();
-    expect(markQuery.update).toHaveBeenCalledWith({ arca_invoice_id: null });
+    expect(markQuery.update).not.toHaveBeenCalledWith({ arca_invoice_id: null });
   });
 
   it("si falla el login antes de pedir el CAE, no deja nada guardado", async () => {

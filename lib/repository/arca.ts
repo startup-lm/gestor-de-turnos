@@ -62,6 +62,19 @@ export async function emitArcaInvoice(payload: ArcaEmitInput): Promise<ArcaEmitR
   return res.json();
 }
 
+export async function verifyArcaInvoice(
+  id: number
+): Promise<{ success: boolean; status?: string; error?: string }> {
+  const res = await fetch(`${BASE}/api/arca/invoices/${id}/verify`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    return { success: false, error: json?.error ?? "No se pudo verificar el comprobante" };
+  }
+  return res.json();
+}
+
 export async function getArcaInvoices(
   options: {
     limit?: number;

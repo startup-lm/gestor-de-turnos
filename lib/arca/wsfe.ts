@@ -173,6 +173,82 @@ export async function requestCae(wsfeUrl: string, auth: WsfeAuth, req: CaeReques
   return parseCaeResponse(xml, req.voucherNumber);
 }
 
+export type VoucherLookup =
+  | { found: false }
+  | {
+      found: true;
+      approved: boolean;
+      cae: string | null;
+      caeDueDate: string | null; // YYYY-MM-DD
+      total: number;
+      docType: number;
+      docNumber: string;
+      voucherNumber: number;
+    };
+
+export function buildConsultVoucher(
+  auth: WsfeAuth,
+  pointOfSale: number,
+  voucherType: number,
+  voucherNumber: number
+): string {
+  return envelope(
+    "FECompConsultar",
+    authXml(auth) +
+      `<ar:FeCompConsReq><ar:CbteTipo>${voucherType}</ar:CbteTipo><ar:CbteNro>${voucherNumber}</ar:CbteNro><ar:PtoVta>${pointOfSale}</ar:PtoVta></ar:FeCompConsReq>`
+  );
+}
+
+export function parseConsultVoucher(xml: string): VoucherLookup {
+  assertNoFault(xml);
+  const result = xmlTag(xml, "FECompConsultarResult") ?? "";
+  const errors = serviceErrors(result);
+  if (errors.some((e) => e.code === 602)) {
+    return { found: false };
+  }
+  if (errors.length > 0) {
+    throw new ArcaError(formatArcaMessages(errors), "service", errors.map((e) => e.code));
+  }
+
+  const resultGet = xmlTag(result, "ResultGet") ?? "";
+  const resultCode = xmlTag(resultGet, "Resultado");
+  const approved = resultCode === "A";
+  const cae = xmlTag(resultGet, "CodAutorizacion") || null;
+  const due = xmlTag(resultGet, "FchVto");
+  const caeDueDate =
+    due && /^\d{8}$/.test(due) ? `${due.slice(0, 4)}-${due.slice(4, 6)}-${due.slice(6, 8)}` : null;
+  const total = Number(xmlTag(resultGet, "ImpTotal") ?? 0);
+  const docType = Number(xmlTag(resultGet, "DocTipo") ?? 0);
+  const docNumber = xmlTag(resultGet, "DocNro") ?? "";
+  const voucherNumber = Number(xmlTag(resultGet, "CbteDesde") ?? xmlTag(resultGet, "CbteNro") ?? 0);
+
+  return {
+    found: true,
+    approved,
+    cae,
+    caeDueDate,
+    total,
+    docType,
+    docNumber,
+    voucherNumber,
+  };
+}
+
+export async function consultVoucher(
+  wsfeUrl: string,
+  auth: WsfeAuth,
+  pointOfSale: number,
+  voucherNumber: number,
+  voucherType = FACTURA_C
+): Promise<VoucherLookup> {
+  const xml = await soapRequest(
+    wsfeUrl,
+    buildConsultVoucher(auth, pointOfSale, voucherType, voucherNumber),
+    `${NS}FECompConsultar`
+  );
+  return parseConsultVoucher(xml);
+}
+
 /** Estado de los servidores de ARCA (no pide autenticación) */
 export async function dummy(wsfeUrl: string) {
   const xml = await soapRequest(wsfeUrl, envelope("FEDummy", ""), `${NS}FEDummy`);

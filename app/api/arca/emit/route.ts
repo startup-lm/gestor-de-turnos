@@ -87,6 +87,15 @@ export async function POST(req: Request) {
         : "Solo podés facturar tus propias ventas", 403);
     }
     if (source.arca_invoice_id) {
+      const { data: existingInv } = await supabaseAdmin
+        .from("arca_invoices")
+        .select("status")
+        .eq("id", source.arca_invoice_id)
+        .maybeSingle();
+
+      if (existingInv?.status === "error" || existingInv?.status === "pending") {
+        return errorResponse("Este cobro tiene una factura sin confirmar. Verificala en Facturas", 409);
+      }
       return errorResponse(sourceType === "appointment" ? "Este turno ya tiene factura" : "Esta venta ya tiene factura", 409);
     }
     if (sourceType === "appointment" && !("paid" in source && source.paid)) {
@@ -181,6 +190,7 @@ export async function POST(req: Request) {
     const attempt = async () => {
       const last = await lastAuthorized(endpoints.wsfe, auth, pointOfSale);
       sent = true;
+      await supabaseAdmin.from("arca_invoices").update({ voucher_number: last + 1 }).eq("id", invoiceId);
       return requestCae(endpoints.wsfe, auth, { ...base, voucherNumber: last + 1 });
     };
 
@@ -207,13 +217,12 @@ export async function POST(req: Request) {
     }
     // Se mandó el pedido y no hubo respuesta: ARCA pudo haberlo autorizado igual
     console.error("[api:arca/emit] sin respuesta de ARCA", err);
-    await release();
     await supabaseAdmin
       .from("arca_invoices")
       .update({ status: "error", error_message: message })
       .eq("id", invoiceId);
     revalidateTag("arca-invoices");
-    return errorResponse("ARCA no respondió. Revisá en Facturas antes de reintentar", 502);
+    return errorResponse("ARCA no respondió. Entrá a Facturas y tocá \"Verificar en ARCA\" antes de volver a facturar", 502);
   }
 
   const raw = { errors: result.errors, observations: result.observations };
