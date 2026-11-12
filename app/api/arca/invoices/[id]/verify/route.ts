@@ -6,8 +6,11 @@ import { isServerFeatureEnabled } from "@/lib/flags/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { ArcaError } from "@/lib/arca/soap";
 import { resolveEndpoints } from "@/lib/arca/endpoints";
-import { getAccessTicket } from "@/lib/arca/wsaa";
-import { consultVoucher, FACTURA_C, type VoucherLookup, type WsfeAuth } from "@/lib/arca/wsfe";
+import { withAccessTicket } from "@/lib/arca/wsaa";
+import { consultVoucher, FACTURA_C, type VoucherLookup } from "@/lib/arca/wsfe";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const SOURCE_TABLE: Record<string, string> = {
   appointment: "appointments",
@@ -87,14 +90,20 @@ export async function POST(
     return errorResponse("Completá la configuración de ARCA antes de facturar", 400);
   }
 
+  const currentEnv = config.environment === "prod" ? "prod" : "homo";
+  const invoiceEnv = inv.environment ?? "homo";
+  if (invoiceEnv !== currentEnv) {
+    return errorResponse("Esta factura es de otro entorno de ARCA", 409);
+  }
+
   const endpoints = resolveEndpoints(config);
   let lookup: VoucherLookup;
   try {
-    const ticket = await getAccessTicket(config, endpoints.wsaa);
-    const auth: WsfeAuth = { ...ticket, cuit: String(config.cuit).replace(/\D/g, "") };
     const ptoVta = inv.point_of_sale ? Number(inv.point_of_sale) : Number(config.point_of_sale);
     const voucherType = inv.voucher_type ?? FACTURA_C;
-    lookup = await consultVoucher(endpoints.wsfe, auth, ptoVta, inv.voucher_number, voucherType);
+    lookup = await withAccessTicket(config, endpoints.wsaa, async (auth) => {
+      return consultVoucher(endpoints.wsfe, auth, ptoVta, inv.voucher_number, voucherType);
+    });
   } catch (err) {
     if (err instanceof ArcaError) {
       return errorResponse(err.message, 502);

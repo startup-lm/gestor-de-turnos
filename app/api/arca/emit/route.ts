@@ -7,7 +7,7 @@ import { requireBarberOrAdmin } from "@/lib/api/auth";
 import { canModify, isAdminStaff } from "@/lib/api/ownership";
 import { ArcaError } from "@/lib/arca/soap";
 import { resolveEndpoints } from "@/lib/arca/endpoints";
-import { getAccessTicket } from "@/lib/arca/wsaa";
+import { withAccessTicket } from "@/lib/arca/wsaa";
 import {
   ERR_WRONG_NUMBER,
   FACTURA_C,
@@ -18,10 +18,12 @@ import {
   requestCae,
   type CaeRequest,
   type CaeResult,
-  type WsfeAuth,
 } from "@/lib/arca/wsfe";
 import { resolveReceiverCondition } from "@/lib/arca/receiverConditions";
 import type { ArcaDocType, ArcaSourceType } from "@/lib/types/Arca";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const SOURCE_TABLE = { appointment: "appointments", sale: "sales" } as const;
 const DOC_TYPES: ArcaDocType[] = [80, 86, 96, 99];
@@ -125,6 +127,7 @@ export async function POST(req: Request) {
     .from("arca_invoices")
     .insert({
       status: "pending",
+      environment: config.environment === "prod" ? "prod" : "homo",
       total,
       customer_name: payload?.customerName ?? null,
       voucher_type: FACTURA_C,
@@ -174,8 +177,6 @@ export async function POST(req: Request) {
   let sent = false;
   let result: CaeResult;
   try {
-    const ticket = await getAccessTicket(config, endpoints.wsaa);
-    const auth: WsfeAuth = { ...ticket, cuit: String(config.cuit).replace(/\D/g, "") };
     const base: Omit<CaeRequest, "voucherNumber"> = {
       pointOfSale,
       voucherType: FACTURA_C,
@@ -187,18 +188,21 @@ export async function POST(req: Request) {
       date: arcaDate(),
     };
 
-    const attempt = async () => {
-      const last = await lastAuthorized(endpoints.wsfe, auth, pointOfSale);
-      sent = true;
-      await supabaseAdmin.from("arca_invoices").update({ voucher_number: last + 1 }).eq("id", invoiceId);
-      return requestCae(endpoints.wsfe, auth, { ...base, voucherNumber: last + 1 });
-    };
+    result = await withAccessTicket(config, endpoints.wsaa, async (auth) => {
+      const attempt = async () => {
+        const last = await lastAuthorized(endpoints.wsfe, auth, pointOfSale);
+        sent = true;
+        await supabaseAdmin.from("arca_invoices").update({ voucher_number: last + 1 }).eq("id", invoiceId);
+        return requestCae(endpoints.wsfe, auth, { ...base, voucherNumber: last + 1 });
+      };
 
-    result = await attempt();
-    // Otro comprobante tomó el mismo número al mismo tiempo: se pide el número de nuevo una vez
-    if (!result.approved && result.errors.some((e) => e.code === ERR_WRONG_NUMBER)) {
-      result = await attempt();
-    }
+      let res = await attempt();
+      // Otro comprobante tomó el mismo número al mismo tiempo: se pide el número de nuevo una vez
+      if (!res.approved && res.errors.some((e) => e.code === ERR_WRONG_NUMBER)) {
+        res = await attempt();
+      }
+      return res;
+    });
   } catch (err) {
     const message = err instanceof ArcaError ? err.message : "No se pudo facturar con ARCA";
     if (!sent) {

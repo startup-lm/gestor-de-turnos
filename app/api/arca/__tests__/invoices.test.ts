@@ -36,8 +36,8 @@ describe("GET /api/arca/invoices", () => {
     expect(res.status).toBe(401);
   });
 
-  it("trae error_message y receiver_iva_condition en el select", async () => {
-    const q = chain({ data: [{ id: 1, error_message: "Error de prueba", receiver_iva_condition: 5 }], error: null });
+  it("trae error_message, receiver_iva_condition y environment en el select", async () => {
+    const q = chain({ data: [{ id: 1, error_message: "Error de prueba", receiver_iva_condition: 5, environment: "prod" }], error: null });
     vi.mocked(supabaseAdmin.from).mockReturnValueOnce(q as any);
 
     const res = await GET(new Request("http://localhost:3000/api/arca/invoices"));
@@ -48,6 +48,18 @@ describe("GET /api/arca/invoices", () => {
     expect(q.select).toHaveBeenCalledWith(
       expect.stringContaining("receiver_iva_condition")
     );
+    expect(q.select).toHaveBeenCalledWith(
+      expect.stringContaining("environment")
+    );
+  });
+
+  it("filtra por environment cuando se pasa el parámetro", async () => {
+    const q = chain({ data: [], error: null });
+    vi.mocked(supabaseAdmin.from).mockReturnValueOnce(q as any);
+
+    const res = await GET(new Request("http://localhost:3000/api/arca/invoices?environment=prod"));
+    expect(res.status).toBe(200);
+    expect(q.eq).toHaveBeenCalledWith("environment", "prod");
   });
 
   it("usa createdAtBound para date_from y date_to", async () => {

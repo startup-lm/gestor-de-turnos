@@ -22,6 +22,9 @@ vi.mock("next/cache", () => ({
 
 vi.mock("@/lib/arca/wsaa", () => ({
   getAccessTicket: vi.fn(),
+  withAccessTicket: vi.fn((config, _url, run) =>
+    run({ token: "t", sign: "s", expiresAt: "2026-11-04T00:00:00-03:00", cuit: String(config.cuit ?? "").replace(/\D/g, "") })
+  ),
 }));
 
 vi.mock("@/lib/arca/wsfe", async (importOriginal) => ({
@@ -102,11 +105,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(auth.requireAdmin).mockResolvedValue({ email: "admin@test.com" } as any);
   vi.mocked(flags.isServerFeatureEnabled).mockResolvedValue(true);
-  vi.mocked(wsaa.getAccessTicket).mockResolvedValue({
-    token: "t",
-    sign: "s",
-    expiresAt: "2026-11-04T00:00:00-03:00",
-  });
+  vi.mocked(wsaa.withAccessTicket).mockImplementation((config, _url, run) =>
+    run({ token: "t", sign: "s", expiresAt: "2026-11-04T00:00:00-03:00", cuit: String(config.cuit ?? "").replace(/\D/g, "") })
+  );
 });
 
 describe("POST /api/arca/invoices/[id]/verify", () => {
@@ -147,6 +148,16 @@ describe("POST /api/arca/invoices/[id]/verify", () => {
     const res = await callVerify();
     expect(res.status).toBe(409);
     expect((await res.json()).error).toBe("Esta factura no necesita verificación");
+  });
+
+  it("responde 409 si la factura es de otro entorno que el configurado", async () => {
+    setupMocks({
+      invoice: { ...BASE_INVOICE, environment: "prod" },
+      settings: { ...SETTINGS, environment: "homo" },
+    });
+    const res = await callVerify();
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("Esta factura es de otro entorno de ARCA");
   });
 
   it("sin número de comprobante (voucher_number null): rechaza y libera el turno", async () => {

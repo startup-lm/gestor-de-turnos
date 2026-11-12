@@ -23,7 +23,12 @@ vi.mock("@/lib/flags/server", () => ({
 
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }));
 
-vi.mock("@/lib/arca/wsaa", () => ({ getAccessTicket: vi.fn() }));
+vi.mock("@/lib/arca/wsaa", () => ({
+  getAccessTicket: vi.fn(),
+  withAccessTicket: vi.fn((config, _url, run) =>
+    run({ token: "t", sign: "s", expiresAt: "2026-11-04T00:00:00-03:00", cuit: String(config.cuit ?? "").replace(/\D/g, "") })
+  ),
+}));
 
 vi.mock("@/lib/arca/wsfe", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/arca/wsfe")>()),
@@ -98,7 +103,9 @@ const requestCae = vi.mocked(wsfe.requestCae);
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(auth.requireBarberOrAdmin).mockResolvedValue(ADMIN);
-  vi.mocked(wsaa.getAccessTicket).mockResolvedValue({ token: "t", sign: "s", expiresAt: "2026-11-04T00:00:00-03:00" });
+  vi.mocked(wsaa.withAccessTicket).mockImplementation((config, _url, run) =>
+    run({ token: "t", sign: "s", expiresAt: "2026-11-04T00:00:00-03:00", cuit: String(config.cuit ?? "").replace(/\D/g, "") })
+  );
   lastAuthorized.mockResolvedValue(7);
   requestCae.mockResolvedValue(APPROVED);
 });
@@ -167,7 +174,9 @@ describe("ARCA: emisión real", () => {
       expect.objectContaining({ cuit: "20123456789" }),
       expect.objectContaining({ total: 12000, voucherNumber: 8, voucherType: 11, concept: 2, receiverIvaCondition: 5 })
     );
-    expect(invoices.insert).toHaveBeenCalledWith(expect.objectContaining({ status: "pending", total: 12000, source_id: 7 }));
+    expect(invoices.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "pending", total: 12000, source_id: 7, environment: "homo" })
+    );
     expect(markQuery.update).toHaveBeenCalledWith({ arca_invoice_id: 50 });
     expect(invoices.update).toHaveBeenCalledWith(expect.objectContaining({ status: "approved", cae: APPROVED.cae }));
   });
@@ -220,7 +229,7 @@ describe("ARCA: emisión real", () => {
   });
 
   it("si falla el login antes de pedir el CAE, no deja nada guardado", async () => {
-    vi.mocked(wsaa.getAccessTicket).mockRejectedValueOnce(new ArcaError("ARCA rechazó el certificado", "auth"));
+    vi.mocked(wsaa.withAccessTicket).mockRejectedValueOnce(new ArcaError("ARCA rechazó el certificado", "auth"));
     const { invoices } = mockTables(PAID);
     const response = await emitAppointment();
 
