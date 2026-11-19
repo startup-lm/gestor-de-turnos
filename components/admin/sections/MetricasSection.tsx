@@ -56,7 +56,6 @@ export default function MetricasSection({ initialBarbers }: Readonly<Props>) {
     totalRevenue: ingresosTotales,
     chartData,
     pastUnpaidCount,
-    pastUnpaidAmount,
   } = useDashboardData(selectedBarberId, startDate, endDate, viewMode);
 
   // Hooks de ventas de productos
@@ -176,7 +175,6 @@ export default function MetricasSection({ initialBarbers }: Readonly<Props>) {
         gananciaVentas={comisionVentas}
         ingresosVentas={ingresosVentas}
         turnosSinCobrar={pastUnpaidCount}
-        montoSinCobrar={pastUnpaidAmount}
         pendientesHref={pendientesHref}
       />
 
