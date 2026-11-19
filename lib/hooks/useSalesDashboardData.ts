@@ -90,6 +90,7 @@ export function useSalesDashboardData(
       .map(([date, { count, revenue, label }]) => ({
         date,
         count,
+        paidCount: count,
         revenue,
         label,
       }))

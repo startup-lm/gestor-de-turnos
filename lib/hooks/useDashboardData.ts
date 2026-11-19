@@ -10,6 +10,7 @@ export interface DataPoint {
   date: string;
   label: string;
   count: number;
+  paidCount: number;
   revenue: number;
 }
 
@@ -18,6 +19,60 @@ const getMonday = (date: Date) => {
   const diff = date.getDate() - day + (day === 0 ? -6 : 1);
   return new Date(date.setDate(diff));
 };
+
+export function buildAppointmentChartData(
+  appointments: Pick<Appointment, "date" | "paid" | "price">[],
+  viewMode: ViewMode
+): DataPoint[] {
+  if (appointments.length === 0) {
+    return [];
+  }
+
+  const grouped: Record<string, { count: number; paidCount: number; revenue: number; label: string }> = {};
+
+  appointments.forEach((appt) => {
+    const dateObj = new Date(appt.date + "T00:00:00");
+
+    let key: string;
+    let label: string;
+
+    if (viewMode === "day") {
+      key = dateObj.toISOString().slice(0, 10);
+      const day = dateObj.getDate();
+      const month = dateObj.getMonth() + 1;
+      label = `${day}/${month}`;
+    } else if (viewMode === "week") {
+      const monday = getMonday(new Date(dateObj));
+      const sunday = new Date(monday);
+      sunday.setDate(sunday.getDate() + 6);
+
+      key = monday.toISOString().slice(0, 10);
+      const startDay = monday.getDate();
+      const endDay = sunday.getDate();
+      const month = sunday.toLocaleDateString("es-AR", { month: "long" });
+      label = `${startDay}-${endDay} ${month.charAt(0).toUpperCase() + month.slice(1)}`;
+    } else {
+      const year = dateObj.getFullYear();
+      const month = dateObj.toLocaleDateString("es-AR", { month: "long" });
+      key = `${year}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
+      label = `${month.charAt(0).toUpperCase() + month.slice(1)} ${year}`;
+    }
+
+    const price = appt.paid ? (appt.price || 0) : 0;
+    const isPaid = appt.paid === true;
+    if (grouped[key]) {
+      grouped[key].count += 1;
+      if (isPaid) grouped[key].paidCount += 1;
+      grouped[key].revenue += price;
+    } else {
+      grouped[key] = { count: 1, paidCount: isPaid ? 1 : 0, revenue: price, label };
+    }
+  });
+
+  return Object.entries(grouped)
+    .map(([date, { count, paidCount, revenue, label }]) => ({ date, count, paidCount, revenue, label }))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+}
 
 export function useDashboardData(
   barberId: number,
@@ -65,56 +120,14 @@ export function useDashboardData(
     const count = appointments.length;
     const paidAppointments = appointments.filter((a) => a.paid === true);
     const revenue = paidAppointments.reduce((sum, a) => sum + (a.price ?? 0), 0);
+    const chartData = buildAppointmentChartData(appointments, viewMode);
 
-    const grouped: Record<string, { count: number; revenue: number; label: string }> = {};
-
-    appointments.forEach((appt) => {
-      const dateObj = new Date(appt.date + "T00:00:00");
-
-      let key: string;
-      let label: string;
-
-      if (viewMode === "day") {
-        key = dateObj.toISOString().slice(0, 10);
-        const day = dateObj.getDate();
-        const month = dateObj.getMonth() + 1;
-        label = `${day}/${month}`;
-      } else if (viewMode === "week") {
-        const monday = getMonday(new Date(dateObj));
-        const sunday = new Date(monday);
-        sunday.setDate(sunday.getDate() + 6);
-
-        key = monday.toISOString().slice(0, 10);
-        const startDay = monday.getDate();
-        const endDay = sunday.getDate();
-        const month = sunday.toLocaleDateString("es-AR", { month: "long" });
-        label = `${startDay}-${endDay} ${month.charAt(0).toUpperCase() + month.slice(1)}`;
-      } else {
-        const year = dateObj.getFullYear();
-        const month = dateObj.toLocaleDateString("es-AR", { month: "long" });
-        key = `${year}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
-        label = `${month.charAt(0).toUpperCase() + month.slice(1)} ${year}`;
-      }
-
-      const price = appt.paid ? (appt.price || 0) : 0;
-      if (grouped[key]) {
-        grouped[key].count += 1;
-        grouped[key].revenue += price;
-      } else {
-        grouped[key] = { count: 1, revenue: price, label };
-      }
-    });
-
-    const dataPoints: DataPoint[] = Object.entries(grouped)
-      .map(([date, { count, revenue, label }]) => ({ date, count, revenue, label }))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    return { totalCount: count, paidCount: paidAppointments.length, totalRevenue: revenue, chartData: dataPoints };
+    return { totalCount: count, paidCount: paidAppointments.length, totalRevenue: revenue, chartData };
   }, [appointments, barberId, viewMode]);
 
   // totalCount: todos los turnos agendados; paidCount: solo los cobrados (los que suman a la facturación)
   // Turnos que ya terminaron y nadie cobró, solo los días del período elegido
-  const { count: pastUnpaidCount, amount: pastUnpaidAmount } = useMemo(() => {
+  const { count: pastUnpaidCount } = useMemo(() => {
     return summarizePastUnpaid(
       appointments,
       formatLocalDate(startDate),
@@ -122,5 +135,5 @@ export function useDashboardData(
     );
   }, [appointments, startDate, endDate]);
 
-  return { totalCount, paidCount, totalRevenue, chartData, pastUnpaidCount, pastUnpaidAmount };
+  return { totalCount, paidCount, totalRevenue, chartData, pastUnpaidCount };
 }
