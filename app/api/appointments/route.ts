@@ -159,6 +159,12 @@ export async function POST(request: Request) {
   let finalType = type ?? "appointment";
   let finalEndTime = end_time;
 
+  // Un barbero solo puede bloquear su propia agenda; el admin, la de cualquiera
+  const isBlock = finalType === "block" || phone === "0000000000";
+  if (staff && isBlock && !canModify(staff, barber_id)) {
+    return errorResponse("Solo podés bloquear tu propia agenda", 403);
+  }
+
   if (!isStaff) {
     // 1. Forzar type = "appointment"
     finalType = "appointment";
