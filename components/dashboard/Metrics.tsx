@@ -20,8 +20,6 @@ interface Props {
   ingresosVentas: number;
   /** Turnos finalizados sin cobrar en el período */
   turnosSinCobrar: number;
-  /** Monto total adeudado de turnos sin cobrar */
-  montoSinCobrar: number;
   /** Enlace a los turnos pendientes del período */
   pendientesHref: string;
 }
@@ -35,7 +33,6 @@ export default function Metrics({
   gananciaVentas,
   ingresosVentas,
   turnosSinCobrar,
-  montoSinCobrar,
   pendientesHref,
 }: Readonly<Props>) {
   const { role } = useAuth();
@@ -184,9 +181,11 @@ export default function Metrics({
             >
               <CountUp start={0} end={turnosSinCobrar} duration={2} separator="." />
             </h4>
-            <span className="block text-[11px] text-slate-500 mt-0.5 truncate">
-              {turnosSinCobrar > 0 ? `Suman ${formatARS(montoSinCobrar)}` : "Está todo cobrado"}
-            </span>
+            {turnosSinCobrar === 0 && (
+              <span className="block text-[11px] text-slate-500 mt-0.5 truncate">
+                Está todo cobrado
+              </span>
+            )}
           </div>
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/25 text-amber-400 shadow-inner flex-shrink-0">
             <AlertTriangle className="w-5 h-5" />
