@@ -6,6 +6,12 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.12.5] - 2026-11-19
+
+### Cambiado
+- Caja: la columna "Debería haber" pasa a llamarse "Saldo" y el subtítulo de la sección es más descriptivo.
+- Balance: la columna "Margen del local" pasa a llamarse "Margen".
+
 ## [1.12.4] - 2026-11-19
 
 ### Cambiado
