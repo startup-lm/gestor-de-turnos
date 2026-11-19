@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isPastUnpaid, summarizePastUnpaid } from "@/lib/appointments/pastUnpaid";
+import { hasEnded, isPastUnpaid, summarizePastUnpaid } from "@/lib/appointments/pastUnpaid";
 
 // 3 de noviembre de 2026, 15:00 en Argentina (18:00 UTC)
 const NOW = new Date("2026-11-03T18:00:00Z");
@@ -9,6 +9,28 @@ const appt = (overrides: Partial<Parameters<typeof isPastUnpaid>[0]> = {}) => ({
   paid: false,
   type: "appointment" as const,
   ...overrides,
+});
+
+describe("hasEnded", () => {
+  it("un turno de ayer ya terminó", () => {
+    expect(hasEnded({ date: "2026-11-02", end_time: "23:59:00" }, NOW)).toBe(true);
+  });
+
+  it("un turno de hoy antes de la hora actual ya terminó", () => {
+    expect(hasEnded({ date: "2026-11-03", end_time: "14:59" }, NOW)).toBe(true);
+  });
+
+  it("un turno justo en el límite ya terminó", () => {
+    expect(hasEnded({ date: "2026-11-03", end_time: "15:00:00" }, NOW)).toBe(true);
+  });
+
+  it("un turno justo después del límite todavía no terminó", () => {
+    expect(hasEnded({ date: "2026-11-03", end_time: "15:00:01" }, NOW)).toBe(false);
+  });
+
+  it("un turno de mañana todavía no terminó", () => {
+    expect(hasEnded({ date: "2026-11-04", end_time: "08:00:00" }, NOW)).toBe(false);
+  });
 });
 
 describe("isPastUnpaid", () => {

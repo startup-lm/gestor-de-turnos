@@ -85,7 +85,7 @@ export async function getBarbersAppointmentsFromDates(barber_id: number,start_da
 
 
 export interface TotalAndRevenueResponse {
-  barberTotals: { barberId: number; totalAppt: number; totalRevenue: number; totalCommission: number }[];
+  barberTotals: { barberId: number; totalAppt: number; totalRevenue: number; totalCommission: number; pastAppt: number }[];
   paymentMethodTotals: Record<string, number>;
 }
 

@@ -7,8 +7,8 @@ describe("useTotalCommissions", () => {
   it("suma las comisiones calculadas por el servidor con el % congelado", () => {
     // Lucas cobró con 50% y Marcos con 40%: el hook no recalcula con el % actual
     const totals: BarberTotals[] = [
-      { barberId: 1, totalAppt: 10, totalRevenue: 100000, totalCommission: 50000 },
-      { barberId: 2, totalAppt: 5, totalRevenue: 50000, totalCommission: 20000 },
+      { barberId: 1, totalAppt: 10, totalRevenue: 100000, totalCommission: 50000, pastAppt: 10 },
+      { barberId: 2, totalAppt: 5, totalRevenue: 50000, totalCommission: 20000, pastAppt: 5 },
     ];
 
     const { result } = renderHook(() => useTotalCommissions(totals));

@@ -19,6 +19,8 @@ export interface BarberTotals {
   totalRevenue: number;
   /** Comisión calculada en el servidor con el % congelado al cobrar */
   totalCommission: number;
+  /** Turnos que ya terminaron en el período, cobrados o no (sin bloqueos) */
+  pastAppt: number;
 };
 
 export type PaymentMethodTotals = Record<string, number>;
@@ -43,7 +45,7 @@ export function useBarberCutsData(startDate: Date, endDate: Date, initialBarbers
         const barber = barbers.find((b) => b.id === t.barberId);
         return {
           name: barber ? barber.name : "Desconocido",
-          value: t.totalAppt,
+          value: t.pastAppt ?? 0,
         };
       });
       const totalApptAll = totals.reduce((sum, t) => sum + t.totalAppt, 0);
