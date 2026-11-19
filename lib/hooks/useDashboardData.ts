@@ -85,8 +85,8 @@ export function useDashboardData(
   const rangeRef = useRef({ startDate, endDate });
   rangeRef.current = { startDate, endDate };
 
-  const startIso = startDate.toISOString().slice(0, 10);
-  const endIso = endDate.toISOString().slice(0, 10);
+  const startIso = formatLocalDate(startDate);
+  const endIso = formatLocalDate(endDate);
 
   useEffect(() => {
     if (barberId === -1) {
