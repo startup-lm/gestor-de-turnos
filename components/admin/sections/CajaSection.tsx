@@ -87,7 +87,7 @@ export default function CajaSection() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">Caja</h2>
           <p className="text-xs text-slate-400 mt-1">
-            Lo que entró desde el último cierre. Al final del día, contá la plata y cerrá la caja
+            Saldo de cada medio de pago desde el último cierre de caja
           </p>
         </div>
         {shift && (
@@ -123,7 +123,7 @@ export default function CajaSection() {
                   <th className="px-4 py-3.5">Medio de pago</th>
                   <th className="px-4 py-3.5 text-right">Cobros</th>
                   <th className="px-4 py-3.5 text-right">Egresos</th>
-                  <th className="px-4 py-3.5 text-right">Debería haber</th>
+                  <th className="px-4 py-3.5 text-right">Saldo</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border)]/60 text-[var(--foreground)]">
@@ -261,7 +261,7 @@ function CloseShiftView({
                   {row.method} {isCash && <span className="text-red-500">*</span>}
                 </label>
                 <span className="text-xs text-slate-400">
-                  Debería haber <span className="font-bold text-[var(--foreground)]">{formatARS(row.expected)}</span>
+                  Saldo <span className="font-bold text-[var(--foreground)]">{formatARS(row.expected)}</span>
                 </span>
               </div>
               <input
