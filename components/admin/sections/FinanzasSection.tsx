@@ -432,7 +432,7 @@ export default function FinanzasSection({ barbers }: Readonly<Props>) {
                   <th className="py-3 px-3 text-right">Facturado ventas</th>
                   <th className="py-3 px-3 text-right">Comisión ventas</th>
                   <th className="py-3 px-3 text-right text-red-400 font-bold">Total comisión</th>
-                  <th className="py-3 px-3 text-right text-emerald-400 font-bold">Margen del local</th>
+                  <th className="py-3 px-3 text-right text-emerald-400 font-bold">Margen</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
