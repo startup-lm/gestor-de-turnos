@@ -6,6 +6,11 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.12.5] - 2026-11-19
+
+### Corregido
+- Catálogo: crear un producto o un servicio ya no falla en el primer intento. Se resincronizan las secuencias de IDs de la base con los registros existentes.
+
 ## [1.12.4] - 2026-11-19
 
 ### Cambiado
