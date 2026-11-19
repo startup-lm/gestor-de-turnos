@@ -1,4 +1,5 @@
 import { Appointment, AppointmentUpdates } from "../types/Appointment";
+import { formatLocalDate } from "@/lib/dates/argentina";
 
 import { getBaseUrl } from "@/utils/getBaseUrl";
 const BASE = getBaseUrl();
@@ -9,7 +10,7 @@ export async function createAppointment(input: {client: string;barber_id: number
   const payload: Record<string, unknown> = {
     client,
     barber_id,
-    date: date.toISOString().split("T")[0],
+    date: formatLocalDate(date),
     start_time,
     end_time,
     phone,
@@ -64,8 +65,8 @@ export async function updateAppointment(
 export async function getBarbersAppointmentsFromDates(barber_id: number,start_date: Date,end_date: Date): Promise<Appointment[]> {
   const params = new URLSearchParams({
     barber_id: barber_id.toString(),
-    start_date: start_date.toISOString().split("T")[0],
-    end_date: end_date.toISOString().split("T")[0],
+    start_date: formatLocalDate(start_date),
+    end_date: formatLocalDate(end_date),
   });
   try {
     const res = await fetch(`${BASE}/api/appointments?${params}`, {
@@ -82,12 +83,6 @@ export async function getBarbersAppointmentsFromDates(barber_id: number,start_da
 }
 
 
-const formatLocalDate = (d: Date): string => {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
 
 export interface TotalAndRevenueResponse {
   barberTotals: { barberId: number; totalAppt: number; totalRevenue: number; totalCommission: number; pastAppt: number }[];

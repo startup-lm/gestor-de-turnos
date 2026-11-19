@@ -6,10 +6,27 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
-## [1.12.1] - 2026-11-19
+## [1.12.4] - 2026-11-19
 
 ### Cambiado
 - Métricas: el gráfico de distribución de turnos por profesional cuenta los turnos que ya pasaron en el período, estén cobrados o no (antes contaba solo los cobrados). Facturación y comisiones no cambian.
+
+## [1.12.3] - 2026-11-19
+
+### Corregido
+- Reservas: los turnos reservados desde las 21:00 ya no se guardan con la fecha del día siguiente.
+- Login: la precarga de la agenda pide la semana correcta (de lunes a domingo) en hora de Argentina.
+
+## [1.12.2] - 2026-11-19
+
+### Cambiado
+- Métricas: la tarjeta de turnos sin cobrar ya no muestra un monto (el precio se define al cobrar).
+- Métricas: en el gráfico, Volumen muestra solo cantidades y Facturación cuenta solo los turnos cobrados.
+
+## [1.12.1] - 2026-11-19
+
+### Corregido
+- Resumen: los períodos (Hoy, Esta semana, Este mes, Mes pasado y Personalizado) ya no suman los turnos del día siguiente; el rango de fechas se envía en hora de Argentina.
 
 ## [1.12.0] - 2026-11-12
 

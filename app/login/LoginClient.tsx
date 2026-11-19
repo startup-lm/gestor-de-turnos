@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { AlertCircle, Mail, Loader2 } from "lucide-react";
-import { startOfWeek, endOfWeek } from "date-fns";
+import { currentWeekDayRange } from "@/lib/dates/argentina";
 import { useAuth } from "@/lib/auth/AuthContext";
 import InputPassword from "@/components/input/InputPassword";
 import logo from "@/public/images/logo.png";
@@ -53,9 +53,7 @@ export default function LoginClient() {
     // Precargar todos los datos requeridos por /turnos antes de redirigir
     if (targetUrl.startsWith("/turnos")) {
       try {
-        const now = new Date();
-        const start = startOfWeek(now, { weekStartsOn: 1 }).toISOString().split("T")[0];
-        const end = endOfWeek(now, { weekStartsOn: 1 }).toISOString().split("T")[0];
+        const { start, end } = currentWeekDayRange();
 
         const storedRaw = typeof window !== "undefined" ? sessionStorage.getItem("auth") : null;
         const stored = storedRaw ? JSON.parse(storedRaw) : null;
