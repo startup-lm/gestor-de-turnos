@@ -7,12 +7,17 @@ import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 import { normalizeMethod } from "@/lib/finance/cashSummary";
 import { commissionOf } from "@/lib/finance/commission";
 import { getAllBarberRates } from "@/lib/finance/barberRates";
+import { hasEnded } from "@/lib/appointments/pastUnpaid";
 
 interface RawRow {
   barber_id: number;
   price:     number | null;
   payment_method: string | null;
   commission_rate: number | null;
+  date: string;
+  end_time: string;
+  type: string | null;
+  paid: boolean | null;
 }
 
 export async function GET(request: Request) {
@@ -25,13 +30,12 @@ export async function GET(request: Request) {
 
   if (!start || !end) return errorResponse("start_date y end_date son requeridos", 400);
 
-  // Solo turnos cobrados: es la facturación real y la base de las comisiones
+  // Trae cobrados y no cobrados; la facturación y comisiones se calculan solo con los cobrados
   const { data: rows, error } = await fetchAllRows<RawRow>((from, to) => {
     let query = supabaseAdmin
       .from("appointments")
-      .select("barber_id, price, payment_method, commission_rate")
+      .select("barber_id, price, payment_method, commission_rate, date, end_time, type, paid")
       .is("deleted_at", null)
-      .eq("paid", true)
       .gte("date", start)
       .lte("date", end)
       .neq("phone", "0000000000");
@@ -45,28 +49,42 @@ export async function GET(request: Request) {
   const { rates, error: ratesError } = await getAllBarberRates();
   if (ratesError) return dbErrorResponse(ratesError, "appointments/all");
 
-  const agg: Record< number, { totalAppt: number; totalRevenue: number; totalCommission: number } > = {};
+  const agg: Record<
+    number,
+    { totalAppt: number; totalRevenue: number; totalCommission: number; pastAppt: number }
+  > = {};
   const paymentMethodTotals: Record<string, number> = {};
 
-  rows.forEach(({ barber_id, price, payment_method, commission_rate }) => {
-    if (!agg[barber_id]) agg[barber_id] = {  totalAppt: 0, totalRevenue: 0, totalCommission: 0 };
-    agg[barber_id].totalAppt++;
-    agg[barber_id].totalRevenue += price ?? 0;
-    // Con el % congelado al cobrar: cambiar el % del barbero no recalcula lo viejo
-    agg[barber_id].totalCommission += commissionOf(price, commission_rate, rates.get(barber_id)?.commission ?? 0);
+  const now = new Date();
+  rows.forEach(({ barber_id, price, payment_method, commission_rate, date, end_time, type, paid }) => {
+    if (!agg[barber_id]) {
+      agg[barber_id] = { totalAppt: 0, totalRevenue: 0, totalCommission: 0, pastAppt: 0 };
+    }
 
-    if (price) {
-      const method = normalizeMethod(payment_method);
-      paymentMethodTotals[method] = (paymentMethodTotals[method] || 0) + price;
+    if (type !== "block" && hasEnded({ date, end_time }, now)) {
+      agg[barber_id].pastAppt++;
+    }
+
+    if (paid === true) {
+      agg[barber_id].totalAppt++;
+      agg[barber_id].totalRevenue += price ?? 0;
+      // Con el % congelado al cobrar: cambiar el % del barbero no recalcula lo viejo
+      agg[barber_id].totalCommission += commissionOf(price, commission_rate, rates.get(barber_id)?.commission ?? 0);
+
+      if (price) {
+        const method = normalizeMethod(payment_method);
+        paymentMethodTotals[method] = (paymentMethodTotals[method] || 0) + price;
+      }
     }
   });
 
   const barberTotals = Object.entries(agg).map(
-    ([barberId, { totalAppt, totalRevenue, totalCommission }]) => ({
+    ([barberId, { totalAppt, totalRevenue, totalCommission, pastAppt }]) => ({
       barberId:      Number(barberId),
       totalAppt,
       totalRevenue,
       totalCommission,
+      pastAppt,
     })
   );
 

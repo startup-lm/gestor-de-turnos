@@ -90,7 +90,7 @@ const formatLocalDate = (d: Date): string => {
 };
 
 export interface TotalAndRevenueResponse {
-  barberTotals: { barberId: number; totalAppt: number; totalRevenue: number; totalCommission: number }[];
+  barberTotals: { barberId: number; totalAppt: number; totalRevenue: number; totalCommission: number; pastAppt: number }[];
   paymentMethodTotals: Record<string, number>;
 }
 
