@@ -1,7 +1,7 @@
 process.env.TZ = "America/Argentina/Buenos_Aires";
 
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { getBarbersAppointmentsFromDates } from "@/lib/repository/appointments";
+import { getBarbersAppointmentsFromDates, createAppointment } from "@/lib/repository/appointments";
 
 describe("getBarbersAppointmentsFromDates", () => {
   afterEach(() => {
@@ -65,3 +65,36 @@ describe("getBarbersAppointmentsFromDates", () => {
     expect(url.searchParams.get("barber_id")).toBe("12");
   });
 });
+
+describe("createAppointment", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it.each([
+    [new Date(2026, 10, 19, 21, 30), "2026-11-19"],
+    [new Date(2026, 10, 19, 0, 0), "2026-11-19"],
+    [new Date(2026, 11, 31, 22, 0), "2026-12-31"],
+  ])("formats date using local time: %s -> %s", async (inputDate, expectedDate) => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, id: 1 }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await createAppointment({
+      client: "Test",
+      barber_id: 1,
+      date: inputDate,
+      start_time: "21:30",
+      end_time: "22:00",
+      phone: "1123456789",
+      service_id: 1,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.date).toBe(expectedDate);
+  });
+});
+

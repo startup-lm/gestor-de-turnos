@@ -10,7 +10,7 @@ export async function createAppointment(input: {client: string;barber_id: number
   const payload: Record<string, unknown> = {
     client,
     barber_id,
-    date: date.toISOString().split("T")[0],
+    date: formatLocalDate(date),
     start_time,
     end_time,
     phone,

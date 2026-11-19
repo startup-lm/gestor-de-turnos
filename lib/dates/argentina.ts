@@ -1,3 +1,5 @@
+import { startOfWeek, endOfWeek } from "date-fns";
+
 /**
  * Fechas del negocio: Argentina usa UTC−3 fijo (sin horario de verano).
  * Las columnas `created_at` se guardan en UTC, así que un día calendario
@@ -50,3 +52,12 @@ export function addDaysToDay(day: string, delta: number): string {
   date.setUTCDate(date.getUTCDate() + delta);
   return date.toISOString().slice(0, 10);
 }
+
+/** Rango "YYYY-MM-DD" de la semana (lunes a domingo) que contiene a `now`, en hora local. */
+export function currentWeekDayRange(now: Date = new Date()): { start: string; end: string } {
+  return {
+    start: formatLocalDate(startOfWeek(now, { weekStartsOn: 1 })),
+    end: formatLocalDate(endOfWeek(now, { weekStartsOn: 1 })),
+  };
+}
+
