@@ -105,7 +105,7 @@ export default function CajaDiariaSection() {
                   <th className="px-4 py-3.5">Medio</th>
                   <th className="px-4 py-3.5 text-right">Entró</th>
                   <th className="px-4 py-3.5 text-right">Salió</th>
-                  <th className="px-4 py-3.5 text-right">Debería haber</th>
+                  <th className="px-4 py-3.5 text-right">Saldo</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border)]/60 text-[var(--foreground)]">
