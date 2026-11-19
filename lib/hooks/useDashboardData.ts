@@ -37,7 +37,7 @@ export function buildAppointmentChartData(
     let label: string;
 
     if (viewMode === "day") {
-      key = dateObj.toISOString().slice(0, 10);
+      key = formatLocalDate(dateObj);
       const day = dateObj.getDate();
       const month = dateObj.getMonth() + 1;
       label = `${day}/${month}`;
@@ -46,7 +46,7 @@ export function buildAppointmentChartData(
       const sunday = new Date(monday);
       sunday.setDate(sunday.getDate() + 6);
 
-      key = monday.toISOString().slice(0, 10);
+      key = formatLocalDate(monday);
       const startDay = monday.getDate();
       const endDay = sunday.getDate();
       const month = sunday.toLocaleDateString("es-AR", { month: "long" });
