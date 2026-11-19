@@ -3,9 +3,22 @@ import { todayInArgentina } from "@/lib/dates/argentina";
 
 type PastUnpaidFields = Pick<Appointment, "date" | "end_time" | "paid" | "type">;
 
+type EndedFields = Pick<Appointment, "date" | "end_time">;
+
 /** Hora actual en Argentina como "HH:MM:SS" (UTC−3 fijo, igual que `todayInArgentina`). */
 function nowTimeInArgentina(now: Date): string {
   return new Date(now.getTime() - 3 * 3600 * 1000).toISOString().slice(11, 19);
+}
+
+/** true si el turno ya terminó (hora de Argentina). */
+export function hasEnded(appt: EndedFields, now: Date = new Date()): boolean {
+  const today = todayInArgentina(now);
+  const day = appt.date.slice(0, 10);
+  if (day < today) return true;
+  if (day > today) return false;
+  // "HH:MM" y "HH:MM:SS" se comparan bien como texto si se completan los segundos
+  const end = appt.end_time.length === 5 ? `${appt.end_time}:00` : appt.end_time;
+  return end <= nowTimeInArgentina(now);
 }
 
 /**
@@ -14,13 +27,7 @@ function nowTimeInArgentina(now: Date): string {
  */
 export function isPastUnpaid(appt: PastUnpaidFields, now: Date = new Date()): boolean {
   if (appt.type === "block" || appt.paid) return false;
-  const today = todayInArgentina(now);
-  const day = appt.date.slice(0, 10);
-  if (day < today) return true;
-  if (day > today) return false;
-  // "HH:MM" y "HH:MM:SS" se comparan bien como texto si se completan los segundos
-  const end = appt.end_time.length === 5 ? `${appt.end_time}:00` : appt.end_time;
-  return end <= nowTimeInArgentina(now);
+  return hasEnded(appt, now);
 }
 
 type PastUnpaidSummaryFields = PastUnpaidFields & Pick<Appointment, "price">;
