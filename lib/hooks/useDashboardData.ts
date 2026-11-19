@@ -30,8 +30,8 @@ export function useDashboardData(
   const rangeRef = useRef({ startDate, endDate });
   rangeRef.current = { startDate, endDate };
 
-  const startIso = startDate.toISOString().slice(0, 10);
-  const endIso = endDate.toISOString().slice(0, 10);
+  const startIso = formatLocalDate(startDate);
+  const endIso = formatLocalDate(endDate);
 
   useEffect(() => {
     if (barberId === -1) {
@@ -75,7 +75,7 @@ export function useDashboardData(
       let label: string;
 
       if (viewMode === "day") {
-        key = dateObj.toISOString().slice(0, 10);
+        key = formatLocalDate(dateObj);
         const day = dateObj.getDate();
         const month = dateObj.getMonth() + 1;
         label = `${day}/${month}`;
@@ -84,7 +84,7 @@ export function useDashboardData(
         const sunday = new Date(monday);
         sunday.setDate(sunday.getDate() + 6);
 
-        key = monday.toISOString().slice(0, 10);
+        key = formatLocalDate(monday);
         const startDay = monday.getDate();
         const endDay = sunday.getDate();
         const month = sunday.toLocaleDateString("es-AR", { month: "long" });
