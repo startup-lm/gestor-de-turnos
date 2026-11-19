@@ -24,6 +24,7 @@ type CombinedPoint = {
   date: string;
   label: string;
   cortes: number;
+  cortesPagados: number;
   ventas: number;
   revenueCortes: number;
   revenueVentas: number;
@@ -41,6 +42,7 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
         date: p.date,
         label: p.label,
         cortes: p.count,
+        cortesPagados: p.paidCount,
         ventas: 0,
         revenueCortes: p.revenue,
         revenueVentas: 0,
@@ -58,6 +60,7 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
           date: p.date,
           label: p.label,
           cortes: 0,
+          cortesPagados: 0,
           ventas: p.count,
           revenueCortes: 0,
           revenueVentas: p.revenue,
@@ -161,7 +164,16 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
                           Turnos:
                         </span>
                         <span className="font-bold text-white">
-                          {p.cortes} <span className="text-slate-400 font-normal">({formatARS(p.revenueCortes)})</span>
+                          {isRevenue ? (
+                            <>
+                              {p.cortesPagados}{" "}
+                              <span className="text-slate-400 font-normal">
+                                ({formatARS(p.revenueCortes)})
+                              </span>
+                            </>
+                          ) : (
+                            p.cortes
+                          )}
                         </span>
                       </div>
 
@@ -172,17 +184,28 @@ export default function Chart({ data, salesData }: Readonly<Props>) {
                           Ventas:
                         </span>
                         <span className="font-bold text-white">
-                          {p.ventas} <span className="text-slate-400 font-normal">({formatARS(p.revenueVentas)})</span>
+                          {isRevenue ? (
+                            <>
+                              {p.ventas}{" "}
+                              <span className="text-slate-400 font-normal">
+                                ({formatARS(p.revenueVentas)})
+                              </span>
+                            </>
+                          ) : (
+                            p.ventas
+                          )}
                         </span>
                       </div>
 
                       {/* Total combinado */}
-                      <div className="pt-2 border-t border-white/10 flex justify-between items-center text-xs">
-                        <span className="text-slate-400 font-semibold">Total día:</span>
-                        <span className="font-extrabold text-emerald-400">
-                          {formatARS(p.revenueCortes + p.revenueVentas)}
-                        </span>
-                      </div>
+                      {isRevenue && (
+                        <div className="pt-2 border-t border-white/10 flex justify-between items-center text-xs">
+                          <span className="text-slate-400 font-semibold">Total día:</span>
+                          <span className="font-extrabold text-emerald-400">
+                            {formatARS(p.revenueCortes + p.revenueVentas)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
