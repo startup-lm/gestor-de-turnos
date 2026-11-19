@@ -606,6 +606,158 @@ describe("API /api/appointments", () => {
       expect(response.status).toBe(400);
       expect((await response.json()).error).toMatch(/coincide o se solapa/i);
     });
+
+    it("un barbero no puede bloquear la agenda de otro barbero", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(BARBER_2);
+
+      const response = await POST(
+        new Request("http://localhost:3000/api/appointments", {
+          method: "POST",
+          body: JSON.stringify({
+            client: "Vacaciones",
+            barber_id: 1,
+            date: "2099-01-10",
+            start_time: "10:00",
+            end_time: "12:00",
+            phone: "0000000000",
+            service_id: 1,
+          }),
+        })
+      );
+
+      const json = await response.json();
+      expect(response.status).toBe(403);
+      expect(json.error).toMatch(/solo podés bloquear tu propia agenda/i);
+      expect(supabaseAdmin.from).not.toHaveBeenCalled();
+    });
+
+    it("un barbero no puede bloquear a otro aunque mande type block", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(BARBER_2);
+
+      const response = await POST(
+        new Request("http://localhost:3000/api/appointments", {
+          method: "POST",
+          body: JSON.stringify({
+            client: "Vacaciones",
+            barber_id: 1,
+            date: "2099-01-10",
+            start_time: "10:00",
+            end_time: "12:00",
+            service_id: 1,
+            type: "block",
+          }),
+        })
+      );
+
+      const json = await response.json();
+      expect(response.status).toBe(403);
+      expect(json.error).toMatch(/solo podés bloquear tu propia agenda/i);
+      expect(supabaseAdmin.from).not.toHaveBeenCalled();
+    });
+
+    it("el admin puede bloquear la agenda de otro barbero", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
+
+      const overlapQueryMock = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
+        lt: vi.fn().mockReturnThis(),
+        gt: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValueOnce({
+          data: [],
+          error: null,
+        }),
+      };
+
+      const insertMock = vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({
+          data: [{ id: 101 }],
+          error: null,
+        }),
+      });
+
+      vi.mocked(supabaseAdmin.from).mockImplementation((table: string) => {
+        if (table === "appointments") {
+          return {
+            ...overlapQueryMock,
+            insert: insertMock,
+          } as any;
+        }
+        return {} as any;
+      });
+
+      const response = await POST(
+        new Request("http://localhost:3000/api/appointments", {
+          method: "POST",
+          body: JSON.stringify({
+            client: "Vacaciones",
+            barber_id: 2,
+            date: "2099-01-10",
+            start_time: "10:00",
+            end_time: "12:00",
+            phone: "0000000000",
+            service_id: 1,
+          }),
+        })
+      );
+
+      expect(response.status).not.toBe(403);
+      expect(response.status).toBe(200);
+      expect(insertMock).toHaveBeenCalled();
+    });
+
+    it("un barbero puede bloquear su propia agenda", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(BARBER_2);
+
+      const overlapQueryMock = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
+        lt: vi.fn().mockReturnThis(),
+        gt: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValueOnce({
+          data: [],
+          error: null,
+        }),
+      };
+
+      const insertMock = vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({
+          data: [{ id: 102 }],
+          error: null,
+        }),
+      });
+
+      vi.mocked(supabaseAdmin.from).mockImplementation((table: string) => {
+        if (table === "appointments") {
+          return {
+            ...overlapQueryMock,
+            insert: insertMock,
+          } as any;
+        }
+        return {} as any;
+      });
+
+      const response = await POST(
+        new Request("http://localhost:3000/api/appointments", {
+          method: "POST",
+          body: JSON.stringify({
+            client: "Vacaciones",
+            barber_id: 2,
+            date: "2099-01-10",
+            start_time: "10:00",
+            end_time: "12:00",
+            phone: "0000000000",
+            service_id: 1,
+          }),
+        })
+      );
+
+      expect(response.status).not.toBe(403);
+      expect(response.status).toBe(200);
+      expect(insertMock).toHaveBeenCalled();
+    });
   });
 });
 
