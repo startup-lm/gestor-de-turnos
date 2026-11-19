@@ -6,6 +6,12 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.12.1] - 2026-11-19
+
+### Cambiado
+- Métricas: la tarjeta de turnos sin cobrar ya no muestra un monto (el precio se define al cobrar).
+- Métricas: en el gráfico, Volumen muestra solo cantidades y Facturación cuenta solo los turnos cobrados.
+
 ## [1.12.0] - 2026-11-12
 
 ### Agregado
