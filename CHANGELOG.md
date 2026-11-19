@@ -6,6 +6,11 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.12.1] - 2026-11-19
+
+### Cambiado
+- Métricas: el gráfico de distribución de turnos por profesional cuenta los turnos que ya pasaron en el período, estén cobrados o no (antes contaba solo los cobrados). Facturación y comisiones no cambian.
+
 ## [1.12.0] - 2026-11-12
 
 ### Agregado
