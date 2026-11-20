@@ -6,6 +6,11 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.12.7] - 2026-11-19
+
+### Corregido
+- Los barberos solo pueden bloquear horarios de su propia agenda; el admin puede bloquear la de cualquier barbero.
+
 ## [1.12.6] - 2026-11-19
 
 ### Corregido

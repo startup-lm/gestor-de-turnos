@@ -10,6 +10,7 @@ import TimeSelect from "./TimeSelect";
 import { generateAllAppointments } from "@/utils/appointments";
 import { createAppointment } from "@/lib/repository/appointments";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { DetailFormSkeleton } from "@/components/loading/Skeleton";
 import { toast } from "@/lib/store/useToastStore";
 import { CalendarX, Lock, Calendar, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
@@ -25,8 +26,12 @@ export default function BlockDateSplitPanel({
 }: Readonly<Props>) {
   const { data: barbers = [], loading: loadingBarbers } = useFetchOnce<Barber[]>("barbers", getBarbers);
   const { businessHours, businessSettings } = useBusinessContext();
+  const { role, barberId } = useAuth();
+  const isAdmin = role === "admin";
 
   const [selectedBarberId, setSelectedBarberId] = useState(-1);
+  const effectiveBarberId = isAdmin ? selectedBarberId : barberId;
+  const selectableBarbers = isAdmin ? (barbers ?? []) : (barbers ?? []).filter((b) => b.id === barberId);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
   const [useRange, setUseRange] = useState(false);
@@ -52,7 +57,7 @@ export default function BlockDateSplitPanel({
 
   const hasDateRangeError = !!(useRange && selectedDate && selectedEndDate && selectedEndDate < selectedDate);
   const isDisabled =
-    selectedBarberId < 0 ||
+    effectiveBarberId < 0 ||
     !selectedDate ||
     (useRange && !selectedEndDate) ||
     !startTime ||
@@ -69,7 +74,7 @@ export default function BlockDateSplitPanel({
     const normalizeDate = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const startDate = normalizeDate(selectedDate!);
     const endDate = normalizeDate(useRange && selectedEndDate ? selectedEndDate : selectedDate!);
-    const createdBy = (barbers ?? []).find((barber) => barber.id === selectedBarberId)?.name;
+    const createdBy = (barbers ?? []).find((barber) => barber.id === effectiveBarberId)?.name;
     const closedDays = businessHours.closed_days ?? [];
 
     const datesToBlock: Date[] = [];
@@ -91,7 +96,7 @@ export default function BlockDateSplitPanel({
           date: dateObj,
           start_time: startTime,
           end_time: endTime,
-          barber_id: selectedBarberId,
+          barber_id: effectiveBarberId,
           created_by: createdBy,
           phone: "0000000000",
           service_id: 1,
@@ -185,9 +190,10 @@ export default function BlockDateSplitPanel({
               </label>
               <BarberSelector
                 id="block-panel-barber"
-                barbers={barbers ?? []}
-                selectedBarberId={selectedBarberId}
+                barbers={selectableBarbers}
+                selectedBarberId={effectiveBarberId}
                 onChange={setSelectedBarberId}
+                disabled={!isAdmin}
                 className="w-full"
               />
             </div>
