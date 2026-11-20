@@ -6,10 +6,15 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
-## [1.12.6] - 2026-11-19
+## [1.12.7] - 2026-11-19
 
 ### Corregido
 - Los barberos solo pueden bloquear horarios de su propia agenda; el admin puede bloquear la de cualquier barbero.
+
+## [1.12.6] - 2026-11-19
+
+### Corregido
+- Catálogo: crear un producto o un servicio ya no falla en el primer intento. Se resincronizan las secuencias de IDs de la base con los registros existentes.
 
 ## [1.12.5] - 2026-11-19
 
