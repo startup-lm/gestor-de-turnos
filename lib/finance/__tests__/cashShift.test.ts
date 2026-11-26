@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeShiftExpected, buildMethodTotals, closingReminderDue } from "@/lib/finance/cashShift";
+import { computeShiftExpected, buildMethodTotals } from "@/lib/finance/cashShift";
 
 const base = { initialCash: 0, methods: ["Efectivo", "Mercado Pago"], appointments: [], sales: [], movements: [] };
 
@@ -55,33 +55,5 @@ describe("buildMethodTotals", () => {
       { method: "Efectivo", expected: 1000, counted: 900 },
       { method: "Mercado Pago", expected: 500, counted: null },
     ]);
-  });
-});
-
-describe("closingReminderDue", () => {
-  // 3/11 15:00 en Argentina
-  const NOW = new Date("2026-11-03T18:00:00Z");
-
-  it("diaria: avisa si el período empezó ayer", () => {
-    expect(closingReminderDue("2026-11-02T22:00:00Z", "daily", NOW)).toBe(true);
-    expect(closingReminderDue("2026-11-03T12:00:00Z", "daily", NOW)).toBe(false);
-  });
-
-  it("diaria: usa el día de Argentina, no el de UTC", () => {
-    // 3/11 01:00 UTC = 2/11 22:00 en Argentina: fue ayer
-    expect(closingReminderDue("2026-11-03T01:00:00Z", "daily", NOW)).toBe(true);
-  });
-
-  it("semanal: avisa recién después de 7 días", () => {
-    expect(closingReminderDue("2026-10-30T18:00:00Z", "weekly", NOW)).toBe(false);
-    expect(closingReminderDue("2026-10-26T17:00:00Z", "weekly", NOW)).toBe(true);
-  });
-
-  it("manual: nunca avisa", () => {
-    expect(closingReminderDue("2026-01-01T00:00:00Z", "manual", NOW)).toBe(false);
-  });
-
-  it("sin frecuencia configurada se comporta como diaria", () => {
-    expect(closingReminderDue("2026-11-02T22:00:00Z", null, NOW)).toBe(true);
   });
 });

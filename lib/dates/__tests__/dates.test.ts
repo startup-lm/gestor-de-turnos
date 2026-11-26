@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { argentinaDayRangeUtc, todayInArgentina, formatLocalDate, createdAtBound, dateColumnBound, addDaysToDay } from "@/lib/dates/argentina";
-import { getPresetRange, presetFromClosingFrequency } from "@/lib/dates/presets";
+import { getPresetRange } from "@/lib/dates/presets";
 
 describe("argentinaDayRangeUtc", () => {
   it.each([
@@ -42,15 +42,6 @@ describe("getPresetRange", () => {
     expect(range("week", new Date(2026, 10, 8, 10, 0, 0))).toEqual(["2026-11-02", "2026-11-08", 23, 59]));
   it("este mes", () => expect(range("month")).toEqual(["2026-11-01", "2026-11-30", 23, 59]));
   it("mes pasado", () => expect(range("last_month")).toEqual(["2026-10-01", "2026-10-31", 23, 59]));
-});
-
-describe("presetFromClosingFrequency", () => {
-  it("mapea la frecuencia de cierre al período por defecto", () => {
-    expect(presetFromClosingFrequency("daily")).toBe("today");
-    expect(presetFromClosingFrequency("weekly")).toBe("week");
-    expect(presetFromClosingFrequency("manual")).toBe("month");
-    expect(presetFromClosingFrequency(undefined)).toBe("month");
-  });
 });
 
 describe("addDaysToDay", () => {

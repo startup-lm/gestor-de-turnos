@@ -1,5 +1,3 @@
-export type CashClosingFrequency = "daily" | "weekly" | "manual";
-
 export type CashMovementType =
   | "income"
   | "expense"

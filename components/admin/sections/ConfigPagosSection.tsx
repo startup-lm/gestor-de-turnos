@@ -9,18 +9,12 @@ import {
   Coins,
   Plus,
   X,
-  Receipt,
-  Calendar,
-  Clock,
-  Sliders,
-  CheckCircle2,
 } from "lucide-react";
 import { ConfigFormSkeleton } from "@/components/loading/Skeleton";
 import SaveButton from "@/components/buttons/SaveButton";
 import { toast } from "@/lib/store/useToastStore";
 import { DEFAULT_PAYMENT_METHODS } from "@/lib/flags";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
-import { CashClosingFrequency } from "@/lib/types/cash";
 import { useSettingsForm } from "@/lib/hooks/useSettingsForm";
 
 type PresetMethod = {
@@ -65,43 +59,12 @@ const PRESET_METHODS: PresetMethod[] = [
 
 const PRESET_NAMES = new Set(PRESET_METHODS.map((p) => p.name));
 
-const CLOSING_FREQUENCIES: Array<{
-  id: CashClosingFrequency;
-  title: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-}> = [
-  {
-    id: "daily",
-    title: "Diario",
-    description: "Se cierra la caja todos los días. Balance arranca mostrando hoy.",
-    icon: Clock,
-  },
-  {
-    id: "weekly",
-    title: "Semanal",
-    description: "Se cierra una vez por semana. Balance arranca mostrando esta semana.",
-    icon: Calendar,
-  },
-  {
-    id: "manual",
-    title: "Manual",
-    description: "Sin recordatorio: se cierra cuando quieras. Balance arranca mostrando este mes.",
-    icon: Sliders,
-  },
-];
-
 type PagosDraft = {
   payment_methods: string[];
-  cash_closing_frequency: CashClosingFrequency;
 };
 
 export default function ConfigPagosSection() {
-  const { isEnabled, limits } = useBusinessContext();
-  const isFinancesEnabled = isEnabled("finances");
-  const isCashClosingEnabled = isEnabled("cash_closing");
-  // La frecuencia sirve de recordatorio para cerrar la caja y de período por defecto en Balance
-  const showsClosingFrequency = isFinancesEnabled || isCashClosingEnabled;
+  const { limits } = useBusinessContext();
   const maxPaymentMethods = limits.maxPaymentMethods;
 
   const [newMethod, setNewMethod] = useState("");
@@ -110,19 +73,13 @@ export default function ConfigPagosSection() {
     useSettingsForm<PagosDraft>({
       pick: (settings) => ({
         payment_methods: settings.payment_methods || DEFAULT_PAYMENT_METHODS,
-        cash_closing_frequency:
-          (settings.cash_closing_frequency as CashClosingFrequency) || "daily",
       }),
       toPayload: (currentDraft) => ({
         payment_methods: currentDraft.payment_methods,
-        ...(showsClosingFrequency && {
-          cash_closing_frequency: currentDraft.cash_closing_frequency,
-        }),
       }),
     });
 
   const paymentMethods = draft?.payment_methods || [];
-  const cashClosingFrequency = draft?.cash_closing_frequency || "daily";
   const isAtLimit = paymentMethods.length >= maxPaymentMethods;
   const limitMessage = `Tu plan permite hasta ${maxPaymentMethods} medios de cobro`;
 
@@ -185,9 +142,7 @@ export default function ConfigPagosSection() {
             Cobros y caja
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            {showsClosingFrequency
-              ? "Habilitá los métodos de pago aceptados y elegí cada cuánto se cierra la caja"
-              : "Habilitá los métodos de pago aceptados para turnos y ventas en el local"}
+            Habilitá los métodos de pago aceptados para turnos y ventas en el local
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -210,69 +165,6 @@ export default function ConfigPagosSection() {
           />
         </div>
       </div>
-
-      {/* Frecuencia de cierre de caja (si el plan incluye la caja o el balance) */}
-      {showsClosingFrequency && (
-        <div className="bg-[var(--foreground)]/5 p-5 rounded-2xl border border-[var(--foreground)]/10 space-y-4">
-          <div className="flex items-center gap-2 text-[var(--accent)] font-bold text-sm tracking-wider">
-            <Receipt className="w-4 h-4" />
-            <span>Frecuencia de cierre de caja</span>
-          </div>
-          <p className="text-xs text-slate-400">
-            {isCashClosingEnabled
-              ? "Cada cuánto contás la plata y cerrás la caja. Si se pasa el plazo, la sección Caja te lo recuerda. "
-              : ""}
-            {isFinancesEnabled
-              ? "También define el período que se muestra por defecto al entrar a Balance."
-              : ""}
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
-            {CLOSING_FREQUENCIES.map((freq) => {
-              const Icon = freq.icon;
-              const isSelected = cashClosingFrequency === freq.id;
-              return (
-                <button
-                  key={freq.id}
-                  type="button"
-                  onClick={() =>
-                    setDraft({
-                      ...draft,
-                      cash_closing_frequency: freq.id,
-                    })
-                  }
-                  className={`p-4 rounded-xl border text-left transition-all flex flex-col justify-between gap-3 cursor-pointer ${
-                    isSelected
-                      ? "!bg-[var(--accent)]/10 !border-[var(--accent)] shadow-md shadow-[var(--accent)]/10"
-                      : "!bg-[var(--foreground)]/5 !border-[var(--foreground)]/10 hover:!border-[var(--foreground)]/25"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div
-                      className={`p-2 rounded-lg ${
-                        isSelected
-                          ? "bg-[var(--accent)] text-slate-950 font-bold"
-                          : "bg-[var(--foreground)]/10 text-slate-300"
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    {isSelected && (
-                      <CheckCircle2 className="w-4 h-4 text-[var(--accent)]" />
-                    )}
-                  </div>
-                  <div>
-                    <h5 className="text-xs font-bold text-white">{freq.title}</h5>
-                    <p className="text-[11px] text-slate-400 mt-1 leading-snug">
-                      {freq.description}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Métodos predefinidos */}
       <div className="space-y-3">

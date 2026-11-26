@@ -1,11 +1,8 @@
 import { computeCashSummary, normalizeMethod } from "@/lib/finance/cashSummary";
-import { todayInArgentina } from "@/lib/dates/argentina";
-import type { CashClosingFrequency, CashShiftExpectedRow, CashShiftMethodTotal } from "@/lib/types/cash";
+import type { CashShiftExpectedRow, CashShiftMethodTotal } from "@/lib/types/cash";
 
 /** El fondo inicial de la caja siempre es en efectivo */
 export const CASH_METHOD = "Efectivo";
-
-const WEEK_MS = 7 * 24 * 3600 * 1000;
 
 /**
  * Lo que debería haber en la caja por medio de pago: los cobros y movimientos
@@ -40,20 +37,4 @@ export function buildMethodTotals(
     const value = counted[row.method];
     return { method: row.method, expected: row.expected, counted: typeof value === "number" ? value : null };
   });
-}
-
-/**
- * ¿Ya pasó el momento de cerrar la caja según la frecuencia configurada?
- * Diaria: se abrió un día anterior (en Argentina). Semanal: lleva más de 7 días. Manual: nunca avisa.
- */
-export function closingReminderDue(
-  openedAt: string,
-  frequency: CashClosingFrequency | string | null | undefined,
-  now: Date = new Date()
-): boolean {
-  const opened = new Date(openedAt);
-  if (Number.isNaN(opened.getTime())) return false;
-  if (frequency === "manual") return false;
-  if (frequency === "weekly") return now.getTime() - opened.getTime() > WEEK_MS;
-  return todayInArgentina(opened) < todayInArgentina(now);
 }
