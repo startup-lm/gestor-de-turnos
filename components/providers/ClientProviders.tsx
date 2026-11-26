@@ -9,6 +9,7 @@ import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/ui/Footer";
 import WhatsappIcon from "@/components/buttons/WhatsappIcon";
 import ToastContainer from "@/components/ui/ToastContainer";
+import ServiceWorkerRegister from "@/components/providers/ServiceWorkerRegister";
 
 interface ClientProvidersProps {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ interface ClientProvidersProps {
 export default function ClientProviders({ children, initialConfig }: Readonly<ClientProvidersProps>) {
   return (
     <AuthProvider>
+      <ServiceWorkerRegister />
       <AutoLogoutManager timeoutMinutes={60} />
       <BusinessProvider initialConfig={initialConfig}>
         <Navbar />

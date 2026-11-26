@@ -6,6 +6,13 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.12.8] - 2026-11-26
+
+### Corregido
+- CSP: orígenes de fotos de Google y banderas de teléfono.
+- El registro del service worker ya no genera errores sin manejar.
+- Los stack traces de Sentry se resuelven con source maps.
+
 ## [1.12.7] - 2026-11-19
 
 ### Corregido

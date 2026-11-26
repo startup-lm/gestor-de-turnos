@@ -80,7 +80,7 @@ const nextConfig: NextConfig = {
     ];
   },
   webpack(config, { dev }) {
-    if (!dev) config.devtool = false;
+    if (!dev && !process.env.SENTRY_AUTH_TOKEN) config.devtool = false;
     return config;
   },
 };
@@ -89,7 +89,7 @@ const withSerwist = withSerwistInit({
   swSrc: "app/sw.ts",
   swDest: "public/sw.js",
   disable: process.env.NODE_ENV === "development",
-  register: true,
+  register: false,
   cacheOnNavigation: true,
 });
 
@@ -100,4 +100,8 @@ export default withSentryConfig(analyzedConfig, {
   project: "gestor-de-turnos",
   silent: true,
   widenClientFileUpload: true,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
 });
