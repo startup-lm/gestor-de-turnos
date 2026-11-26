@@ -6,6 +6,18 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
+## [1.13.0] - 2026-11-26
+
+### Agregado
+- Turnos: se guarda la fecha y hora real del cobro (`paid_at`), útil para cobros por adelantado. Los turnos ya cobrados toman la apertura de su caja.
+
+### Eliminado
+- Configuración de pagos: el selector de frecuencia de cierre de caja (diario, semanal o manual). El cierre es siempre manual y la caja muestra todo lo cobrado desde su apertura.
+- Caja: el aviso de que la caja no se cerró a tiempo.
+
+### Cambiado
+- Balance arranca siempre mostrando el día de hoy.
+
 ## [1.12.8] - 2026-11-26
 
 ### Corregido
