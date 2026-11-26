@@ -14,9 +14,9 @@ describe("buildCspReportOnly", () => {
     expect(csp).toContain("default-src 'self'");
     expect(csp).toContain("script-src 'self' 'unsafe-inline' 'unsafe-eval'");
     expect(csp).toContain("style-src 'self' 'unsafe-inline'");
-    expect(csp).toContain("img-src 'self' data: blob: https://xyzcompany.supabase.co https://*.googleusercontent.com");
+    expect(csp).toContain("img-src 'self' data: blob: https://xyzcompany.supabase.co https://*.googleusercontent.com https://purecatamphetamine.github.io");
     expect(csp).toContain("font-src 'self' data:");
-    expect(csp).toContain("connect-src 'self' https://xyzcompany.supabase.co wss://xyzcompany.supabase.co https://*.sentry.io https://*.ingest.sentry.io https://*.ingest.us.sentry.io");
+    expect(csp).toContain("connect-src 'self' https://xyzcompany.supabase.co wss://xyzcompany.supabase.co https://*.googleusercontent.com https://purecatamphetamine.github.io https://*.sentry.io https://*.ingest.sentry.io https://*.ingest.us.sentry.io");
     expect(csp).toContain("frame-src https://www.google.com https://maps.google.com");
     expect(csp).toContain("worker-src 'self' blob:");
     expect(csp).toContain("frame-ancestors 'self'");
@@ -30,8 +30,8 @@ describe("buildCspReportOnly", () => {
   it("omite el origen de Supabase cuando supabaseUrl no está definido o es vacío", () => {
     const csp = buildCspReportOnly({ sentryDsn: validSentryDsn });
 
-    expect(csp).toContain("img-src 'self' data: blob: https://*.googleusercontent.com");
-    expect(csp).toContain("connect-src 'self' https://*.sentry.io https://*.ingest.sentry.io https://*.ingest.us.sentry.io");
+    expect(csp).toContain("img-src 'self' data: blob: https://*.googleusercontent.com https://purecatamphetamine.github.io");
+    expect(csp).toContain("connect-src 'self' https://*.googleusercontent.com https://purecatamphetamine.github.io https://*.sentry.io https://*.ingest.sentry.io https://*.ingest.us.sentry.io");
     expect(csp).not.toContain("supabase.co");
     expect(csp).not.toContain("wss://");
     expect(csp).not.toContain("undefined");
@@ -71,7 +71,7 @@ describe("buildCspReportOnly", () => {
 
   it("omite supabase si la url es inválida sin lanzar error", () => {
     const csp = buildCspReportOnly({ supabaseUrl: "ftp://invalid-url" });
-    expect(csp).toContain("img-src 'self' data: blob: https://*.googleusercontent.com");
+    expect(csp).toContain("img-src 'self' data: blob: https://*.googleusercontent.com https://purecatamphetamine.github.io");
     expect(csp).not.toContain("undefined");
   });
 

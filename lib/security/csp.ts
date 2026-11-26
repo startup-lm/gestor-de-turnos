@@ -41,7 +41,10 @@ export function buildCspReportOnly({
   if (sbOrigin) {
     imgSrcParts.push(sbOrigin);
   }
-  imgSrcParts.push("https://*.googleusercontent.com");
+  imgSrcParts.push(
+    "https://*.googleusercontent.com",
+    "https://purecatamphetamine.github.io"
+  );
 
   const connectSrcParts = ["'self'"];
   if (sbOrigin) {
@@ -51,6 +54,8 @@ export function buildCspReportOnly({
     connectSrcParts.push(sbWssOrigin);
   }
   connectSrcParts.push(
+    "https://*.googleusercontent.com",
+    "https://purecatamphetamine.github.io",
     "https://*.sentry.io",
     "https://*.ingest.sentry.io",
     "https://*.ingest.us.sentry.io"
