@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { PRODUCT_CREDIT } from "@/lib/brand";
+import { buildSocialUrl } from "@/lib/format/socialUrl";
 import { FaInstagram, FaFacebook, FaTiktok, FaWhatsapp, FaLink } from "react-icons/fa";
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -19,17 +20,23 @@ export default function Footer() {
   if (pathname?.startsWith("/admin")) {
     return null;
   }
-  const activeSocials = (businessSettings?.social_media || []).filter(s => s.active && s.url);
+  const activeSocials = (businessSettings?.social_media || [])
+    .filter((s) => s.active)
+    .map((s) => {
+      const href = buildSocialUrl(s.name, s.url);
+      return href ? { name: s.name, href } : null;
+    })
+    .filter((s): s is { name: string; href: string } => s !== null);
 
   return (
     <footer className="w-full bg-[var(--background)] text-[var(--secondary)] py-8 px-4 border-t border-white/5">
       <div className="w-full max-w-[1720px] mx-auto flex flex-col items-center">
         {activeSocials.length > 0 && (
           <div className="flex gap-4 mb-4">
-            {activeSocials.map(social => (
+            {activeSocials.map((social) => (
               <a 
                 key={social.name} 
-                href={social.url} 
+                href={social.href} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-[var(--secondary)] hover:text-[var(--primary)] transition-colors"

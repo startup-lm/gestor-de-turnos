@@ -21,6 +21,11 @@ import { updateBarber } from "@/lib/repository/barbers";
 import { updatePassword } from "@/lib/repository/auth";
 import { uploadImage } from "@/lib/repository/storage";
 import { toast } from "@/lib/store/useToastStore";
+import {
+  IMAGE_ACCEPT_ATTR,
+  IMAGE_LIMITS_TEXT,
+  validateImageFile,
+} from "@/lib/storage/policy";
 import InputPassword from "@/components/input/InputPassword";
 import logo from "@/public/images/logo.png";
 
@@ -52,6 +57,12 @@ export default function MiPerfilSection({ barber }: Readonly<{ barber: Barber }>
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const invalid = validateImageFile(file);
+      if (invalid) {
+        toast.error(invalid);
+        e.target.value = "";
+        return;
+      }
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
     }
@@ -81,8 +92,7 @@ export default function MiPerfilSection({ barber }: Readonly<{ barber: Barber }>
       try {
         imageUrl = await uploadImage("barbers", imageFile);
       } catch (err) {
-        console.error(err);
-        toast.error("Error al subir la imagen. Verificá que no sea demasiado pesada.");
+        toast.error(err instanceof Error ? err.message : "No se pudo subir la imagen. Probá de nuevo.");
         setLoading(false);
         return;
       }
@@ -176,7 +186,7 @@ export default function MiPerfilSection({ barber }: Readonly<{ barber: Barber }>
         <div className="lg:col-span-4 flex flex-col gap-6">
           {/* Identity Showcase Card */}
           <div className="p-8 rounded-3xl border border-[var(--foreground)]/10 bg-gradient-to-b from-[var(--foreground)]/6 to-[var(--foreground)]/2 backdrop-blur-xl shadow-xl flex flex-col items-center text-center relative overflow-hidden">
-            <div className="relative group mb-5">
+            <div className="relative group mb-2">
               <label className="cursor-pointer block relative">
                 <div className="w-36 h-36 rounded-full p-[3px] bg-gradient-to-tr from-[var(--accent)] to-[var(--accent-light)] shadow-xl shadow-[var(--accent)]/10 transition-transform duration-300 group-hover:scale-105">
                   <div className="w-full h-full rounded-full overflow-hidden bg-slate-950 relative">
@@ -200,12 +210,15 @@ export default function MiPerfilSection({ barber }: Readonly<{ barber: Barber }>
                 </div>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept={IMAGE_ACCEPT_ATTR}
                   onChange={handleFileChange}
                   className="hidden"
                 />
               </label>
             </div>
+            <p className="text-xs text-[var(--foreground)]/40 text-center mb-4">
+              {IMAGE_LIMITS_TEXT}
+            </p>
 
             <h2 className="text-2xl font-extrabold text-[var(--foreground)] tracking-tight">
               {name || "Barbero"}

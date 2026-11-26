@@ -69,8 +69,8 @@ export default function ServiceForm({ service, onBack, onSaved }: Readonly<Props
         try {
           if (service?.image) await deleteImage("services", service.image).catch(() => undefined);
           imageUrl = await uploadImage("services", imageFile);
-        } catch {
-          toast.info("No se pudo subir la imagen, el servicio se guarda sin cambiarla");
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "No se pudo subir la imagen. Probá de nuevo.");
         }
       }
 

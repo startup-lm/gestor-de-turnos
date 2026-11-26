@@ -7,9 +7,8 @@ import { removeStorageObject, uploadStorageObject } from "@/lib/storage/server";
 import {
   canWriteBucket,
   isAllowedBucket,
-  isAllowedImageType,
   isSafeObjectPath,
-  MAX_UPLOAD_BYTES,
+  validateImageFile,
 } from "@/lib/storage/policy";
 
 export async function POST(request: Request) {
@@ -23,8 +22,9 @@ export async function POST(request: Request) {
   if (!bucket || !file) return errorResponse("Faltan bucket o file en el form-data", 400);
   if (!isAllowedBucket(bucket)) return errorResponse("Bucket inválido", 400);
   if (!canWriteBucket(bucket, staff.barber.role)) return errorResponse("No autorizado", 403);
-  if (!isAllowedImageType(file.type)) return errorResponse("Solo se permiten imágenes JPG, PNG, WEBP o GIF", 400);
-  if (file.size > MAX_UPLOAD_BYTES) return errorResponse("La imagen supera el tamaño máximo de 5 MB", 400);
+
+  const invalid = validateImageFile(file);
+  if (invalid) return errorResponse(invalid, 400);
 
   const ext = file.type.split("/")[1] ?? "bin";
   const fileName = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;

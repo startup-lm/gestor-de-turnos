@@ -67,8 +67,8 @@ export default function ProductForm({ product, onBack, onSaved }: Readonly<Props
         try {
           if (product?.image) await deleteImage("products", product.image).catch(() => undefined);
           imageUrl = await uploadImage("products", imageFile);
-        } catch {
-          toast.info("No se pudo subir la imagen, el producto se guarda sin cambiarla");
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "No se pudo subir la imagen. Probá de nuevo.");
         }
       }
 

@@ -3,6 +3,12 @@
 import Image from "next/image";
 import { Upload } from "lucide-react";
 import logo from "@/public/images/logo.png";
+import { toast } from "@/lib/store/useToastStore";
+import {
+  IMAGE_ACCEPT_ATTR,
+  IMAGE_LIMITS_TEXT,
+  validateImageFile,
+} from "@/lib/storage/policy";
 
 interface Props {
   label: string;
@@ -37,15 +43,23 @@ export default function CatalogImageField({ label, currentImage, preview, fileNa
           <div className="flex flex-col items-center justify-center p-6 text-center">
             <Image src={logo} alt="" width={64} height={64} className="opacity-20 mb-3" />
             <span className="text-sm font-semibold text-[var(--foreground)]">Seleccionar foto</span>
-            <span className="text-xs text-[var(--foreground)]/40 mt-1">PNG, JPG o WEBP (máx. 4MB)</span>
+            <span className="text-xs text-[var(--foreground)]/40 mt-1">{IMAGE_LIMITS_TEXT}</span>
           </div>
         )}
         <input
           type="file"
-          accept="image/*"
+          accept={IMAGE_ACCEPT_ATTR}
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) onSelect(file);
+            if (file) {
+              const invalid = validateImageFile(file);
+              if (invalid) {
+                toast.error(invalid);
+                e.target.value = "";
+                return;
+              }
+              onSelect(file);
+            }
           }}
           className="absolute inset-0 opacity-0 cursor-pointer"
         />
