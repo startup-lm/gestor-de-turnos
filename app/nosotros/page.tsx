@@ -6,6 +6,7 @@ import GoogleReviewsSection from "@/components/reviews/GoogleReviewsSection";
 import { getBusinessSettings } from "@/lib/repository/businessSettings";
 import { isFeatureEnabled } from "@/lib/flags";
 import { getPublicGoogleReviews } from "@/lib/reviews/getPublicGoogleReviews";
+import { buildSocialUrl } from "@/lib/format/socialUrl";
 import { FaInstagram, FaFacebook, FaTiktok, FaWhatsapp, FaLink } from "react-icons/fa";
 import Image from "next/image";
 import local from "@/public/images/local.webp";
@@ -37,7 +38,13 @@ export default async function NosotrosPage() {
     'Te esperamos para que disfrutes de un buen corte, un afeitado prolijo y un rato de desconexión de la rutina.'
   ];
 
-  const activeSocials = (settings.social_media || []).filter(s => s.active);
+  const activeSocials = (settings.social_media || [])
+    .filter((s) => s.active)
+    .map((s) => {
+      const url = buildSocialUrl(s.name, s.url);
+      return url ? { name: s.name, url } : null;
+    })
+    .filter((s): s is { name: string; url: string } => s !== null);
 
   const storefrontPhoto = settings.local_photo || local;
 
