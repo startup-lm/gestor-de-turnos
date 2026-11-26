@@ -6,11 +6,16 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 
 ---
 
-## [1.12.9] - 2026-11-26
+## [1.12.10] - 2026-11-26
 
 ### Corregido
 - Subida de fotos: se indican los formatos y el tamaño máximo (4 MB) y los errores explican el motivo.
 - Los links a redes sociales del sitio abren la red correcta en lugar de dar 404.
+
+## [1.12.9] - 2026-11-26
+
+### Corregido
+- Storage: una migración garantiza que existan los buckets de imágenes (barberos, marca, fotos del local, productos y servicios); antes subir una imagen fallaba con 'Bucket not found' en bases nuevas.
 
 ## [1.12.8] - 2026-11-26
 
