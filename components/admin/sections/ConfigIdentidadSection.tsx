@@ -7,6 +7,12 @@ import { ConfigFormSkeleton } from "@/components/loading/Skeleton";
 import SaveButton from "@/components/buttons/SaveButton";
 import { uploadImage, deleteImage } from "@/lib/repository/storage";
 import { useSettingsForm } from "@/lib/hooks/useSettingsForm";
+import { toast } from "@/lib/store/useToastStore";
+import {
+  IMAGE_ACCEPT_ATTR,
+  IMAGE_LIMITS_TEXT,
+  validateImageFile,
+} from "@/lib/storage/policy";
 import logoPlaceholder from "@/public/images/logo.png";
 import localPlaceholder from "@/public/images/local.webp";
 
@@ -95,6 +101,12 @@ export default function ConfigIdentidadSection() {
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      const invalid = validateImageFile(file);
+      if (invalid) {
+        toast.error(invalid);
+        e.target.value = "";
+        return;
+      }
       logoFileRef.current = file;
       setLogoPreview(URL.createObjectURL(file));
       setDraft((prev) =>
@@ -118,6 +130,12 @@ export default function ConfigIdentidadSection() {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      const invalid = validateImageFile(file);
+      if (invalid) {
+        toast.error(invalid);
+        e.target.value = "";
+        return;
+      }
       photoFileRef.current = file;
       setPhotoPreview(URL.createObjectURL(file));
       setDraft((prev) =>
@@ -256,6 +274,11 @@ export default function ConfigIdentidadSection() {
             setIsDraggingLogo(false);
             if (e.dataTransfer.files && e.dataTransfer.files[0]) {
               const file = e.dataTransfer.files[0];
+              const invalid = validateImageFile(file);
+              if (invalid) {
+                toast.error(invalid);
+                return;
+              }
               logoFileRef.current = file;
               setLogoPreview(URL.createObjectURL(file));
               setDraft((prev) =>
@@ -350,10 +373,12 @@ export default function ConfigIdentidadSection() {
                   </div>
                 )}
 
+                <p className="text-xs text-[var(--foreground)]/40">{IMAGE_LIMITS_TEXT}</p>
+
                 <input
                   ref={logoInputRef}
                   type="file"
-                  accept="image/png,image/webp,image/svg+xml,image/jpeg"
+                  accept={IMAGE_ACCEPT_ATTR}
                   onChange={handleLogoChange}
                   className="hidden"
                 />
@@ -379,6 +404,11 @@ export default function ConfigIdentidadSection() {
             setIsDraggingPhoto(false);
             if (e.dataTransfer.files && e.dataTransfer.files[0]) {
               const file = e.dataTransfer.files[0];
+              const invalid = validateImageFile(file);
+              if (invalid) {
+                toast.error(invalid);
+                return;
+              }
               photoFileRef.current = file;
               setPhotoPreview(URL.createObjectURL(file));
               setDraft((prev) =>
@@ -472,10 +502,12 @@ export default function ConfigIdentidadSection() {
                   </div>
                 )}
 
+                <p className="text-xs text-[var(--foreground)]/40">{IMAGE_LIMITS_TEXT}</p>
+
                 <input
                   ref={photoInputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept={IMAGE_ACCEPT_ATTR}
                   onChange={handlePhotoChange}
                   className="hidden"
                 />

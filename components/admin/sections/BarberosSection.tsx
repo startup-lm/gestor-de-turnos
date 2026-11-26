@@ -14,6 +14,11 @@ import { useBusinessContext } from "@/lib/context/BusinessContext";
 import { createStaffAccount, isBarberAuthenticated } from "@/lib/repository/auth";
 import { uploadImage } from "@/lib/repository/storage";
 import { toast } from "@/lib/store/useToastStore";
+import {
+  IMAGE_ACCEPT_ATTR,
+  IMAGE_LIMITS_TEXT,
+  validateImageFile,
+} from "@/lib/storage/policy";
 import InputPassword from "@/components/input/InputPassword";
 import {
   ArrowLeft,
@@ -136,6 +141,12 @@ export default function BarberosSection({ barbers }: Readonly<Props>) {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      const invalid = validateImageFile(file);
+      if (invalid) {
+        toast.error(invalid);
+        e.target.value = "";
+        return;
+      }
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
     }
@@ -185,8 +196,7 @@ export default function BarberosSection({ barbers }: Readonly<Props>) {
         try {
           imageUrl = await uploadImage("barbers", imageFile);
         } catch (imgErr) {
-          console.error("Error subiendo imagen:", imgErr);
-          toast.info("No se pudo cargar la imagen, el barbero se creará sin avatar.");
+          toast.error(imgErr instanceof Error ? imgErr.message : "No se pudo subir la imagen. Probá de nuevo.");
         }
       }
 
@@ -253,8 +263,7 @@ export default function BarberosSection({ barbers }: Readonly<Props>) {
         try {
           imageUrl = await uploadImage("barbers", imageFile);
         } catch (imgErr) {
-          console.error("Error actualizando imagen:", imgErr);
-          toast.info("No se pudo actualizar la imagen.");
+          toast.error(imgErr instanceof Error ? imgErr.message : "No se pudo subir la imagen. Probá de nuevo.");
         }
       }
 
@@ -390,12 +399,12 @@ export default function BarberosSection({ barbers }: Readonly<Props>) {
                         <Upload className="w-4 h-4" />
                         <span>{imageFile ? imageFile.name : "Subir nueva foto"}</span>
                       </div>
-                      <span className="text-[10px] text-slate-400 mt-0.5">
-                        PNG, JPG o WEBP (máx. 2MB)
+                      <span className="text-xs text-[var(--foreground)]/40 mt-0.5">
+                        {IMAGE_LIMITS_TEXT}
                       </span>
                       <input
                         type="file"
-                        accept="image/*"
+                        accept={IMAGE_ACCEPT_ATTR}
                         onChange={handleImageChange}
                         className="hidden"
                       />
