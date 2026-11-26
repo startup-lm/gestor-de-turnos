@@ -18,6 +18,11 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 ### Cambiado
 - Balance arranca siempre mostrando el día de hoy.
 
+## [1.12.9] - 2026-11-26
+
+### Corregido
+- Storage: una migración garantiza que existan los buckets de imágenes (barberos, marca, fotos del local, productos y servicios); antes subir una imagen fallaba con 'Bucket not found' en bases nuevas.
+
 ## [1.12.8] - 2026-11-26
 
 ### Corregido
