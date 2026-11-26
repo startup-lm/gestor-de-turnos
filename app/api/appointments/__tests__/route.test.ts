@@ -179,7 +179,45 @@ describe("API /api/appointments", () => {
       const update = mockExisting({ id: 1, barber_id: 1, paid: true, arca_invoice_id: null });
 
       await patch({ appointmentId: 1, updates: { paid: false } });
-      expect(update).toHaveBeenCalledWith({ paid: false, commission_rate: null });
+      expect(update).toHaveBeenCalledWith({ paid: false, commission_rate: null, paid_at: null });
+    });
+
+    it("al cobrar guarda la fecha de cobro", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-11-26T15:00:00Z"));
+      try {
+        vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
+        const update = mockExisting({ id: 1, barber_id: 1, paid: false, arca_invoice_id: null, commission: 0.6 });
+
+        const response = await patch({ appointmentId: 1, updates: { paid: true, price: 15000, payment_method: "Efectivo" } });
+        expect(response.status).toBe(200);
+        expect(update).toHaveBeenCalledWith(
+          expect.objectContaining({ paid: true, paid_at: "2026-11-26T15:00:00.000Z" })
+        );
+        const callArg = update.mock.calls[0][0];
+        expect(callArg).toEqual(expect.objectContaining({ paid: true, paid_at: expect.any(String) }));
+        expect(!Number.isNaN(Date.parse(callArg.paid_at))).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("si el turno ya estaba cobrado no cambia la fecha de cobro", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
+      const update = mockExisting({ id: 1, barber_id: 1, paid: true, arca_invoice_id: null, commission: 0.6 });
+
+      const response = await patch({ appointmentId: 1, updates: { paid: true, price: 20000, payment_method: "Efectivo" } });
+      expect(response.status).toBe(200);
+      expect(update.mock.calls[0][0]).not.toHaveProperty("paid_at");
+    });
+
+    it("un navegador no puede fijar paid_at", async () => {
+      vi.mocked(auth.requireBarberOrAdmin).mockResolvedValueOnce(ADMIN);
+      const update = mockExisting({ id: 1, barber_id: 1, paid: false, arca_invoice_id: null });
+
+      const response = await patch({ appointmentId: 1, updates: { paid: false, price: 1, paid_at: "2020-01-01T00:00:00Z" } });
+      expect(response.status).toBe(200);
+      expect(update.mock.calls[0][0]).not.toHaveProperty("paid_at");
     });
 
     it("no permite modificar un turno ya liquidado", async () => {
