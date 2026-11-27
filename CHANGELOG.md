@@ -18,6 +18,12 @@ y este proyecto se rige bajo [Semantic Versioning (SemVer)](https://semver.org/l
 ### Cambiado
 - Balance arranca siempre mostrando el día de hoy.
 
+## [1.12.10] - 2026-11-26
+
+### Corregido
+- Subida de fotos: se indican los formatos y el tamaño máximo (4 MB) y los errores explican el motivo.
+- Los links a redes sociales del sitio abren la red correcta en lugar de dar 404.
+
 ## [1.12.9] - 2026-11-26
 
 ### Corregido
