@@ -31,10 +31,3 @@ export function getPresetRange(preset: FixedDatePreset, now: Date = new Date()):
       return { start: startOfDay(y, m - 1, 1), end: endOfDay(y, m, 0) };
   }
 }
-
-/** Preset por defecto del balance según business_settings.cash_closing_frequency. */
-export function presetFromClosingFrequency(freq?: "daily" | "weekly" | "manual" | null): FixedDatePreset {
-  if (freq === "daily") return "today";
-  if (freq === "weekly") return "week";
-  return "month";
-}

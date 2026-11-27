@@ -33,6 +33,8 @@ export interface Appointment {
   commission_rate?: number | null;
   /** Caja que estaba abierta cuando se cobró */
   shift_id?: number | null;
+  /** Fecha y hora real en que se cobró (null si no está cobrado) */
+  paid_at?: string | null;
 }
 
 export interface AppointmentUpdates {

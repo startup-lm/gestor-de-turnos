@@ -4,7 +4,6 @@ import { requirePlanFeature } from "@/lib/flags/server";
 import { errorResponse, dbErrorResponse } from "@/lib/api/response";
 import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin";
 import { getOpenShift, loadShiftExpected } from "@/lib/finance/openShift";
-import { closingReminderDue } from "@/lib/finance/cashShift";
 
 const HISTORY_LIMIT = 10;
 
@@ -20,15 +19,10 @@ export async function GET() {
   if (error) return dbErrorResponse(error, "cash/shifts");
 
   let expected = null;
-  let reminderDue = false;
   if (shift) {
-    const [loaded, settings] = await Promise.all([
-      loadShiftExpected(shift),
-      supabaseAdmin.from("business_settings").select("cash_closing_frequency").eq("id", 1).maybeSingle(),
-    ]);
+    const loaded = await loadShiftExpected(shift);
     if (loaded.error) return dbErrorResponse(loaded.error, "cash/shifts.expected");
     expected = loaded.rows;
-    reminderDue = closingReminderDue(shift.opened_at, settings.data?.cash_closing_frequency);
   }
 
   let history = null;
@@ -43,5 +37,5 @@ export async function GET() {
     history = data ?? [];
   }
 
-  return NextResponse.json({ shift, expected, reminderDue, history });
+  return NextResponse.json({ shift, expected, history });
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { AlertTriangle, ArrowLeft, Loader2, Lock, Wallet } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, Wallet } from "lucide-react";
 import { ActionButton } from "@/components/buttons/ActionButton";
 import { catalogInputClass, catalogLabelClass } from "@/components/admin/catalog/styles";
 import { formatARS } from "@/lib/format/currency";
@@ -14,7 +14,6 @@ import type { CashShift, CashShiftExpectedRow } from "@/lib/types/cash";
 interface CashState {
   shift: CashShift | null;
   expected: CashShiftExpectedRow[] | null;
-  reminderDue: boolean;
   history: CashShift[] | null;
 }
 
@@ -75,7 +74,7 @@ export default function CajaSection() {
     );
   }
 
-  const { shift, expected, reminderDue, history } = data;
+  const { shift, expected, history } = data;
   const totals = (expected ?? []).reduce(
     (acc, r) => ({ income: acc.income + r.income, outcome: acc.outcome + r.outcome, expected: acc.expected + r.expected }),
     { income: 0, outcome: 0, expected: 0 }
@@ -100,12 +99,6 @@ export default function CajaSection() {
         )}
       </div>
 
-      {shift && reminderDue && (
-        <div className="flex items-start gap-2.5 p-4 rounded-xl bg-amber-500/10 border border-amber-500/25 text-sm text-amber-200">
-          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-400" />
-          <span>La caja no se cierra desde el {formatDateTime(shift.opened_at)}. Contá la plata y cerrala.</span>
-        </div>
-      )}
 
       {!shift ? (
         <div className="flex flex-col items-center gap-2 py-12 rounded-xl border border-[var(--border)] bg-[var(--background)] text-center px-4">

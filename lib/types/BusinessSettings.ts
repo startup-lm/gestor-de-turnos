@@ -64,6 +64,7 @@ export type BusinessSettings = {
   /** Plan contratado (lo define el dueño del SaaS). Ver PLAN_FEATURES en lib/flags. */
   plan?: PlanName;
   features?: Record<string, boolean>;
+  /** @deprecated Ya no se usa: el cierre de caja es siempre manual. La columna se conserva por retrocompatibilidad. */
   cash_closing_frequency?: "daily" | "weekly" | "manual";
   google_reviews?: GoogleReviewsConfig;
 };

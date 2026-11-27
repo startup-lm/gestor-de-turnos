@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import CountUp from "react-countup";
 import { Barber } from "@/lib/types/Barbers";
 import { useBarberCutsData } from "@/lib/hooks/useBarberCutsdata";
@@ -11,8 +11,8 @@ import { getCashSummary, CashSummaryResponse } from "@/lib/repository/cash";
 import { formatLocalDate } from "@/lib/dates/argentina";
 import {
   DatePreset,
+  FixedDatePreset,
   getPresetRange,
-  presetFromClosingFrequency,
 } from "@/lib/dates/presets";
 import DatePresetSelector from "@/components/admin/DatePresetSelector";
 import { formatARS } from "@/lib/format/currency";
@@ -34,33 +34,15 @@ interface Props {
 }
 
 export default function FinanzasSection({ barbers }: Readonly<Props>) {
-  const { businessSettings, isEnabled } = useBusinessContext();
+  const { isEnabled } = useBusinessContext();
   const isExpensesEnabled = isEnabled("expenses");
 
-  const initialPreset = useMemo(
-    () => presetFromClosingFrequency(businessSettings?.cash_closing_frequency),
-    [businessSettings?.cash_closing_frequency]
-  );
-  const initialRange = useMemo(() => getPresetRange(initialPreset), [initialPreset]);
+  const initialPreset: FixedDatePreset = "today";
+  const initialRange = useMemo(() => getPresetRange(initialPreset), []);
 
   const [preset, setPreset] = useState<DatePreset>(initialPreset);
   const [startDate, setStartDate] = useState<Date>(initialRange.start);
   const [endDate, setEndDate] = useState<Date>(initialRange.end);
-
-  const freqRef = useRef(businessSettings?.cash_closing_frequency);
-  useEffect(() => {
-    if (
-      businessSettings?.cash_closing_frequency &&
-      businessSettings.cash_closing_frequency !== freqRef.current
-    ) {
-      freqRef.current = businessSettings.cash_closing_frequency;
-      const p = presetFromClosingFrequency(businessSettings.cash_closing_frequency);
-      const r = getPresetRange(p);
-      setPreset(p);
-      setStartDate(r.start);
-      setEndDate(r.end);
-    }
-  }, [businessSettings?.cash_closing_frequency]);
 
   const [cashSummary, setCashSummary] = useState<CashSummaryResponse | null>(null);
   const [cashSummaryLoading, setCashSummaryLoading] = useState(true);

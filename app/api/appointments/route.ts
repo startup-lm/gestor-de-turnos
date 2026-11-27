@@ -429,9 +429,17 @@ export async function PATCH(request: Request) {
     shiftUpdate = { shift_id: shiftId };
   }
 
+  // Fecha de cobro: se fija al cobrar y se borra al revertir el cobro
+  let paidAtUpdate: { paid_at?: string | null } = {};
+  if (!willBePaid && existingAppt.paid) {
+    paidAtUpdate = { paid_at: null };
+  } else if (updates.paid === true && !existingAppt.paid) {
+    paidAtUpdate = { paid_at: new Date().toISOString() };
+  }
+
   const { data, error } = await supabaseAdmin
     .from("appointments")
-    .update({ ...updates, ...commissionUpdate, ...shiftUpdate })
+    .update({ ...updates, ...commissionUpdate, ...shiftUpdate, ...paidAtUpdate })
     .eq("id", appointmentId)
     .select();
 
